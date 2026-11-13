@@ -340,6 +340,7 @@ function rpc(fn,args){
     },
     canPick:!!CFG.pickerKey,
     pickFolder:function(){
+      var cur=null;
       function loadGapi(){return new Promise(function(res,rej){
         if(window.gapi&&window.google&&window.google.picker)return res();
         function ready(){window.gapi.load('picker',{callback:res,onerror:rej})}
@@ -350,11 +351,12 @@ function rpc(fn,args){
         var t=r[0];if(!t||!t.ok)throw new Error('token');
         return new Promise(function(res){
           var view=new google.picker.DocsView(google.picker.ViewId.FOLDERS).setSelectFolderEnabled(true).setIncludeFolders(true).setMimeTypes('application/vnd.google-apps.folder');
-          new google.picker.PickerBuilder().addView(view).setOAuthToken(t.token).setDeveloperKey(CFG.pickerKey).setAppId(t.appId).setLocale(window.CE_LANG||'pt')
+          cur=new google.picker.PickerBuilder().addView(view).setOAuthToken(t.token).setDeveloperKey(CFG.pickerKey).setAppId(t.appId).setLocale(window.CE_LANG||'pt')
             .setCallback(function(d){
               if(d.action==='picked'&&d.docs&&d.docs[0])res(call('set-folder',{folderId:d.docs[0].id}));
               else if(d.action==='cancel')res({cancelled:true});
-            }).build().setVisible(true);
+            }).build();cur.setVisible(true);
+          window.CE_DRIVE.cancelPick=function(){try{cur.setVisible(false);cur.dispose()}catch(e){}res({cancelled:true})};
         });
       });
     },

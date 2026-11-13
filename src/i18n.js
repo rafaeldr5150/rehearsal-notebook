@@ -19,6 +19,9 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Escolher outra pasta','Choose another folder','Elegir otra carpeta'],
+['No iPhone o Google costuma bloquear a janela de escolha (cookies do Safari). Faça pelo computador ou por um Android. Ou, no app Google Drive, mova a pasta setlist para onde quiser: o app continua usando a mesma pasta depois de movida.','On iPhone, Google often blocks the picker window (Safari cookies). Do it from a computer or an Android phone. Or, in the Google Drive app, move the setlist folder wherever you want: the app keeps using the same folder after it is moved.','En iPhone, Google suele bloquear la ventana de selección (cookies de Safari). Hazlo desde un ordenador o un Android. O, en la app Google Drive, mueve la carpeta setlist adonde quieras: la app sigue usando la misma carpeta después de moverla.'],
+['Tentar mesmo assim','Try anyway','Intentar de todos modos'],['Se a janela do Google der erro, toque em Cancelar','If the Google window shows an error, tap Cancel','Si la ventana de Google da error, toca Cancelar'],['Cancelar','Cancel','Cancelar'],
 ['Arquivos','Files','Archivos'],['Enviar arquivo','Upload a file','Subir archivo'],['Baixar','Download','Descargar'],['Baixando…','Downloading…','Descargando…'],
 ['Não foi possível baixar. Tente abrir pelo Drive.','Could not download. Try opening it in Drive.','No se pudo descargar. Prueba abrirlo en Drive.'],['Não foi possível guardar o arquivo.','Could not store the file.','No se pudo guardar el archivo.'],
 ['Instalar o app','Install the app','Instalar la app'],['Ícone na tela inicial, tela cheia e lembretes','Home screen icon, full screen and reminders','Icono en la pantalla de inicio, pantalla completa y recordatorios'],
