@@ -932,6 +932,9 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 .cus-row input[type=color]{width:52px;height:40px;padding:0;border:1px solid var(--line);border-radius:10px;background:transparent;cursor:pointer}
 .cus-presets{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .cus-sw{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.35);cursor:pointer}
+.acc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.acc-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line)}
+.acc-meta{display:flex;flex-direction:column;min-width:0}.acc-meta b{font-size:14px}.acc-meta small{opacity:.7;font-size:12px;overflow:hidden;text-overflow:ellipsis}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -2439,10 +2442,27 @@ function pushRows(row){
   if(s==='on')return row('push-off','nota','Lembretes ativados','Aviso na véspera (18h) e no dia do ensaio (8h). Toque para desativar.')+row('push-test','nota','Enviar aviso de teste','Confira se a notificação chega neste aparelho');
   return row('push-on','nota','Ativar lembretes do ensaio','Aviso na véspera (18h) e no dia do ensaio (8h)');
 }
+function accPanel(){
+  var l=ui.accList;
+  if(l===undefined){
+    ui.accList=null;
+    window.CE_AUTH.accounts().then(function(r){ui.accList=r}).catch(function(){ui.accList=false}).then(function(){renderConfig()});
+    return '<p class="hint">Carregando…</p>';
+  }
+  if(l===null)return '<p class="hint">Carregando…</p>';
+  if(l===false)return '<p class="hint">Não foi possível carregar agora.</p>';
+  var owners=l.filter(function(x){return x.role==='owner'}).length;
+  return '<ul class="acc-list">'+l.map(function(x){
+    var key=x.user_id+(x.role==='owner'?'m':'o'),arm=ui.armAcc===key,lm=x.mid&&member(x.mid);
+    var can=x.role==='owner'?owners>1:true;
+    return '<li><div class="acc-meta"><b>'+esc(x.name||x.email)+'</b><small>'+esc(x.email)+' · '+(x.role==='owner'?'dono':'integrante')+(lm?' · '+esc(first(lm.name)):'')+'</small></div>'+
+      (can?'<button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="acc-role" data-u="'+x.user_id+'" data-r="'+(x.role==='owner'?'member':'owner')+'">'+(arm?'Confirmar':x.role==='owner'?'Tirar de dono':'Tornar dono')+'</button>':'<span class="faint" style="font-size:12px">único dono</span>')+'</li>'}).join('')+'</ul>';
+}
 function accountRows(row){
   var A=window.CE_AUTH;if(!A)return '';
   if(A.user){
     return '<div class="cfg-row static">'+svgIco('user',24)+'<span><b>Conectado</b><small>'+esc(A.user.email||A.user.name||'')+(A.role?' · '+(A.role==='owner'?'dono da banda':'integrante'):'')+'</small></span></div>'+
+      (A.role==='owner'?row('acc-toggle','group',ui.accOpen?'Esconder donos e contas':'Donos e contas','Ver quem tem conta e escolher os donos')+(ui.accOpen?accPanel():''):'')+
       row('my-bands','group','Minhas bandas','Ver a lista e trocar de banda')+row('auth-out','user','Sair da conta','Este aparelho deixa de mostrar as suas bandas');
   }
   return row('auth-open','user','Entrar ou criar conta','Com Google ou e-mail, para ver as suas bandas em qualquer aparelho');
@@ -2617,6 +2637,14 @@ document.addEventListener('click',function(e){
   if(act==='pl-cancel'){ui.plEdit=false;renderConfig();return}
   if(act==='pl-save'){var pid=plIdOf(ui.plDraft);if(!pid){toast('Cole o link de uma playlist do Spotify.');return}
     spotCfg={playlist:pid,seen:[],last:0};if(spotDoc)spotDoc.set(spotCfg).catch(fail);ui.plEdit=false;render();syncPlaylist(true);return}
+  if(act==='acc-toggle'){ui.accOpen=!ui.accOpen;ui.accList=undefined;ui.armAcc='';renderConfig();return}
+  if(act==='acc-role'){var au=t.dataset.u,ar=t.dataset.r,ak=au+(ar==='member'?'m':'o');
+    if(ui.armAcc!==ak){ui.armAcc=ak;renderConfig();return}
+    ui.armAcc='';window.CE_AUTH.setRole(au,ar).then(function(){
+      var l=ui.accList||[],me=l.filter(function(x){return x.user_id===au&&window.CE_AUTH.user&&x.email===window.CE_AUTH.user.email})[0];
+      if(me&&ar==='member'){window.CE_AUTH.role='member';ui.accOpen=false}
+      ui.accList=undefined;toast(ar==='owner'?'Pronto: agora também é dono da banda.':'Pronto: deixou de ser dono.');renderConfig();
+    }).catch(function(err){toast(/last owner/.test(String(err&&err.message))?'A banda precisa de pelo menos um dono.':'Não foi possível mudar agora.');renderConfig()});return}
   if(act==='my-bands'||act==='auth-open'){window.CE_AUTH.openEntry();return}
   if(act==='auth-out'){window.CE_AUTH.signOut();return}
   if(act==='rec-play'){recPlay(t.dataset.fid);return}

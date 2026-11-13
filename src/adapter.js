@@ -111,6 +111,8 @@ window.CE_AUTH={
   user:null,role:'',
   openEntry:function(){try{sessionStorage.setItem('ce-entry','1')}catch(e){}location.href=location.pathname},
   signOut:function(){return authClient().auth.signOut().then(function(){try{sessionStorage.removeItem('ce-entry');localStorage.removeItem('ce-band');localStorage.removeItem('ce-me')}catch(e){}location.href=location.pathname})},
+  accounts:function(){return arpc('ce_band_accounts',{p_code:band})},
+  setRole:function(u,r){return arpc('ce_band_set_role',{p_code:band,p_user:u,p_role:r})},
   setMe:function(mid){if(window.CE_AUTH.user&&band)arpc('ce_set_me',{p_code:band,p_mid:mid||''}).catch(function(){})}
 };
 function pickBand(code,mid){

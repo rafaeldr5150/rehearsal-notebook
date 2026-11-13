@@ -65,3 +65,28 @@ end $$;
 revoke all on function public.ce_my_bands(), public.ce_band_join(text), public.ce_band_leave(text), public.ce_set_me(text,text) from public;
 grant execute on function public.ce_my_bands(), public.ce_band_join(text), public.ce_band_leave(text), public.ce_set_me(text,text) to authenticated;
 grant execute on function public.ce_band_create() to anon, authenticated;
+
+-- Owners can see which accounts are in the band and change roles (at least one owner always remains).
+create or replace function public.ce_band_accounts(p_code text) returns table(user_id uuid, role text, email text, name text, mid text)
+language plpgsql security definer set search_path=public as $$
+begin
+  if not exists(select 1 from ce_members m where m.band=p_code and m.user_id=auth.uid() and m.role='owner') then raise exception 'forbidden'; end if;
+  return query
+    select m.user_id, m.role, u.email::text,
+           coalesce(u.raw_user_meta_data->>'full_name', u.raw_user_meta_data->>'name', '')::text, m.mid
+    from ce_members m join auth.users u on u.id=m.user_id
+    where m.band=p_code order by m.joined_at;
+end $$;
+
+create or replace function public.ce_band_set_role(p_code text, p_user uuid, p_role text) returns boolean
+language plpgsql security definer set search_path=public as $$
+begin
+  if p_role not in ('owner','member') then raise exception 'invalid role'; end if;
+  if not exists(select 1 from ce_members m where m.band=p_code and m.user_id=auth.uid() and m.role='owner') then raise exception 'forbidden'; end if;
+  if not exists(select 1 from ce_members m where m.band=p_code and m.user_id=p_user) then raise exception 'unknown member'; end if;
+  if p_role='member' and not exists(select 1 from ce_members m where m.band=p_code and m.role='owner' and m.user_id<>p_user) then raise exception 'last owner'; end if;
+  update ce_members set role=p_role where band=p_code and user_id=p_user;
+  return true;
+end $$;
+revoke all on function public.ce_band_accounts(text), public.ce_band_set_role(text,uuid,text) from public;
+grant execute on function public.ce_band_accounts(text), public.ce_band_set_role(text,uuid,text) to authenticated;

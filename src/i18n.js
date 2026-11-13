@@ -19,6 +19,11 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Donos e contas','Owners and accounts','Dueños y cuentas'],['Esconder donos e contas','Hide owners and accounts','Ocultar dueños y cuentas'],['Ver quem tem conta e escolher os donos','See who has an account and choose the owners','Ver quién tiene cuenta y elegir los dueños'],
+['Tornar dono','Make owner','Hacer dueño'],['Tirar de dono','Remove as owner','Quitar como dueño'],['Confirmar','Confirm','Confirmar'],['único dono','only owner','único dueño'],
+['Não foi possível carregar agora.','Could not load right now.','No se pudo cargar ahora.'],
+['Pronto: agora também é dono da banda.','Done: now also an owner of the band.','Listo: ahora también es dueño de la banda.'],['Pronto: deixou de ser dono.','Done: no longer an owner.','Listo: ya no es dueño.'],
+['A banda precisa de pelo menos um dono.','The band needs at least one owner.','La banda necesita al menos un dueño.'],['Não foi possível mudar agora.','Could not change right now.','No se pudo cambiar ahora.'],
 ['Política de privacidade','Privacy policy','Política de privacidad'],
 ['Voltar às minhas bandas','Back to my bands','Volver a mis bandas'],
 ['Conectado','Signed in','Conectado'],['dono da banda','band owner','dueño de la banda'],['integrante','member','integrante'],['dono','owner','dueño'],
@@ -356,6 +361,7 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^(.+) · (dono|integrante)(?: · (.+))?$/,function(m){return m[1]+' · '+(m[2]==='dono'?(I===1?'owner':'dueño'):(I===1?'member':'integrante'))+(m[3]?' · '+m[3]:'')}],
 [/^(\d+) músicas? novas? da playlist: (.+)$/,function(m){return m[1]+(I===1?(m[1]==='1'?' new song':' new songs')+' from the playlist: ':(m[1]==='1'?' canción nueva':' canciones nuevas')+' de la lista: ')+m[2]}],
 [/^Última busca (.+?)(?: · (\d+) novas?)?$/,function(m){return (I===1?'Last fetch ':'Última búsqueda ')+m[1]+(m[2]?' · '+m[2]+(I===1?' new':(m[2]==='1'?' nueva':' nuevas')):'')}],
 [/^(.+) \/ (.+) \/ setlist \/ música$/,function(m){return m[1]+' / '+m[2]+' / setlist / '+(I===1?'song':'canción')}],
