@@ -1,4 +1,4 @@
-/* Ligação do Caderno de Ensaio com o Supabase.
+/* Ligação do Rehearsal Notebook com o Supabase.
    Oferece a mesma interface de banco que a página já usa (doc/collection/onSnapshot),
    com cópia local para funcionar sem internet e fila de gravações pendentes. */
 (function(){
@@ -34,15 +34,19 @@ function showJoin(msg){
    '#join button[disabled]{opacity:.6;cursor:default}'+
    '#join #join-msg{min-height:22px;margin-top:12px;color:#ff9a9a;font-size:15px}'+
    '#join .jhint{margin:14px 0 0;font-size:14px;color:#9a9ab2}'+
+   '#join .jor{display:flex;align-items:center;gap:10px;margin:18px 0 12px;color:#8c8ca6;font-size:13px}#join .jor:before,#join .jor:after{content:"";flex:1;height:1px;background:rgba(255,255,255,.14)}'+
+   '#join #join-new{width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;font:700 16px/1 Inter,system-ui,sans-serif;cursor:pointer}'+
+   '#join .jnew{margin-top:10px}'+
    '#join .jlang{display:flex;gap:8px;justify-content:center;margin-top:16px}'+
    '#join .jlang button{background:transparent;border:1px solid rgba(255,255,255,.2);color:#cfcfe0;border-radius:999px;padding:6px 12px;font:600 13px Inter,sans-serif;cursor:pointer}'+
    '#join .jlang button.on{background:rgba(255,255,255,.14);color:#fff}';
   document.head.appendChild(css);
   var box=document.createElement('div');box.id='join';
-  box.innerHTML='<div class="jbox"><h1>Caderno de Ensaio</h1><p>Cole o código de convite da sua banda para entrar.</p>'+
+  box.innerHTML='<div class="jbox"><h1>Rehearsal Notebook</h1><p>Cole o código de convite da sua banda para entrar.</p>'+
     '<form id="join-form" autocomplete="off"><input id="join-code" type="text" inputmode="text" placeholder="Código ou link de convite" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código ou link de convite"><button type="submit" id="join-go">Entrar na banda</button></form>'+
     '<div id="join-msg" role="status" aria-live="polite"></div>'+
     '<p class="jhint">Não tem um código? Peça o link ou o código a alguém da banda.</p>'+
+    '<div class="jor"><span>ou</span></div><button type="button" id="join-new">Criar uma banda nova</button><p class="jhint jnew">Primeira vez por aqui? Crie a sua banda, cadastre o pessoal e envie o convite.</p>'+
     '<div class="jlang">'+['pt','en','es'].map(function(l){return '<button type="button" data-l="'+l+'" class="'+((window.CE_LANG||'pt')===l?'on':'')+'">'+{pt:'Português',en:'English',es:'Español'}[l]+'</button>'}).join('')+'</div></div>';
   document.body.appendChild(box);
   var msgEl=box.querySelector('#join-msg'),inp=box.querySelector('#join-code'),go=box.querySelector('#join-go');
@@ -61,6 +65,16 @@ function showJoin(msg){
         else{go.disabled=false;say('Código não encontrado. Confira e tente de novo.')}
       })
       .catch(function(){go.disabled=false;say('Sem internet para verificar o código.')});
+  });
+  box.querySelector('#join-new').addEventListener('click',function(){
+    var nb=this;nb.disabled=true;go.disabled=true;say('Criando…');
+    fetch(CFG.url+'/rest/v1/rpc/ce_band_create',{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:'{}'})
+      .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
+      .then(function(r){
+        if(r.ok&&typeof r.j==='string'){try{localStorage.setItem('ce-band',r.j)}catch(e){}location.href=location.pathname}
+        else{nb.disabled=false;go.disabled=false;say(/rate/i.test(JSON.stringify(r.j))?'Muitas bandas criadas deste aparelho. Tente de novo mais tarde.':'Não foi possível criar a banda agora. Tente de novo.')}
+      })
+      .catch(function(){nb.disabled=false;go.disabled=false;say('Sem internet para criar a banda.')});
   });
   setTimeout(function(){try{inp.focus()}catch(e){}},50);
 }

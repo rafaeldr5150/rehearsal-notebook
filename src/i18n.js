@@ -1,4 +1,4 @@
-/* Idiomas do Caderno de Ensaio: português (original), inglês e espanhol.
+/* Idiomas do Rehearsal Notebook: português (original), inglês e espanhol.
    Traduz os textos da tela quando ela é montada. Trocar de idioma recarrega a página. */
 (function(){
 'use strict';
@@ -19,6 +19,11 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['ou','or','o'],['Criar uma banda nova','Create a new band','Crear una banda nueva'],['Criando…','Creating…','Creando…'],
+['Primeira vez por aqui? Crie a sua banda, cadastre o pessoal e envie o convite.','First time here? Create your band, add the members and send the invite.','¿Primera vez por aquí? Crea tu banda, añade a los integrantes y envía la invitación.'],
+['Muitas bandas criadas deste aparelho. Tente de novo mais tarde.','Too many bands created from this device. Try again later.','Demasiadas bandas creadas desde este dispositivo. Inténtalo más tarde.'],
+['Não foi possível criar a banda agora. Tente de novo.','Could not create the band right now. Try again.','No se pudo crear la banda ahora. Inténtalo de nuevo.'],
+['Sem internet para criar a banda.','No internet to create the band.','Sin internet para crear la banda.'],
 ['Personalizado','Custom','Personalizado'],['Neon com as suas duas cores.','Neon with your two colors.','Neón con tus dos colores.'],['Suas cores','Your colors','Tus colores'],['Cor 1','Color 1','Color 1'],['Cor 2','Color 2','Color 2'],
 ['Deixar tudo pronto','Get everything ready','Dejar todo listo'],
 ['Libere agora o que o app vai usar, para não ser interrompido depois.','Allow now what the app will use, so you are not interrupted later.','Permite ahora lo que usará la app, para que no te interrumpa después.'],
@@ -96,7 +101,7 @@ var D=[
 ['Marque com ★ as músicas do ensaio para ver o que falta para cada um.','Mark the rehearsal songs with ★ to see what each person still needs to learn.','Marca con ★ las canciones del ensayo para ver qué le falta a cada uno.'],
 ['Ajuda','Help','Ayuda'],['Ver o tour de novo','See the tour again','Ver el tour otra vez'],['Como o app funciona, em poucos passos','How the app works, in a few steps','Cómo funciona la app, en pocos pasos'],
 ['Voltar','Back','Atrás'],['Próximo','Next','Siguiente'],['Começar','Start','Empezar'],['Pular tour','Skip tour','Saltar tour'],
-['Bem-vindo ao Caderno de Ensaio','Welcome to Rehearsal Notebook','Bienvenido al Cuaderno de Ensayo'],
+['Bem-vindo ao Rehearsal Notebook','Welcome to Rehearsal Notebook','Bienvenido a Rehearsal Notebook'],
 ['Aqui a banda acompanha as músicas que cada um precisa tirar para o ensaio e para o show.','Here the band tracks the songs each person needs to learn for rehearsal and for the show.','Aquí la banda sigue las canciones que cada uno debe sacar para el ensayo y para el show.'],
 ['Escolha quem você é','Choose who you are','Elige quién eres'],
 ['Cada integrante tem a sua página, só com as músicas dele. O aparelho lembra de você.','Each member has their own page with only their songs. This device remembers you.','Cada integrante tiene su página, solo con sus canciones. Este dispositivo te recuerda.'],
@@ -166,7 +171,7 @@ var D=[
 ['Importe as músicas ou monte o setlist.','Import the songs or build the setlist.','Importa las canciones o arma el setlist.'],
 ['Sem duração','No duration','Sin duración'],['sem duração','no duration','sin duración'],['sem função definida','no role defined','sin rol definido'],
 /* menu */
-['Caderno de Ensaio','Rehearsal Notebook','Cuaderno de Ensayo'],['Caderno de ensaio','Rehearsal notebook','Cuaderno de ensayo'],
+
 ['Geral','Overview','General'],['Setlist','Setlist','Setlist'],['Páginas','Pages','Páginas'],['Navegação','Navigation','Navegación'],
 ['Voz','Vocals','Voz'],['Guitarra','Guitar','Guitarra'],['Baixo','Bass','Bajo'],['Bateria','Drums','Batería'],['Teclado','Keys','Teclado'],['Violão','Acoustic guitar','Guitarra acústica'],['Percussão','Percussion','Percusión'],['Backing vocal','Backing vocals','Coros'],
 /* página pessoal */
@@ -425,7 +430,7 @@ function doNode(n){
     for(var c=n.firstChild;c;c=c.nextSibling)doNode(c);
   }
 }
-var title={en:'Rehearsal Notebook',es:'Cuaderno de Ensayo'}[lang];
+var title='Rehearsal Notebook';
 document.title=title;
 function start(){
   doNode(document.body);

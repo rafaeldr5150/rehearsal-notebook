@@ -27,7 +27,7 @@ sw='''const V="ce-%s";const CORE=["./","index.html","supabase.js","manifest.webm
 self.addEventListener("install",e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener("push",e=>{let d={};try{d=e.data.json()}catch(_){}
-  e.waitUntil(self.registration.showNotification(d.title||"Caderno de Ensaio",{body:d.body||"",icon:"icon-192.png",badge:"icon-192.png",tag:d.tag,data:{url:d.url||"./"}}))});
+  e.waitUntil(self.registration.showNotification(d.title||"Rehearsal Notebook",{body:d.body||"",icon:"icon-192.png",badge:"icon-192.png",tag:d.tag,data:{url:d.url||"./"}}))});
 self.addEventListener("notificationclick",e=>{e.notification.close();
   e.waitUntil(clients.matchAll({type:"window",includeUncached:true}).then(l=>{for(const c of l){if("focus" in c)return c.focus()}return clients.openWindow(e.notification.data.url||"./")}))});
 self.addEventListener("fetch",e=>{
@@ -41,7 +41,7 @@ self.addEventListener("fetch",e=>{
 });
 '''%ver
 open(os.path.join(PUB,'sw.js'),'w').write(sw)
-man={"name":cfg.get("appName","Caderno de Ensaio"),"short_name":"Ensaio","start_url":"./","display":"standalone","background_color":"#17181a","theme_color":"#17181a","lang":"pt-BR",
+man={"name":cfg.get("appName","Rehearsal Notebook"),"short_name":"Rehearsal","start_url":"./","display":"standalone","background_color":"#17181a","theme_color":"#17181a","lang":"pt-BR",
  "icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}
 json.dump(man,open(os.path.join(PUB,'manifest.webmanifest'),'w'),ensure_ascii=False)
 for n in ('icon-192.png','icon-512.png'): shutil.copy(os.path.join(ROOT,'src',n),os.path.join(PUB,n))
