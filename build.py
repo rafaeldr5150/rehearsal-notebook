@@ -24,6 +24,7 @@ head=('<!doctype html>\n<html lang="pt-BR">\n<head>\n<meta charset="utf-8">\n'
 tail=('\n<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>\n</body>\n</html>\n')
 html=head+page+tail
 open(os.path.join(PUB,'index.html'),'w',encoding='utf8').write(html)
+open(os.path.join(PUB,'privacy.html'),'w',encoding='utf8').write(open(os.path.join(ROOT,'src','privacy.html'),encoding='utf8').read().replace('__CONTACT__',cfg.get('contact','')))
 ver=hashlib.sha1(html.encode()).hexdigest()[:10]
 sw='''const V="ce-%s";const CORE=["./","index.html","supabase.js","manifest.webmanifest","icon-192.png","icon-512.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});

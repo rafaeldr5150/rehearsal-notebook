@@ -57,7 +57,7 @@ function showJoin(msg){
     '<p class="jhint">Não tem um código? Peça o link ou o código a alguém da banda.</p>'+
     '<div class="jor"><span>ou</span></div><button type="button" id="join-new">Criar uma banda nova</button><p class="jhint jnew">Primeira vez por aqui? Crie a sua banda, cadastre o pessoal e envie o convite.</p>'+
     '<p class="jhint"><a href="#" id="join-acct" style="color:#ffb3d0">Entrar com uma conta</a></p>'+
-    '<div class="jlang">'+['pt','en','es'].map(function(l){return '<button type="button" data-l="'+l+'" class="'+((window.CE_LANG||'pt')===l?'on':'')+'">'+{pt:'Português',en:'English',es:'Español'}[l]+'</button>'}).join('')+'</div></div>';
+    '<div class="jlang">'+['pt','en','es'].map(function(l){return '<button type="button" data-l="'+l+'" class="'+((window.CE_LANG||'pt')===l?'on':'')+'">'+{pt:'Português',en:'English',es:'Español'}[l]+'</button>'}).join('')+'</div><p class="jhint" style="text-align:center"><a href="privacy.html" style="color:#9a9ab2">Política de privacidade</a></p></div>';
   document.body.appendChild(box);
   var msgEl=box.querySelector('#join-msg'),inp=box.querySelector('#join-code'),go=box.querySelector('#join-go');
   function say(t){msgEl.textContent=t||''}
@@ -121,7 +121,7 @@ function mountScreen(inner){
   var old=document.getElementById('join');if(old)old.remove();
   joinCss();
   var box=document.createElement('div');box.id='join';
-  box.innerHTML='<div class="jbox">'+inner+'<div class="jlang">'+['pt','en','es'].map(function(l){return '<button type="button" data-l="'+l+'" class="'+((window.CE_LANG||'pt')===l?'on':'')+'">'+{pt:'Português',en:'English',es:'Español'}[l]+'</button>'}).join('')+'</div></div>';
+  box.innerHTML='<div class="jbox">'+inner+'<div class="jlang">'+['pt','en','es'].map(function(l){return '<button type="button" data-l="'+l+'" class="'+((window.CE_LANG||'pt')===l?'on':'')+'">'+{pt:'Português',en:'English',es:'Español'}[l]+'</button>'}).join('')+'</div><p class="jhint" style="text-align:center"><a href="privacy.html" style="color:#9a9ab2">Política de privacidade</a></p></div>';
   document.body.appendChild(box);
   box.querySelector('.jlang').addEventListener('click',function(e){var b=e.target.closest('button[data-l]');if(b&&window.CE_SET_LANG)window.CE_SET_LANG(b.dataset.l)});
   return box;

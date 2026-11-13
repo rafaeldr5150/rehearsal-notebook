@@ -2465,7 +2465,8 @@ function renderConfig(){
    '<section class="cfg"><h3>Repertório</h3>'+row('cfg-import','list','Importar lista de músicas','Cole uma música por linha')+
      plRows(row)+
      (nl?row('lyrics-all','nota','Buscar letras que faltam','('+nl+')'):'')+'</section>'+
-   (window.CE_STANDALONE?'<section class="cfg"><h3>Conta</h3>'+accountRows(row)+'<div class="row-actions"><button type="button" class="btn small danger" data-act="leave-band">Sair desta banda</button></div></section>':'');
+   (window.CE_STANDALONE?'<section class="cfg"><h3>Conta</h3>'+accountRows(row)+'<div class="row-actions"><button type="button" class="btn small danger" data-act="leave-band">Sair desta banda</button></div></section>':'')+
+   '<p class="hint" style="margin-top:18px"><a href="privacy.html" target="_blank" rel="noopener">Política de privacidade</a></p>';
 }
 function render(){
   if(!band)return;

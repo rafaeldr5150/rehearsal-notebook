@@ -19,6 +19,7 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Política de privacidade','Privacy policy','Política de privacidad'],
 ['Voltar às minhas bandas','Back to my bands','Volver a mis bandas'],
 ['Conectado','Signed in','Conectado'],['dono da banda','band owner','dueño de la banda'],['integrante','member','integrante'],['dono','owner','dueño'],
 ['Minhas bandas','My bands','Mis bandas'],['Ver a lista e trocar de banda','See the list and switch bands','Ver la lista y cambiar de banda'],
