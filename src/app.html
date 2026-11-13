@@ -1333,11 +1333,48 @@ function noteIdx(n){var i=NS.indexOf(n);return i>=0?i:NF.indexOf(n)}
 function isChordTok(t){var m=t.match(CHORD_RE);return !!m&&/^(?:m|maj|min|M|dim|aug|sus|add|\+|°|ø|[0-9#b\-\(\)])*$/.test(m[2])}
 function shiftNote(n,k,flat){return (flat?NF:NS)[((noteIdx(n)+k)%12+12)%12]}
 function transposeTok(t,k,flat){var m=t.match(CHORD_RE);return shiftNote(m[1],k,flat)+m[2]+(m[3]?'/'+shiftNote(m[3],k,flat):'')}
+/* tablatura: os números são casas do braço; ao transpor, somam-se os semitons (mantendo o alinhamento) */
+var TAB_ROW=/^(\s*[A-Ga-g][#b]?\s*\|)([-\dA-Za-z~\/\\^()*.|<>=\s]*)$/;
+function isTabRow(l){var m=TAB_ROW.exec(l);return !!m&&/-{3,}/.test(m[2])}
+function shiftTabBlock(rows,k){
+  var frets=[];
+  rows.forEach(function(l){var s=TAB_ROW.exec(l)[2],re=/\d+/g,m;while((m=re.exec(s))){if(s[m.index-1]!=='x')frets.push(+m[0])}});
+  if(!frets.length)return rows;
+  var mn=Math.min.apply(null,frets),mx=Math.max.apply(null,frets),best=null;
+  [0,-12,12,-24,24].forEach(function(o){var s=k+o;if(mn+s>=0&&mx+s<=24&&(best===null||Math.abs(s-k)<Math.abs(best-k)))best=s});
+  if(best===null)best=Math.max(-mn,Math.min(k,24-mx));
+  if(!best)return rows;
+  /* trabalha por colunas: quando um número cresce (9 -> 11), todas as cordas ganham uma coluna, mantendo o alinhamento */
+  var pre=[],body=[],W=0;
+  rows.forEach(function(l){var m=TAB_ROW.exec(l);pre.push(m[1]);body.push(m[2]);W=Math.max(W,m[2].length)});
+  body=body.map(function(s){return s+'-'.repeat(W-s.length)});
+  var cov=new Array(W+1).fill(false);
+  body.forEach(function(s){var re=/\d+/g,m;while((m=re.exec(s))){if(s[m.index-1]==='x')continue;for(var q=m.index;q<m.index+m[0].length;q++)cov[q]=true}});
+  var out=rows.map(function(){return ''}),c=0;
+  while(c<W){
+    if(!cov[c]){for(var r=0;r<body.length;r++)out[r]+=body[r][c];c++;continue}
+    var e=c;while(e<W&&cov[e])e++;
+    var subs=body.map(function(s){
+      return s.slice(c,e).replace(/\d+/g,function(d,off,whole){return (off>0&&whole[off-1]==='x')?d:String(Math.max(0,+d+best))});
+    }),w=e-c;
+    subs.forEach(function(s){w=Math.max(w,s.length)});
+    for(var r2=0;r2<out.length;r2++)out[r2]+=subs[r2]+'-'.repeat(w-subs[r2].length);
+    c=e;
+  }
+  return out.map(function(s,i){return pre[i]+s});
+}
 function transposeText(text,k){
   if(!k||!text)return text||'';
   text=text.replace(/[\u200B-\u200D\u2060\uFEFF\u00AD]/g,'').replace(/\r/g,'');
   var flat=/(^|[\s(\/])[A-G]b/.test(text)&&!/(^|[\s(\/])[A-G]#/.test(text);
-  return text.split('\n').map(function(line){
+  var lines=text.split('\n'),isTab=[];
+  for(var a=0;a<lines.length;){
+    if(isTabRow(lines[a])){var b=a;while(b<lines.length&&isTabRow(lines[b]))b++;
+      if(b-a>=3){var blk=shiftTabBlock(lines.slice(a,b),k);for(var z=a;z<b;z++){lines[z]=blk[z-a];isTab[z]=1}}
+      a=b}else a++;
+  }
+  return lines.map(function(line,li){
+    if(isTab[li])return line;
     var tm=line.match(/^(\s*(?:Tom|Key)\s*:\s*)([A-G][#b]?[^\s\/]*)(\s*)$/i);
     if(tm&&isChordTok(tm[2]))return tm[1]+transposeTok(tm[2],k,flat)+tm[3];
     var parts=line.split(/(\s+)/),toks=[],chords=0;
