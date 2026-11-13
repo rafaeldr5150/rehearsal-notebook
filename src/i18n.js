@@ -19,6 +19,8 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Arquivos','Files','Archivos'],['Enviar arquivo','Upload a file','Subir archivo'],['Baixar','Download','Descargar'],['Baixando…','Downloading…','Descargando…'],
+['Não foi possível baixar. Tente abrir pelo Drive.','Could not download. Try opening it in Drive.','No se pudo descargar. Prueba abrirlo en Drive.'],['Não foi possível guardar o arquivo.','Could not store the file.','No se pudo guardar el archivo.'],
 ['Instalar o app','Install the app','Instalar la app'],['Ícone na tela inicial, tela cheia e lembretes','Home screen icon, full screen and reminders','Icono en la pantalla de inicio, pantalla completa y recordatorios'],
 ['App instalado','App installed','App instalada'],['Você está usando o app instalado.','You are using the installed app.','Estás usando la app instalada.'],
 ['Dica','Tip','Consejo'],['Instale o app na tela inicial','Install the app on your home screen','Instala la app en tu pantalla de inicio'],
@@ -101,7 +103,7 @@ var D=[
 ['Ensaio com lembrete','Rehearsal with reminder','Ensayo con recordatorio'],
 ['Na tela Geral, marque a data e a hora do próximo ensaio. Em Configurações, ative os lembretes: o celular avisa na véspera e no dia.','On the Overview screen, set the date and time of the next rehearsal. In Settings, turn on reminders: your phone alerts you the evening before and the day of.','En la pantalla General, marca la fecha y la hora del próximo ensayo. En Ajustes, activa los recordatorios: el móvil te avisa la víspera y el día.'],
 ['Grave e ouça','Record and listen','Graba y escucha'],
-['Conecte o Google Drive em Configurações. Em cada música, toque em Gravar: o arquivo vai para a pasta setlist do Drive da banda. Dá para ouvir ali mesmo e apagar se não gostar.','Connect Google Drive in Settings. In each song, tap Record: the file goes to the setlist folder in the band\'s Drive. You can listen right there and delete it if you don\'t like it.','Conecta Google Drive en Ajustes. En cada canción, toca Grabar: el archivo va a la carpeta setlist del Drive de la banda. Puedes escucharlo ahí mismo y borrarlo si no te gusta.'],
+['Conecte o Google Drive em Configurações. Em cada música, toque em Gravar: o arquivo vai para a pasta setlist do Drive da banda. Dá para ouvir ali mesmo, apagar se não gostar e enviar também PDFs, cifras e imagens.','Connect Google Drive in Settings. In each song, tap Record: the file goes to the setlist folder in the band\'s Drive. You can listen right there, delete it if you don\'t like it, and also upload PDFs, charts and images.','Conecta Google Drive en Ajustes. En cada canción, toca Grabar: el archivo va a la carpeta setlist del Drive de la banda. Puedes escucharlo ahí mismo, borrarlo si no te gusta y subir también PDFs, cifras e imágenes.'],
 ['Entendi','Got it','Entendido'],
 ['Carregando gravações…','Loading recordings…','Cargando grabaciones…'],['Não foi possível carregar a lista agora.','Could not load the list right now.','No se pudo cargar la lista ahora.'],
 ['▶ Ouvir','▶ Play','▶ Escuchar'],['⏸ Pausar','⏸ Pause','⏸ Pausar'],['Apagar','Delete','Borrar'],['Confirmar: apagar','Confirm: delete','Confirmar: borrar'],['Carregando…','Loading…','Cargando…'],
@@ -382,6 +384,11 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^PDF, cifra, partitura, imagem… vai para a pasta setlist\/(.+)\/ no Drive\.$/,function(m){return I===1?'PDF, chart, score, image… goes to the setlist/'+m[1]+'/ folder in Drive.':'PDF, cifra, partitura, imagen… va a la carpeta setlist/'+m[1]+'/ en el Drive.'}],
+[/^Enviando (.+) \((\d+) de (\d+)\)… (.+)$/,function(m){return (I===1?'Sending ':'Enviando ')+m[1]+' ('+m[2]+(I===1?' of ':' de ')+m[3]+')… '+m[4]}],
+[/^Arquivo muito grande \(máximo 150 MB\): (.+)$/,function(m){return (I===1?'File too large (max 150 MB): ':'Archivo demasiado grande (máx. 150 MB): ')+m[1]}],
+[/^(\d+) arquivos? enviados? para o Drive\.$/,function(m){return I===1?m[1]+(m[1]==='1'?' file sent to Drive.':' files sent to Drive.'):m[1]+(m[1]==='1'?' archivo enviado al Drive.':' archivos enviados al Drive.')}],
+[/^Sem conexão: (\d+) arquivos? será(?:o)? enviados? depois\.$/,function(m){return I===1?'Offline: '+m[1]+(m[1]==='1'?' file will be sent later.':' files will be sent later.'):'Sin conexión: '+m[1]+(m[1]==='1'?' archivo se enviará después.':' archivos se enviarán después.')}],
 [/^(.+) · (dono|integrante)(?: · (.+))?$/,function(m){return m[1]+' · '+(m[2]==='dono'?(I===1?'owner':'dueño'):(I===1?'member':'integrante'))+(m[3]?' · '+m[3]:'')}],
 [/^(\d+) músicas? novas? da playlist: (.+)$/,function(m){return m[1]+(I===1?(m[1]==='1'?' new song':' new songs')+' from the playlist: ':(m[1]==='1'?' canción nueva':' canciones nuevas')+' de la lista: ')+m[2]}],
 [/^Última busca (.+?)(?: · (\d+) novas?)?$/,function(m){return (I===1?'Last fetch ':'Última búsqueda ')+m[1]+(m[2]?' · '+m[2]+(I===1?' new':(m[2]==='1'?' nueva':' nuevas')):'')}],
