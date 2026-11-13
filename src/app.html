@@ -901,6 +901,38 @@ body.sk-car #tabbar span{font-size:10px}
 }
 body.sk-est .cfg-row,body.sk-neo .cfg-row{background:var(--m-surface2);border-color:var(--m-line);color:var(--m-ink)}
 body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px solid var(--paper-ink);border-radius:3px;box-shadow:2px 2px 0 #000}
+
+/* ensaio, atividade, status, tour */
+.reh,.feed{display:flex;flex-direction:column;gap:10px}
+.reh:empty,.feed:empty{display:none}
+.reh{padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.reh h3{font-size:16px}
+.reh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.reh-top small{display:block;opacity:.7;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.reh-top b{font-size:16px}
+.reh-cnt{font-weight:700;font-size:15px;white-space:nowrap}
+.reh-who{display:flex;flex-wrap:wrap;gap:6px}
+.reh-who .tag.ok{opacity:.65}
+.feed h3{font-size:14px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+.feed ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.feed li{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.feed li small{opacity:.65;white-space:nowrap}
+.stpill{font:inherit;cursor:pointer;background:transparent}
+.stpill:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#statuspick,#tour{position:fixed;inset:0;z-index:36;display:flex;align-items:center;justify-content:center;background:rgba(8,4,6,.82);padding:18px;overflow:auto}
+#tour{z-index:40}
+.stpick,.tourbox{width:min(420px,100%);text-align:center}
+.stopts{display:grid;grid-template-columns:1fr;gap:8px}
+.stopts .stbtn{padding:14px 10px;font-size:15px}
+.stopts .stbtn.cur{outline:3px solid currentColor;outline-offset:2px}
+.tourbox h2{font-size:26px;margin:8px 0 4px}
+.tour-ico{display:flex;justify-content:center;opacity:.9}
+.tour-dots{display:flex;justify-content:center;gap:7px;margin:14px 0}
+.tour-dots i{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.25}
+.tour-dots i.on{opacity:1;transform:scale(1.25)}
+.btn.ghost{background:transparent;border-color:transparent;box-shadow:none;text-decoration:underline}
+body.sk-est .reh,body.sk-neo .reh,body.sk-est .feed li,body.sk-neo .feed li{background:var(--m-surface2);border-color:var(--m-line);color:var(--m-ink)}
+body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-ink);border:2px solid var(--paper-ink);border-radius:3px;box-shadow:2px 2px 0 #000}
 </style>
 
 <div class="wrap">
@@ -952,7 +984,9 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
       <div class="people" id="people"></div>
     </section>
 
+    <section id="reh" class="reh"></section>
     <section id="lineup" class="lineup"></section>
+    <section id="feed" class="feed"></section>
 
     <section class="panel" id="panel-add" hidden>
       <h3>Nova música</h3>
@@ -985,6 +1019,8 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 </div>
 <nav id="tabbar" aria-label="Navegação"></nav>
 <div id="who" hidden></div>
+<div id="statuspick" hidden></div>
+<div id="tour" hidden></div>
 <div id="skinpick" hidden></div>
 <div id="drawer-bg" data-act="drawer-close" hidden></div>
 <div id="drawer" hidden></div>
@@ -1012,7 +1048,7 @@ var met={ctx:null,running:false,beat:0,next:0,timer:null,songId:null,delta:0};
 var ui={edit:{},more:{},tr:{},arm:{},ced:{}}, fs=15, fss=26;
 var setlist=null, setDoc=null, stage=null, setChain=Promise.resolve();
 var live=null, liveDoc=null, following=false, lastLiveSong='', lyBusy=false;
-var showCfg=null, showDoc=null, comments=[], cmCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0};
+var acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0};
 var pend={}, drafts={}, renderTimer=null;
 var BG=['flat','top','soft'], BGN={soft:'parede suave',top:'parede só no topo',flat:'liso'}, bgMode='flat';
 try{bgMode=localStorage.getItem('ce-bg2')||'flat'}catch(e){}
@@ -1586,7 +1622,7 @@ function pcardHTML(s,pid){
   return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+(p.status===2?checkHTML():'')+
     '<div><div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div>'+
     (meta?'<div class="inst">'+meta+'</div>':'')+(p.role?'<div class="mine">'+esc(p.role)+'</div>':'')+(p.tone?'<div class="faint">Timbre: '+esc(p.tone)+'</div>':'')+
-    '<div class="cbar cst">'+statPill(p.status===2?3:p.status,STATE_LABEL[p.status===2?3:p.status])+'</div></div>';
+    '<div class="cbar cst"><button type="button" class="pill s'+(p.status===2?3:p.status)+' stpill" data-act="pill-status" data-id="'+s.id+'" data-mid="'+pid+'" aria-label="Mudar o status">'+STATE_LABEL[p.status===2?3:p.status]+' ▾</button></div></div>';
 }
 function boardHTML(list,cols,keyFn,cardFn){
   var cur=bcol;
@@ -2046,7 +2082,7 @@ function commentsBlock(s){
 
 /* ---------- render principal ---------- */
 function renderHome(){
-  renderHero();renderSummary();renderLineup();
+  renderHero();renderSummary();renderReh();renderLineup();renderFeed();
   if(!loaded)return;
   var q=query.trim().toLowerCase();
   var vis=songs.filter(function(s){
@@ -2063,6 +2099,83 @@ function renderHome(){
     listEl.innerHTML=flatHTML(vis,cardHTML);
   }
 }
+function changeStatus(id,mid,nx){
+  var s=get(id);if(!s)return;var prev=partOf(s,mid).status;
+  setPart(id,mid,{status:nx},true);
+  if(nx===2&&prev!==2&&actCol)actCol.add({mid:mid,songId:id,title:s.title||'',at:Date.now(),by:myId()||null}).catch(function(){});
+}
+function renderStPick(){
+  var el=$('#statuspick');if(!el)return;
+  var sp=ui.stPick,s=sp&&get(sp.id);
+  if(!s){el.hidden=true;el.innerHTML='';return}
+  var cur=partOf(s,sp.mid).status;
+  el.hidden=false;
+  el.innerHTML='<div class="who-box stpick" role="dialog" aria-label="Mudar o status"><h2 style="font-size:26px">'+esc(s.title||'Sem título')+'</h2><p class="hint">Como está essa música para você?</p><div class="stopts">'+
+    [[0,'Não iniciada'],[1,'Em andamento'],[2,'Pronta'],[3,'Não toco essa']].map(function(o){return '<button type="button" class="stbtn st'+o[0]+(cur===o[0]?' cur':'')+'" data-act="st-set" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+
+    '</div><div class="row-actions" style="justify-content:center;margin-top:14px"><button type="button" class="btn small" data-act="st-close">Cancelar</button></div></div>';
+}
+function rel(ts){
+  var d=Math.round((Date.now()-ts)/1000),L=window.CE_LOCALE||'pt-BR',f;
+  try{f=new Intl.RelativeTimeFormat(L,{numeric:'auto'})}catch(e){return ''}
+  if(d<60)return f.format(0,'second');if(d<3600)return f.format(-Math.round(d/60),'minute');
+  if(d<86400)return f.format(-Math.round(d/3600),'hour');return f.format(-Math.round(d/86400),'day');
+}
+function renderFeed(){
+  var el=$('#feed');if(!el)return;
+  var lim=Date.now()-14*86400000;
+  var list=acts.filter(function(a){return a.at>lim&&member(a.mid)}).slice(-5).reverse();
+  el.innerHTML=list.length?'<h3>Atividade recente</h3><ul>'+list.map(function(a){
+    return '<li><span>'+esc(first(member(a.mid).name)+' terminou '+(a.title||''))+'</span><small>'+esc(rel(a.at))+'</small></li>'}).join('')+'</ul>':'';
+}
+function rehInfo(){
+  if(!rehCfg||!rehCfg.date)return null;
+  var d=new Date(rehCfg.date+'T00:00:00');if(isNaN(d.getTime()))return null;
+  var today=new Date();today.setHours(0,0,0,0);
+  return {days:Math.round((d-today)/86400000),date:d};
+}
+function pendNext(mid){return songs.filter(function(s){var st=partOf(s,mid).status;return s.next&&st<2})}
+function renderReh(){
+  var el=$('#reh');if(!el)return;
+  var i=rehInfo();
+  if(ui.rehEdit||!i){
+    el.innerHTML=ui.rehEdit?'<h3>Próximo ensaio</h3><div class="fields">'+
+      '<label class="f">Data<input type="date" data-f="rehdate" value="'+esc(rehCfg&&rehCfg.date||'')+'" aria-label="Data do ensaio"></label>'+
+      '<label class="f">Hora (opcional)<input type="time" data-f="rehtime" value="'+esc(rehCfg&&rehCfg.time||'')+'" aria-label="Hora do ensaio"></label>'+
+      '<label class="f">Local (opcional)<input type="text" data-f="rehplace" data-fk="rehplace" value="'+esc(rehCfg&&rehCfg.place||'')+'" placeholder="Ex.: Estúdio do Zé" aria-label="Local do ensaio"></label></div>'+
+      '<div class="row-actions"><button type="button" class="btn small primary" data-act="reh-done">Pronto</button>'+(i?'<button type="button" class="btn small danger" data-act="reh-clear">Remover</button>':'')+'</div>'
+      :'<button type="button" class="btn small" data-act="reh-edit">Marcar o próximo ensaio</button>';
+    return;
+  }
+  var dt=i.date.toLocaleDateString(window.CE_LOCALE||'pt-BR',{weekday:'long',day:'numeric',month:'long'});
+  var cnt=i.days<0?'O ensaio passou':i.days===0?'É hoje!':'Faltam '+i.days+(i.days===1?' dia':' dias');
+  var line=dt+(rehCfg.time?' · '+rehCfg.time:'')+(rehCfg.place?' · '+rehCfg.place:'');
+  var nx=songs.filter(function(s){return s.next}).length;
+  el.innerHTML='<div class="reh-top"><div><small>Próximo ensaio</small><b>'+esc(line)+'</b></div><span class="reh-cnt">'+cnt+'</span></div>'+
+    (nx&&i.days>=0?'<div class="reh-who">'+members().map(function(m){var n=pendNext(m.id).length;return '<span class="tag'+(n?'':' ok')+'">'+esc(first(m.name)+': '+(n?n+' a tirar':'em dia'))+'</span>'}).join('')+'</div>':
+      (i.days>=0?'<p class="hint">Marque com ★ as músicas do ensaio para ver o que falta para cada um.</p>':''))+
+    '<div class="row-actions"><button type="button" class="btn small" data-act="reh-edit">Editar</button></div>';
+}
+var TOUR=[
+ ['home','Bem-vindo ao Caderno de Ensaio','Aqui a banda acompanha as músicas que cada um precisa tirar para o ensaio e para o show.'],
+ ['user','Escolha quem você é','Cada integrante tem a sua página, só com as músicas dele. O aparelho lembra de você.'],
+ ['nota','Acompanhe o status','Cada música está Não iniciada, Em andamento ou Pronta. Toque na etiqueta para mudar. A estrela ★ marca as músicas do próximo ensaio.'],
+ ['list','Estude dentro da música','Toque numa música para ver a letra, a cifra, o metrônomo e o link do Spotify. Dá para transpor a cifra para o seu tom.'],
+ ['group','Setlist e modo show','Monte o setlist e use o modo show no palco, com rolagem automática e metrônomo sincronizado entre os celulares.'],
+ ['gear','Convide a banda','Em Configurações você copia o link ou o código de convite, troca o layout e o idioma, e vê este tour de novo. O app funciona sem internet e pode ser instalado na tela inicial.']
+];
+function renderTour(){
+  var el=$('#tour');if(!el)return;
+  var n=ui.tour;
+  if(n==null){el.hidden=true;el.innerHTML='';return}
+  var st=TOUR[n],last=n===TOUR.length-1;
+  el.hidden=false;
+  el.innerHTML='<div class="who-box tourbox" role="dialog" aria-label="Tour"><div class="tour-ico">'+svgIco(st[0],54)+'</div><h2>'+st[1]+'</h2><p class="hint">'+st[2]+'</p>'+
+    '<div class="tour-dots" aria-hidden="true">'+TOUR.map(function(_,i){return '<i'+(i===n?' class="on"':'')+'></i>'}).join('')+'</div>'+
+    '<div class="row-actions" style="justify-content:center"><button type="button" class="btn small" data-act="tour-back"'+(n?'':' hidden')+'>Voltar</button>'+
+    '<button type="button" class="btn small primary" data-act="tour-next">'+(last?'Começar':'Próximo')+'</button></div>'+
+    (last?'':'<div class="row-actions" style="justify-content:center;margin-top:8px"><button type="button" class="btn small ghost" data-act="tour-skip">Pular tour</button></div>')+'</div>';
+}
+function tourEnd(){ui.tour=null;try{localStorage.setItem('ce-tour','1')}catch(e){}renderTour()}
 function renderConfig(){
   var el=$('#cfgview');if(!el)return;
   var me=meMember&&member(meMember),sk=SKINS.filter(function(x){return x[0]===skin})[0];
@@ -2075,6 +2188,7 @@ function renderConfig(){
      (skin==='cartaz'?row('bg-cycle','list','Fundo da página',BGN[bgMode]):'')+'</section>'+
    '<section class="cfg"><h3>Banda</h3>'+row('open-band','group','Banda','Nome, logo, integrantes e convite')+
      (window.CE_STANDALONE?row('copy-invite','group','Copiar link de convite','Quem abrir esse link entra no caderno da banda.')+row('copy-code','group','Copiar código','Para quem prefere colar o código na tela de entrada.'):'')+'</section>'+
+   '<section class="cfg"><h3>Ajuda</h3>'+row('tour-open','home','Ver o tour de novo','Como o app funciona, em poucos passos')+'</section>'+
    '<section class="cfg"><h3>Repertório</h3>'+row('cfg-import','list','Importar lista de músicas','Cole uma música por linha')+
      '<a class="cfg-row" target="_blank" rel="noopener" href="https://open.spotify.com/playlist/1sq08fB986YPFkc4Kw4v5U">'+svgIco('nota',24)+'<span><b>Playlist no Spotify</b><small>Abrir a playlist da banda</small></span><i aria-hidden="true">↗</i></a>'+
      (nl?row('lyrics-all','nota','Buscar letras que faltam','('+nl+')'):'')+'</section>'+
@@ -2092,7 +2206,8 @@ function render(){
   $('#home').hidden=!!pid||isSet||isCfg;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;
   $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=true;
   if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg)renderConfig();else renderHome();
-  renderDrawer();renderWho();renderCePick();
+  renderDrawer();renderWho();renderCePick();renderStPick();
+  if(!ui.tourChecked&&band&&members().length){ui.tourChecked=true;var seen='1';try{seen=localStorage.getItem('ce-tour')||''}catch(e){}if(!seen){ui.tour=0;renderTour()}}
   if(fk){var el=document.querySelector('[data-fk="'+fk+'"]');if(el){el.focus();try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
 }
 function route(){
@@ -2201,7 +2316,17 @@ document.addEventListener('click',function(e){
   if(act==='pick-me'){meMember=id;try{localStorage.setItem('ce-me',id)}catch(err){}whoOpen=false;render();return}
   if(act==='set-me'){meMember=id;try{localStorage.setItem('ce-me',id)}catch(err){}render();toast('Pronto, esta é a sua página.');return}
   if(act==='band-rm'){bandDraft.splice(+t.dataset.i,1);renderBandPanel();return}
-  if(act==='cyc-part'){e.stopPropagation();var cp=partOf(get(id),t.dataset.mid).status;setPart(id,t.dataset.mid,{status:(cp+1)%4},true);render();return}
+  if(act==='cyc-part'){e.stopPropagation();var cp=partOf(get(id),t.dataset.mid).status;changeStatus(id,t.dataset.mid,(cp+1)%4);render();return}
+  if(act==='pill-status'){e.stopPropagation();ui.stPick={id:id,mid:t.dataset.mid};renderStPick();return}
+  if(act==='st-set'){var sp=ui.stPick;ui.stPick=null;if(sp){changeStatus(sp.id,sp.mid,+t.dataset.v)}render();return}
+  if(act==='st-close'){ui.stPick=null;renderStPick();return}
+  if(act==='reh-edit'){ui.rehEdit=true;renderReh();return}
+  if(act==='reh-done'){ui.rehEdit=false;renderReh();return}
+  if(act==='reh-clear'){ui.rehEdit=false;rehCfg=null;if(rehDoc)rehDoc.set({date:'',time:'',place:''}).catch(fail);render();return}
+  if(act==='tour-open'){ui.tour=0;renderTour();return}
+  if(act==='tour-next'){if(ui.tour>=TOUR.length-1)tourEnd();else{ui.tour++;renderTour()}return}
+  if(act==='tour-back'){if(ui.tour>0){ui.tour--;renderTour()}return}
+  if(act==='tour-skip'){tourEnd();return}
   if(act==='del'){
     if(!t.classList.contains('armed')){t.classList.add('armed');t.textContent='Confirmar exclusão';return}
     if(!col)return;
@@ -2245,6 +2370,7 @@ document.addEventListener('change',function(e){
   if(t.id==='band-logo-file'){readLogo(t.files&&t.files[0]);t.value='';return}
   if(t.id==='as'){as=t.value;try{localStorage.setItem('ce-as',as)}catch(err){}render();return}
   var f=t.dataset.f,id=t.dataset.id,sid=t.dataset.sid;if(!f)return;
+  if(f==='rehdate'||f==='rehtime'||f==='rehplace'){var o2=Object.assign({date:'',time:'',place:''},rehCfg||{});o2[f==='rehdate'?'date':f==='rehtime'?'time':'place']=t.value.trim();rehCfg=o2;if(rehDoc)rehDoc.set(o2).catch(fail);if(f!=='rehplace')render();return}
   if(f==='showdate'){saveShow({date:t.value,name:(showCfg&&showCfg.name)||''});return}
   if(f==='showname'){saveShow({date:(showCfg&&showCfg.date)||'',name:t.value.trim()});return}
   if(f==='gap'){var gv=parseInt(t.value,10);saveSet(setIds(),isNaN(gv)?30:Math.max(0,Math.min(600,gv)));softRender();return}
@@ -2318,6 +2444,15 @@ function start(){
     if(canSync()){syncClock(6);setInterval(function(){if(!document.hidden)syncClock(4)},240000)}
     liveDoc=db.doc('config/live');
     liveDoc.onSnapshot(function(snap){live=snap.exists?snap.data():null;render()},function(){});
+    rehDoc=db.doc('config/rehearsal');
+    rehDoc.onSnapshot(function(snap){rehCfg=snap.exists?snap.data():null;if(editingField())softRender();else render()},function(){});
+    actCol=db.collection('activity');
+    actCol.onSnapshot(function(snap){
+      var prev=acts.length;
+      acts=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())}).sort(function(a,b){return (a.at||0)-(b.at||0)});
+      if(actReady){acts.slice(prev).forEach(function(a){if(a.by&&a.by===myId())return;if(Date.now()-a.at>30000)return;var m=member(a.mid);if(m)toast(first(m.name)+' terminou '+(a.title||'')+'!')})}
+      actReady=true;if(editingField())softRender();else render();
+    },function(){});
     showDoc=db.doc('config/show');
     showDoc.onSnapshot(function(snap){showCfg=snap.exists?snap.data():null;if(editingField())softRender();else render()},function(){});
     cmCol=db.collection('comments');

@@ -19,6 +19,28 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Mudar o status','Change status','Cambiar el estado'],['Como está essa música para você?','How is this song going for you?','¿Cómo va esta canción para ti?'],
+['Não toco essa','I don\'t play this','No toco esta'],
+['Atividade recente','Recent activity','Actividad reciente'],
+['Próximo ensaio','Next rehearsal','Próximo ensayo'],['Marcar o próximo ensaio','Set the next rehearsal','Marcar el próximo ensayo'],
+['Data','Date','Fecha'],['Hora (opcional)','Time (optional)','Hora (opcional)'],['Local (opcional)','Place (optional)','Lugar (opcional)'],
+['Ex.: Estúdio do Zé','E.g. Joe\'s studio','Ej.: Estudio de José'],['Pronto','Done','Listo'],['Remover','Remove','Quitar'],['Editar','Edit','Editar'],
+['O ensaio passou','The rehearsal has passed','El ensayo ya pasó'],['É hoje!','It\'s today!','¡Es hoy!'],
+['Marque com ★ as músicas do ensaio para ver o que falta para cada um.','Mark the rehearsal songs with ★ to see what each person still needs to learn.','Marca con ★ las canciones del ensayo para ver qué le falta a cada uno.'],
+['Ajuda','Help','Ayuda'],['Ver o tour de novo','See the tour again','Ver el tour otra vez'],['Como o app funciona, em poucos passos','How the app works, in a few steps','Cómo funciona la app, en pocos pasos'],
+['Voltar','Back','Atrás'],['Próximo','Next','Siguiente'],['Começar','Start','Empezar'],['Pular tour','Skip tour','Saltar tour'],
+['Bem-vindo ao Caderno de Ensaio','Welcome to Rehearsal Notebook','Bienvenido al Cuaderno de Ensayo'],
+['Aqui a banda acompanha as músicas que cada um precisa tirar para o ensaio e para o show.','Here the band tracks the songs each person needs to learn for rehearsal and for the show.','Aquí la banda sigue las canciones que cada uno debe sacar para el ensayo y para el show.'],
+['Escolha quem você é','Choose who you are','Elige quién eres'],
+['Cada integrante tem a sua página, só com as músicas dele. O aparelho lembra de você.','Each member has their own page with only their songs. This device remembers you.','Cada integrante tiene su página, solo con sus canciones. Este dispositivo te recuerda.'],
+['Acompanhe o status','Follow the status','Sigue el estado'],
+['Cada música está Não iniciada, Em andamento ou Pronta. Toque na etiqueta para mudar. A estrela ★ marca as músicas do próximo ensaio.','Each song is Not started, In progress or Done. Tap the label to change it. The star ★ marks the songs for the next rehearsal.','Cada canción está Sin empezar, En curso o Lista. Toca la etiqueta para cambiarla. La estrella ★ marca las canciones del próximo ensayo.'],
+['Estude dentro da música','Study inside each song','Estudia dentro de la canción'],
+['Toque numa música para ver a letra, a cifra, o metrônomo e o link do Spotify. Dá para transpor a cifra para o seu tom.','Tap a song to see the lyrics, chords, metronome and the Spotify link. You can transpose the chords to your key.','Toca una canción para ver la letra, los acordes, el metrónomo y el enlace de Spotify. Puedes transponer los acordes a tu tono.'],
+['Setlist e modo show','Setlist and show mode','Setlist y modo show'],
+['Monte o setlist e use o modo show no palco, com rolagem automática e metrônomo sincronizado entre os celulares.','Build the setlist and use show mode on stage, with auto-scroll and a metronome synced across phones.','Arma el setlist y usa el modo show en el escenario, con desplazamiento automático y metrónomo sincronizado entre los móviles.'],
+['Convide a banda','Invite the band','Invita a la banda'],
+['Em Configurações você copia o link ou o código de convite, troca o layout e o idioma, e vê este tour de novo. O app funciona sem internet e pode ser instalado na tela inicial.','In Settings you can copy the invite link or code, change the layout and language, and see this tour again. The app works offline and can be installed on the home screen.','En Ajustes puedes copiar el enlace o el código de invitación, cambiar el diseño y el idioma, y ver este tour otra vez. La app funciona sin internet y se puede instalar en la pantalla de inicio.'],
 ['Configurações','Settings','Ajustes'],['Ajustes','Preferences','Preferencias'],['Aparência','Appearance','Apariencia'],
 ['Quem sou eu','Who am I','Quién soy'],['Escolha o seu nome','Choose your name','Elige tu nombre'],['Fundo da página','Page background','Fondo de la página'],
 ['Nome, logo, integrantes e convite','Name, logo, members and invite','Nombre, logo, integrantes e invitación'],
@@ -228,6 +250,10 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^(.+) terminou (.+)$/,function(m){return I===1?m[1]+' finished '+m[2]:m[1]+' terminó '+m[2]}],
+[/^(.+): (\d+) a tirar$/,function(m){return m[1]+': '+m[2]+(I===1?' to learn':' por sacar')}],
+[/^(.+): em dia$/,function(m){return m[1]+(I===1?': all caught up':': al día')}],
+[/^(.+) terminou (.+)!$/,function(m){return I===1?m[1]+' finished '+m[2]+'!':m[1]+' terminó '+m[2]+'!'}],
 [/^Você é (.+) \((.+)\)$/,function(m){var x=EX[m[2]]?EX[m[2]][I]:m[2];return (I===1?'You are ':'Eres ')+m[1]+' ('+x+')'}],
 [/^(\d+)% tirado$/,function(m){return m[1]+(I===1?'% learned':'% sacado')}],
 [/^(\d+) música no repertório$/,function(m){return m[1]+(I===1?' song in the repertoire':' canción en el repertorio')}],
