@@ -19,6 +19,7 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Personalizado','Custom','Personalizado'],['Neon com as suas duas cores.','Neon with your two colors.','Neón con tus dos colores.'],['Suas cores','Your colors','Tus colores'],['Cor 1','Color 1','Color 1'],['Cor 2','Color 2','Color 2'],
 ['Deixar tudo pronto','Get everything ready','Dejar todo listo'],
 ['Libere agora o que o app vai usar, para não ser interrompido depois.','Allow now what the app will use, so you are not interrupted later.','Permite ahora lo que usará la app, para que no te interrumpa después.'],
 ['Microfone','Microphone','Micrófono'],['Para gravar as músicas direto no app.','To record songs right in the app.','Para grabar las canciones directo en la app.'],

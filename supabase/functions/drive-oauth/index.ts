@@ -8,7 +8,7 @@ const CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID") || "";
 const CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET") || "";
 const KEY = Deno.env.get("CRON_SECRET") || "";
 const SELF = Deno.env.get("SUPABASE_URL")! + "/functions/v1/drive-oauth";
-const ORIGINS = ["https://caderno-de-ensaio.vercel.app", "https://caderno-de-ensaio-rafaeldr5150s-projects.vercel.app", "https://rehearsal-notebook-rafaeldr5150s-projects.vercel.app", "http://localhost:8765"];
+const ORIGINS = ["https://caderno-de-ensaio.vercel.app", "https://caderno-de-ensaio-rafaeldr5150s-projects.vercel.app", "https://rehearsal-notebook-rafaeldr5150s-projects.vercel.app", "https://rehearsal-notebook-band.vercel.app", "http://localhost:8765"];
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "apikey, content-type, authorization, x-client-info", "Access-Control-Allow-Methods": "GET, POST, OPTIONS" };
 const J = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const b64u = (b: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(b as ArrayBuffer))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
