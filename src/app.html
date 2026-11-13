@@ -935,6 +935,8 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 .acc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .acc-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line)}
 .acc-meta{display:flex;flex-direction:column;min-width:0}.acc-meta b{font-size:14px}.acc-meta small{opacity:.7;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.inst-steps{margin:10px 0 0;padding-left:22px;text-align:left;display:flex;flex-direction:column;gap:8px;font-size:15px}
+#install{position:fixed;inset:0;z-index:38;display:flex;align-items:center;justify-content:center;background:rgba(8,4,6,.82);padding:18px;overflow:auto}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -1019,6 +1021,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
       <div class="people" id="people"></div>
     </section>
 
+    <section id="installbar" class="reh" hidden></section>
     <section id="reh" class="reh"></section>
     <section id="lineup" class="lineup"></section>
     <section id="feed" class="feed"></section>
@@ -1057,6 +1060,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
 <div id="statuspick" hidden></div>
 <div id="tour" hidden></div>
 <div id="setup" hidden></div>
+<div id="install" hidden></div>
 <div id="skinpick" hidden></div>
 <div id="drawer-bg" data-act="drawer-close" hidden></div>
 <div id="drawer" hidden></div>
@@ -2132,7 +2136,7 @@ function commentsBlock(s){
 
 /* ---------- render principal ---------- */
 function renderHome(){
-  renderHero();renderSummary();renderReh();renderLineup();renderFeed();
+  renderHero();renderSummary();renderInstallBar();renderReh();renderLineup();renderFeed();
   if(!loaded)return;
   var q=query.trim().toLowerCase();
   var vis=songs.filter(function(s){
@@ -2442,6 +2446,36 @@ function pushRows(row){
   if(s==='on')return row('push-off','nota','Lembretes ativados','Aviso na véspera (18h) e no dia do ensaio (8h). Toque para desativar.')+row('push-test','nota','Enviar aviso de teste','Confira se a notificação chega neste aparelho');
   return row('push-on','nota','Ativar lembretes do ensaio','Aviso na véspera (18h) e no dia do ensaio (8h)');
 }
+/* ---------- instalar o app na tela inicial ---------- */
+function installEnv(){
+  var ua=navigator.userAgent||'',ios=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),and=/android/i.test(ua);
+  var standalone=!!((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone);
+  var safari=/safari/i.test(ua)&&!/crios|fxios|edgios|opios|instagram|fban|fbav|line\//i.test(ua);
+  var samsung=/samsungbrowser/i.test(ua);
+  return {ios:ios,and:and,mobile:ios||and,standalone:standalone,safari:safari,samsung:samsung,prompt:!!window.__ceInstall};
+}
+function renderInstallBar(){
+  var el=$('#installbar');if(!el)return;
+  var e=installEnv(),gone='';try{gone=localStorage.getItem('ce-inst-hide')||''}catch(x){}
+  if(!e.mobile||e.standalone||gone||ui.rehEdit){el.hidden=true;el.innerHTML='';return}
+  el.hidden=false;
+  el.innerHTML='<div class="reh-top"><div><small>Dica</small><b>Instale o app na tela inicial</b></div></div><p class="hint">Abre mais rápido, em tela cheia, e recebe os lembretes do ensaio.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="install-open">Instalar o app</button><button type="button" class="btn small" data-act="install-hide">Agora não</button></div>';
+}
+function renderInstall(){
+  var el=$('#install');if(!el)return;
+  if(!ui.install){el.hidden=true;el.innerHTML='';return}
+  var e=installEnv(),body='',cp=location.origin+location.pathname;
+  function steps(l){return '<ol class="inst-steps">'+l.map(function(s){return '<li>'+s+'</li>'}).join('')+'</ol>'}
+  if(e.standalone)body='<p class="hint">O app já está instalado neste aparelho.</p>';
+  else if(e.prompt)body='<p class="hint">Toque no botão para instalar. Ele aparece na tela inicial do celular.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="install-now">Instalar agora</button></div>';
+  else if(e.ios&&e.safari)body='<p class="hint">No iPhone, a instalação é feita pelo Safari:</p>'+steps(['Toque no botão “Compartilhar” (o quadrado com uma seta para cima), na barra do Safari.','Role a lista e toque em “Adicionar à Tela de Início”.','Toque em “Adicionar”, no canto de cima.']);
+  else if(e.ios)body='<p class="hint">No iPhone, a instalação só funciona pelo “Safari”. Abra este endereço no Safari e siga os passos:</p><p class="mono" style="word-break:break-all">'+esc(cp)+'</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn small" data-act="install-copy">Copiar o endereço</button></div>'+steps(['No Safari, toque em “Compartilhar”.','Toque em “Adicionar à Tela de Início”.','Toque em “Adicionar”.']);
+  else if(e.and&&e.samsung)body='<p class="hint">No navegador da Samsung:</p>'+steps(['Toque no menu “☰”, embaixo.','Toque em “Adicionar página a” e escolha “Tela inicial”.']);
+  else if(e.and)body='<p class="hint">No Chrome do Android:</p>'+steps(['Toque no menu “⋮”, no canto de cima.','Toque em “Instalar app” (ou “Adicionar à tela inicial”).','Confirme em “Instalar”.'])+'<p class="hint">Se a opção não aparecer, abra este endereço no Chrome.</p>';
+  else body='<p class="hint">No computador, use o Chrome ou o Edge e procure o ícone de “instalar” na barra de endereço, ou o menu do navegador → “Instalar”.</p>';
+  el.hidden=false;
+  el.innerHTML='<div class="who-box tourbox setupbox" role="dialog" aria-label="Instalar o app"><h2>Instalar o app</h2>'+body+'<div class="row-actions" style="justify-content:center;margin-top:14px"><button type="button" class="btn small" data-act="install-close">Fechar</button></div></div>';
+}
 function accPanel(){
   var l=ui.accList;
   if(l===undefined){
@@ -2481,7 +2515,7 @@ function renderConfig(){
      (window.CE_STANDALONE?row('copy-invite','group','Copiar link de convite','Quem abrir esse link entra no caderno da banda.')+row('copy-code','group','Copiar código','Para quem prefere colar o código na tela de entrada.'):'')+'</section>'+
    '<section class="cfg"><h3>Google Drive</h3>'+driveRows(row)+'</section>'+
    '<section class="cfg"><h3>Lembretes</h3>'+pushRows(row)+'</section>'+
-   '<section class="cfg"><h3>Ajuda</h3>'+row('setup-open','gear','Permissões e acessos','Microfone, lembretes e Google Drive')+row('tour-open','home','Ver o tour de novo','Como o app funciona, em poucos passos')+'</section>'+
+   '<section class="cfg"><h3>Ajuda</h3>'+(installEnv().standalone?'<div class="cfg-row static">'+svgIco('home',24)+'<span><b>App instalado</b><small>Você está usando o app instalado.</small></span></div>':row('install-open','home','Instalar o app','Ícone na tela inicial, tela cheia e lembretes'))+row('setup-open','gear','Permissões e acessos','Microfone, lembretes e Google Drive')+row('tour-open','home','Ver o tour de novo','Como o app funciona, em poucos passos')+'</section>'+
    '<section class="cfg"><h3>Repertório</h3>'+row('cfg-import','list','Importar lista de músicas','Cole uma música por linha')+
      plRows(row)+
      (nl?row('lyrics-all','nota','Buscar letras que faltam','('+nl+')'):'')+'</section>'+
@@ -2503,7 +2537,7 @@ function render(){
   $('#home').hidden=!!pid||isSet||isCfg;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;
   $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=true;
   if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
-  renderDrawer();renderWho();renderCePick();renderStPick();
+  renderDrawer();renderWho();renderCePick();renderStPick();renderInstall();
   if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
   if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
     try{var qs=new URLSearchParams(location.search),dv=qs.get('drive');if(dv){var M={ok:'Google Drive conectado!',denied:'Conexão cancelada.',err:'Não foi possível conectar o Drive. Tente de novo.',nosecret:'O Drive ainda não está configurado no servidor.'};toast(M[dv]||'');qs.delete('drive');history.replaceState(null,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}}catch(e){}}
@@ -2515,6 +2549,7 @@ function route(){
   window.scrollTo(0,0);ui.pushAsked=false;render();
 }
 window.addEventListener('hashchange',route);
+window.addEventListener('ce-installed',function(){ui.install=false;toast('App instalado!');render()});
 window.addEventListener('ce-auth',function(){try{renderBandPanel()}catch(e){}var A=window.CE_AUTH;if(A&&A.mid&&!meMember&&member(A.mid)){meMember=A.mid;try{localStorage.setItem('ce-me',A.mid)}catch(e){}}render()});
 document.addEventListener('pointerdown',function(){if(smOn()&&!audioReady())ensureAudio()},{passive:true});
 var rzT=0;window.addEventListener('resize',function(){if(stage&&stage.kind==='chords'&&!cwrapOn()&&ui.fit!==false){clearTimeout(rzT);rzT=setTimeout(applyFit,150)}});
@@ -2637,6 +2672,11 @@ document.addEventListener('click',function(e){
   if(act==='pl-cancel'){ui.plEdit=false;renderConfig();return}
   if(act==='pl-save'){var pid=plIdOf(ui.plDraft);if(!pid){toast('Cole o link de uma playlist do Spotify.');return}
     spotCfg={playlist:pid,seen:[],last:0};if(spotDoc)spotDoc.set(spotCfg).catch(fail);ui.plEdit=false;render();syncPlaylist(true);return}
+  if(act==='install-open'){ui.install=true;renderInstall();return}
+  if(act==='install-close'){ui.install=false;renderInstall();return}
+  if(act==='install-hide'){try{localStorage.setItem('ce-inst-hide','1')}catch(err){}renderInstallBar();return}
+  if(act==='install-copy'){var ip=location.origin+location.pathname;try{navigator.clipboard.writeText(ip).then(function(){toast('Endereço copiado.')},function(){toast(ip)})}catch(err){toast(ip)}return}
+  if(act==='install-now'){var ev=window.__ceInstall;if(!ev)return;ev.prompt();ev.userChoice.then(function(c){window.__ceInstall=null;ui.install=false;renderInstall();toast(c&&c.outcome==='accepted'?'Instalando o app…':'Tudo bem, você pode instalar depois em Configurações.');render()}).catch(function(){});return}
   if(act==='acc-toggle'){ui.accOpen=!ui.accOpen;ui.accList=undefined;ui.armAcc='';renderConfig();return}
   if(act==='acc-role'){var au=t.dataset.u,ar=t.dataset.r,ak=au+(ar==='member'?'m':'o');
     if(ui.armAcc!==ak){ui.armAcc=ak;renderConfig();return}

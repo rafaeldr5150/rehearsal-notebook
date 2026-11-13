@@ -20,6 +20,7 @@ head=('<!doctype html>\n<html lang="pt-BR">\n<head>\n<meta charset="utf-8">\n'
  '<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>\n'
  '<style>html:not(.ce-ready) body>*{visibility:hidden}html:not(.ce-ready) #join{visibility:visible}html[data-skin=neon] body,html[data-skin=custom] body{background:#08080d!important}html[data-skin=estudio] body{background:#f2f3f5!important}html[data-skin=cartaz] body{background:#17181a!important}</style>\n'
  '<script>(function(){var d=document.documentElement,s="neon";try{s=localStorage.getItem("ce-skin")||"neon";if(!localStorage.getItem("ce-band")&&!/[?&]b=/.test(location.search))s="neon"}catch(e){}d.dataset.skin=s;setTimeout(function(){d.classList.add("ce-ready")},4000)})()</script>\n'
+ '<script>window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__ceInstall=e});window.addEventListener("appinstalled",function(){window.__ceInstall=null;window.dispatchEvent(new Event("ce-installed"))})</script>\n'
  '</head>\n<body>\n')
 tail=('\n<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>\n</body>\n</html>\n')
 html=head+page+tail
