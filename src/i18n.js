@@ -19,6 +19,27 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Gravar','Record','Grabar'],['● Gravar','● Record','● Grabar'],['Gravando','Recording','Grabando'],['Parar e salvar','Stop and save','Parar y guardar'],['Descartar','Discard','Descartar'],
+['Você está gravando outra música.','You are recording another song.','Estás grabando otra canción.'],
+['Conecte o Google Drive da banda para guardar as gravações.','Connect the band\'s Google Drive to store recordings.','Conecta el Google Drive de la banda para guardar las grabaciones.'],
+['Conectar o Drive','Connect Drive','Conectar el Drive'],['Enviando…','Sending…','Enviando…'],['Enviar agora','Send now','Enviar ahora'],
+['Este navegador não consegue gravar áudio.','This browser cannot record audio.','Este navegador no puede grabar audio.'],
+['Não foi possível usar o microfone. Libere a permissão do navegador.','Could not use the microphone. Allow it in your browser.','No se pudo usar el micrófono. Permítelo en el navegador.'],
+['Gravação muito curta, descartada.','Recording too short, discarded.','Grabación demasiado corta, descartada.'],
+['O Drive não está conectado. A gravação ficou guardada no aparelho.','Drive is not connected. The recording was kept on this device.','El Drive no está conectado. La grabación quedó guardada en el dispositivo.'],
+['Sem conexão: a gravação será enviada depois.','Offline: the recording will be sent later.','Sin conexión: la grabación se enviará después.'],
+['Não foi possível guardar a gravação.','Could not store the recording.','No se pudo guardar la grabación.'],
+['Tudo enviado.','All sent.','Todo enviado.'],
+['Google Drive','Google Drive','Google Drive'],['Drive conectado','Drive connected','Drive conectado'],['Sem conexão agora.','Offline right now.','Sin conexión ahora.'],['Indisponível no momento.','Unavailable right now.','No disponible por ahora.'],
+['Conectar Google Drive','Connect Google Drive','Conectar Google Drive'],['Grave as músicas e salve direto no Drive da banda','Record songs and save straight to the band\'s Drive','Graba las canciones y guárdalas directo en el Drive de la banda'],
+['Abrir a pasta setlist','Open the setlist folder','Abrir la carpeta setlist'],['Só abre para a conta que conectou. Compartilhe a pasta com a banda no Drive.','Only opens for the account that connected it. Share the folder with the band in Drive.','Solo abre con la cuenta que lo conectó. Comparte la carpeta con la banda en Drive.'],
+['Trocar a conta do Drive','Switch the Drive account','Cambiar la cuenta del Drive'],['Confirmar: trocar a conta','Confirm: switch account','Confirmar: cambiar la cuenta'],['As próximas gravações vão para a nova conta','Future recordings go to the new account','Las próximas grabaciones irán a la nueva cuenta'],
+['Desconectar o Drive','Disconnect Drive','Desconectar el Drive'],['Confirmar: desconectar','Confirm: disconnect','Confirmar: desconectar'],['As gravações já enviadas continuam no Drive','Recordings already sent stay in Drive','Las grabaciones ya enviadas siguen en el Drive'],
+['Toque para enviar agora','Tap to send now','Toca para enviar ahora'],
+['Toque de novo para confirmar a troca do Drive da banda.','Tap again to confirm switching the band\'s Drive.','Toca de nuevo para confirmar el cambio del Drive de la banda.'],
+['Toque de novo para desconectar o Drive da banda.','Tap again to disconnect the band\'s Drive.','Toca de nuevo para desconectar el Drive de la banda.'],
+['Drive desconectado.','Drive disconnected.','Drive desconectado.'],['Google Drive conectado!','Google Drive connected!','¡Google Drive conectado!'],['Conexão cancelada.','Connection cancelled.','Conexión cancelada.'],
+['Não foi possível conectar o Drive. Tente de novo.','Could not connect Drive. Try again.','No se pudo conectar el Drive. Inténtalo de nuevo.'],['O Drive ainda não está configurado no servidor.','Drive is not set up on the server yet.','El Drive aún no está configurado en el servidor.'],
 ['Hora','Time','Hora'],['Salvar','Save','Guardar'],['Informe a data e a hora do ensaio.','Enter the rehearsal date and time.','Indica la fecha y la hora del ensayo.'],
 ['Lembretes','Reminders','Recordatorios'],['Lembretes do ensaio','Rehearsal reminders','Recordatorios del ensayo'],
 ['No iPhone, instale o app: Compartilhar → Adicionar à Tela de Início. Depois ative aqui.','On iPhone, install the app first: Share → Add to Home Screen. Then turn this on here.','En iPhone, instala la app primero: Compartir → Añadir a pantalla de inicio. Luego actívalo aquí.'],
@@ -266,6 +287,12 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^Salva em setlist\/(.+)\/ no Drive da banda\.$/,function(m){return I===1?'Saved to setlist/'+m[1]+'/ in the band\'s Drive.':'Se guarda en setlist/'+m[1]+'/ en el Drive de la banda.'}],
+[/^Gravação salva no Drive: (.+)$/,function(m){return (I===1?'Recording saved to Drive: ':'Grabación guardada en Drive: ')+m[1]}],
+[/^Última enviada: (.+)$/,function(m){return (I===1?'Last sent: ':'Último enviado: ')+m[1]}],
+[/^(\d+) gravações? aguardando envio\.?$/,function(m){return I===1?m[1]+(m[1]==='1'?' recording':' recordings')+' waiting to send':m[1]+(m[1]==='1'?' grabación':' grabaciones')+' esperando envío'}],
+[/^Ainda há (\d+) aguardando\. Tente de novo com internet\.$/,function(m){return I===1?m[1]+' still waiting. Try again with internet.':'Aún hay '+m[1]+' en espera. Inténtalo con internet.'}],
+[/^(.+) · setlist\/<música>\/$/,function(m){return m[1]+' · setlist/<'+(I===1?'song':'canción')+'>/'}],
 [/^(.+) terminou (.+)$/,function(m){return I===1?m[1]+' finished '+m[2]:m[1]+' terminó '+m[2]}],
 [/^(.+): (\d+) a tirar$/,function(m){return m[1]+': '+m[2]+(I===1?' to learn':' por sacar')}],
 [/^(.+): em dia$/,function(m){return m[1]+(I===1?': all caught up':': al día')}],

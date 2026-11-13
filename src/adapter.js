@@ -121,6 +121,51 @@ function rpc(fn,args){
     }
   };
 })();
+/* Google Drive da banda: gravações enviadas para setlist/<música>/ (o servidor guarda o acesso). */
+(function(){
+  var FN=CFG.url+'/functions/v1/drive-oauth';
+  function call(action,extra){
+    return fetch(FN,{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action:action,band:band},extra||{}))}).then(function(r){return r.json()});
+  }
+  function idb(){return new Promise(function(res,rej){var q=indexedDB.open('ce-rec',1);q.onupgradeneeded=function(){q.result.createObjectStore('q',{keyPath:'id'})};q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})}
+  function tx(mode,fn){return idb().then(function(d){return new Promise(function(res,rej){var t=d.transaction('q',mode),r=fn(t.objectStore('q'));t.oncomplete=function(){res(r&&r.result)};t.onerror=function(){rej(t.error)}})})}
+  function put(it){return tx('readwrite',function(s){return s.put(it)})}
+  function del(id){return tx('readwrite',function(s){return s.delete(id)})}
+  function all(){return tx('readonly',function(s){return s.getAll()}).then(function(a){return (a||[]).filter(function(x){return x.band===band})}).catch(function(){return []})}
+  function send(it,onProg){
+    return call('upload',{songId:it.songId,title:it.title,name:it.name,mime:it.mime,origin:location.origin}).then(function(r){
+      if(!r||!r.ok){var e=new Error(r&&r.error||'upload');e.code=r&&r.error;throw e}
+      return new Promise(function(res,rej){
+        var x=new XMLHttpRequest();x.open('PUT',r.url);x.setRequestHeader('Content-Type',it.mime);
+        x.upload.onprogress=function(e){if(onProg&&e.lengthComputable)onProg(e.loaded/e.total)};
+        x.onload=function(){if(x.status>=200&&x.status<300){var j={};try{j=JSON.parse(x.responseText)}catch(e){}res(j)}else rej(new Error('put '+x.status))};
+        x.onerror=function(){rej(new Error('network'))};x.send(it.blob);
+      });
+    });
+  }
+  var flushing=false;
+  function flush(){
+    if(flushing)return Promise.resolve(0);flushing=true;
+    return all().then(function(list){
+      return list.reduce(function(p,it){return p.then(function(){return send(it).then(function(){return del(it.id)}).catch(function(){})})},Promise.resolve());
+    }).then(function(){flushing=false;return all().then(function(l){return l.length})},function(){flushing=false;return 0});
+  }
+  window.CE_DRIVE={
+    status:function(){return call('status').catch(function(){return null})},
+    connect:function(){location.href=FN+'?start=1&band='+encodeURIComponent(band)+'&ret='+encodeURIComponent(location.origin)},
+    disconnect:function(){return call('disconnect')},
+    pending:function(){return all().then(function(l){return l.length})},
+    flush:flush,
+    upload:function(blob,meta,onProg){
+      var it={id:Math.random().toString(36).slice(2)+Date.now(),band:band,songId:meta.songId,title:meta.title,name:meta.name,mime:meta.mime,blob:blob,at:Date.now()};
+      return send(it,onProg).then(function(f){return {sent:true,file:f}},function(e){
+        return put(it).then(function(){return {sent:false,queued:true,error:e&&e.code}},function(){throw e});
+      });
+    }
+  };
+  window.addEventListener('online',function(){flush()});
+  setTimeout(function(){if(navigator.onLine)flush()},6000);
+})();
 function applyOp(o){
   var c=cache[o.coll]||(cache[o.coll]={});
   if(o.op==='delete')delete c[o.id];

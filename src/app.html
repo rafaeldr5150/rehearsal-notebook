@@ -903,6 +903,10 @@ body.sk-car #tabbar span{font-size:10px}
 body.sk-est .cfg-row,body.sk-neo .cfg-row{background:var(--m-surface2);border-color:var(--m-line);color:var(--m-ink)}
 body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px solid var(--paper-ink);border-radius:3px;box-shadow:2px 2px 0 #000}
 
+
+.rec-live{display:flex;align-items:center;gap:8px;font-size:18px}
+.rec-dot{width:12px;height:12px;border-radius:50%;background:#e5322d;animation:recp 1s infinite}
+@keyframes recp{50%{opacity:.25}}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -1670,7 +1674,7 @@ function detailHTML(s){
     (s.metaAuto?'<p class="hint">BPM e tom preenchidos automaticamente com dados da internet'+(s.metaCheck?'. As fontes divergem para esta música, então confira de ouvido.':'.')+'</p>':'')+
     '<div class="block"><h3>Quem faz o quê <span class="faint">toque no status para avançar</span></h3>'+partRows+'</div>'+
     '<label class="f">Observações<textarea rows="3" placeholder="Afinação, andamento, pegadas, pontos de atenção…" data-f="notes" data-id="'+id+'" data-fk="'+id+'notes">'+esc(s.notes||'')+'</textarea></label>'+
-    ratingBlock(s)+commentsBlock(s)+
+    recBlock(s)+ratingBlock(s)+commentsBlock(s)+
     '<div class="row-actions"><a class="btn small primary" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">'+(s.spotify?'▶ Ouvir no Spotify':'Buscar no Spotify ↗')+'</a>'+
       (safeUrl(s.link)?'<a class="btn small" target="_blank" rel="noopener" href="'+esc(s.link)+'">Abrir referência ↗</a>':'')+
       '<button type="button" class="btn small danger" data-act="del" data-id="'+id+'">Excluir música</button></div>'+
@@ -1729,7 +1733,7 @@ function studyHTML(s,m){
     (safeUrl(s.moises)?'<a class="btn small" target="_blank" rel="noopener" href="'+esc(s.moises)+'">Faixas da música ↗</a>':'')+
     '<a class="btn small" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">'+(s.spotify?'▶ Ouvir no Spotify':'Buscar no Spotify ↗')+'</a></div></div>';
   var more=ui.more[id];
-  return '<div class="detail"><div class="block study">'+prim.map(function(x){return B[x]}).join('')+mine+ratingBlock(s)+commentsBlock(s)+
+  return '<div class="detail"><div class="block study">'+prim.map(function(x){return B[x]}).join('')+mine+recBlock(s)+ratingBlock(s)+commentsBlock(s)+
     '<details class="more"'+(more?' open':'')+'><summary data-act="more" data-id="'+id+'">Mais ferramentas</summary><div>'+sec.map(function(x){return B[x]}).join('')+'</div></details></div></div>';
 }
 function renderPerson(pid){
@@ -2180,6 +2184,76 @@ function renderTour(){
     (last?'':'<div class="row-actions" style="justify-content:center;margin-top:8px"><button type="button" class="btn small ghost" data-act="tour-skip">Pular tour</button></div>')+'</div>';
 }
 function tourEnd(){ui.tour=null;try{localStorage.setItem('ce-tour','1')}catch(e){}renderTour()}
+function refreshDrive(){
+  var D=window.CE_DRIVE;if(!D)return;
+  D.status().then(function(s){ui.drive=s||{connected:false,configured:false,offline:true};return D.pending()}).then(function(n){ui.recPending=n;render()}).catch(function(){render()});
+}
+var rec=null,wake=null;
+function recName(ext){
+  var d=new Date(),z=function(n){return String(n).padStart(2,'0')},m=meMember&&member(meMember);
+  return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+'.'+z(d.getMinutes())+' - '+(m?first(m.name):'Banda')+'.'+ext;
+}
+function recTick(){
+  var t=document.querySelector('.rec-time');
+  if(t&&rec){var s=Math.floor((Date.now()-rec.start)/1000);t.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+  var u=ui.up&&ui.up[openId],pg=document.querySelector('.rec-prog');
+  if(pg&&u)pg.textContent=Math.round(u.p*100)+'%';
+}
+function recStart(id){
+  var s=get(id);if(!s||rec)return;
+  if(!navigator.mediaDevices||!window.MediaRecorder){toast('Este navegador não consegue gravar áudio.');return}
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}}).then(function(stream){
+    var mt=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus','audio/webm'].filter(function(m){return MediaRecorder.isTypeSupported(m)})[0]||'';
+    var mr=new MediaRecorder(stream,mt?{mimeType:mt}:{}),chunks=[];
+    mr.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data)};
+    rec={songId:id,title:s.title||'Sem título',mr:mr,chunks:chunks,stream:stream,start:Date.now(),mime:mr.mimeType||mt||'audio/webm',cancel:false};
+    mr.onstop=recFinish;mr.start(1000);
+    try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(function(w){wake=w}).catch(function(){})}catch(e){}
+    clearInterval(ui.recTimer);ui.recTimer=setInterval(recTick,500);render();
+  }).catch(function(){toast('Não foi possível usar o microfone. Libere a permissão do navegador.')});
+}
+function recStop(cancel){if(!rec)return;rec.cancel=!!cancel;try{rec.mr.stop()}catch(e){recFinish()}}
+function recFinish(){
+  var r=rec;if(!r)return;rec=null;
+  clearInterval(ui.recTimer);try{r.stream.getTracks().forEach(function(t){t.stop()})}catch(e){}
+  try{if(wake)wake.release();wake=null}catch(e){}
+  if(r.cancel){render();return}
+  if(Date.now()-r.start<1500||!r.chunks.length){toast('Gravação muito curta, descartada.');render();return}
+  var base=String(r.mime).split(';')[0],ext=base.indexOf('mp4')>=0?'m4a':base.indexOf('ogg')>=0?'ogg':'webm';
+  var blob=new Blob(r.chunks,{type:base}),name=recName(ext);
+  (ui.up||(ui.up={}))[r.songId]={p:0};render();
+  window.CE_DRIVE.upload(blob,{songId:r.songId,title:r.title,name:name,mime:base},function(p){ui.up[r.songId].p=p;recTick()}).then(function(res){
+    delete ui.up[r.songId];
+    if(res.sent){(ui.recDone||(ui.recDone={}))[r.songId]=name;toast('Gravação salva no Drive: setlist/'+r.title)}
+    else{ui.recPending=(ui.recPending||0)+1;toast(res.error==='not_connected'?'O Drive não está conectado. A gravação ficou guardada no aparelho.':'Sem conexão: a gravação será enviada depois.')}
+    render();
+  }).catch(function(){delete ui.up[r.songId];toast('Não foi possível guardar a gravação.');render()});
+}
+window.addEventListener('beforeunload',function(e){if(rec){e.preventDefault();e.returnValue=''}});
+function recBlock(s){
+  if(!window.CE_DRIVE)return '';
+  var d=ui.drive,id=s.id,body='';
+  if(!d)return '';
+  if(rec&&rec.songId===id)body='<div class="rec-live"><span class="rec-dot"></span><b>Gravando</b> <span class="rec-time mono">0:00</span></div><div class="row-actions"><button type="button" class="btn danger" data-act="rec-stop">Parar e salvar</button><button type="button" class="btn small" data-act="rec-cancel">Descartar</button></div>';
+  else if(ui.up&&ui.up[id])body='<p class="hint">Enviando para o Drive… <span class="rec-prog mono">'+Math.round(ui.up[id].p*100)+'%</span></p>';
+  else if(rec)body='<p class="hint">Você está gravando outra música.</p>';
+  else if(!d.connected)body='<p class="hint">Conecte o Google Drive da banda para guardar as gravações.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="drive-go">Conectar o Drive</button></div>';
+  else body='<div class="row-actions"><button type="button" class="btn primary" data-act="rec-start" data-id="'+id+'">● Gravar</button></div><p class="hint">Salva em setlist/'+esc(s.title||'Sem título')+'/ no Drive da banda.</p>'+(ui.recDone&&ui.recDone[id]?'<p class="hint">Última enviada: '+esc(ui.recDone[id])+'</p>':'');
+  if(ui.recPending>0&&!(rec&&rec.songId===id))body+='<p class="hint">'+ui.recPending+(ui.recPending===1?' gravação aguardando envio.':' gravações aguardando envio.')+'</p><div class="row-actions"><button type="button" class="btn small" data-act="rec-flush">Enviar agora</button></div>';
+  return '<div class="block rec"><h3>Gravar</h3>'+body+'</div>';
+}
+function driveRows(row){
+  if(!window.CE_DRIVE)return '';
+  var d=ui.drive,pend=ui.recPending>0?row('rec-flush','nota',ui.recPending+(ui.recPending===1?' gravação aguardando envio':' gravações aguardando envio'),'Toque para enviar agora'):'';
+  if(!d)return pend;
+  if(d.offline)return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Google Drive</b><small>Sem conexão agora.</small></span></div>'+pend;
+  if(!d.configured)return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Google Drive</b><small>Indisponível no momento.</small></span></div>';
+  if(!d.connected)return row('drive-connect','nota','Conectar Google Drive','Grave as músicas e salve direto no Drive da banda')+pend;
+  return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Drive conectado</b><small>'+esc(d.email||'')+' · setlist/&lt;música&gt;/</small></span></div>'+
+    '<a class="cfg-row" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/'+esc(d.folder)+'">'+svgIco('list',24)+'<span><b>Abrir a pasta setlist</b><small>Só abre para a conta que conectou. Compartilhe a pasta com a banda no Drive.</small></span><i aria-hidden="true">↗</i></a>'+
+    row('drive-connect','nota',ui.armDrive==='c'?'Confirmar: trocar a conta':'Trocar a conta do Drive','As próximas gravações vão para a nova conta')+
+    row('drive-off','nota',ui.armDrive==='d'?'Confirmar: desconectar':'Desconectar o Drive','As gravações já enviadas continuam no Drive')+pend;
+}
 function refreshPush(){
   var P=window.CE_PUSH;if(!P)return;
   P.state().then(function(s){
@@ -2209,6 +2283,7 @@ function renderConfig(){
      (skin==='cartaz'?row('bg-cycle','list','Fundo da página',BGN[bgMode]):'')+'</section>'+
    '<section class="cfg"><h3>Banda</h3>'+row('open-band','group','Banda','Nome, logo, integrantes e convite')+
      (window.CE_STANDALONE?row('copy-invite','group','Copiar link de convite','Quem abrir esse link entra no caderno da banda.')+row('copy-code','group','Copiar código','Para quem prefere colar o código na tela de entrada.'):'')+'</section>'+
+   '<section class="cfg"><h3>Google Drive</h3>'+driveRows(row)+'</section>'+
    '<section class="cfg"><h3>Lembretes</h3>'+pushRows(row)+'</section>'+
    '<section class="cfg"><h3>Ajuda</h3>'+row('tour-open','home','Ver o tour de novo','Como o app funciona, em poucos passos')+'</section>'+
    '<section class="cfg"><h3>Repertório</h3>'+row('cfg-import','list','Importar lista de músicas','Cole uma música por linha')+
@@ -2229,6 +2304,8 @@ function render(){
   $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=true;
   if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
   renderDrawer();renderWho();renderCePick();renderStPick();
+  if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
+    try{var qs=new URLSearchParams(location.search),dv=qs.get('drive');if(dv){var M={ok:'Google Drive conectado!',denied:'Conexão cancelada.',err:'Não foi possível conectar o Drive. Tente de novo.',nosecret:'O Drive ainda não está configurado no servidor.'};toast(M[dv]||'');qs.delete('drive');history.replaceState(null,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}}catch(e){}}
   if(!ui.tourChecked&&band&&members().length){ui.tourChecked=true;var seen='1';try{seen=localStorage.getItem('ce-tour')||''}catch(e){}if(!seen){ui.tour=0;renderTour()}}
   if(fk){var el=document.querySelector('[data-fk="'+fk+'"]');if(el){el.focus();try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
 }
@@ -2347,6 +2424,13 @@ document.addEventListener('click',function(e){
     var o3={date:dd.date,time:dd.time,place:(dd.place||'').trim()};rehCfg=o3;if(rehDoc)rehDoc.set(o3).catch(fail);ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';render();return}
   if(act==='reh-cancel'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';renderReh();return}
   if(act==='reh-clear'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';rehCfg=null;if(rehDoc)rehDoc.set({date:'',time:'',place:''}).catch(fail);render();return}
+  if(act==='rec-start'){recStart(id);return}
+  if(act==='rec-stop'){recStop(false);return}
+  if(act==='rec-cancel'){recStop(true);return}
+  if(act==='rec-flush'){toast('Enviando…');window.CE_DRIVE.flush().then(function(n){ui.recPending=n;toast(n?'Ainda há '+n+' aguardando. Tente de novo com internet.':'Tudo enviado.');render()});return}
+  if(act==='drive-go'){location.hash='#config';return}
+  if(act==='drive-connect'){var cn=ui.drive&&ui.drive.connected;if(cn&&ui.armDrive!=='c'){ui.armDrive='c';toast('Toque de novo para confirmar a troca do Drive da banda.');renderConfig();return}ui.armDrive='';window.CE_DRIVE.connect();return}
+  if(act==='drive-off'){if(ui.armDrive!=='d'){ui.armDrive='d';toast('Toque de novo para desconectar o Drive da banda.');renderConfig();return}ui.armDrive='';window.CE_DRIVE.disconnect().then(function(){refreshDrive();toast('Drive desconectado.')});return}
   if(act==='push-on'){toast('Pedindo permissão…');window.CE_PUSH.enable(meMember).then(function(){ui.pushState='on';ui.pushSynced=true;toast('Lembretes ativados.');renderConfig()}).catch(function(err){refreshPush();toast(err&&err.message==='denied'?'Permissão negada. Libere as notificações nas configurações do navegador.':'Não foi possível ativar agora. Tente de novo.')});return}
   if(act==='push-off'){window.CE_PUSH.disable().then(function(){ui.pushState='off';toast('Lembretes desativados.');renderConfig()}).catch(function(){toast('Não foi possível desativar agora.')});return}
   if(act==='push-test'){window.CE_PUSH.test().then(function(r){toast(r&&r.ok?'Aviso enviado. Ele deve chegar em instantes.':'Não foi possível enviar o aviso de teste.')}).catch(function(){toast('Não foi possível enviar o aviso de teste.')});return}
