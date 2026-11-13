@@ -2250,10 +2250,15 @@ function refreshDrive(){
   D.status().then(function(s){ui.drive=s||{connected:false,configured:false,offline:true};return D.pending()}).then(function(n){ui.recPending=n;render()}).catch(function(){render()});
 }
 var rec=null,wake=null;
-function recName(ext){
-  var d=new Date(),z=function(n){return String(n).padStart(2,'0')},m=meMember&&member(meMember);
-  return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+'.'+z(d.getMinutes())+' - '+(m?first(m.name):'Banda')+'.'+ext;
+function maxTake(files){var m=0;(files||[]).forEach(function(f){var x=/take (\d+)/i.exec(f.name||'');if(x)m=Math.max(m,+x[1])});return m}
+function nextTake(id){
+  ui.lastTake=ui.lastTake||{};
+  var fin=function(n){n=Math.max(n,(ui.lastTake[id]||0)+1);ui.lastTake[id]=n;return n};
+  var local=function(){return fin(maxTake(ui.recList&&ui.recList[id])+1)};
+  var net=window.CE_DRIVE.list(id).then(function(r){return r&&r.ok?fin(maxTake(r.files)+1):local()}).catch(local);
+  return Promise.race([net,new Promise(function(res){setTimeout(function(){res(local())},4000)})]);
 }
+function recName(title,n,ext){return String(title||'Sem título').replace(/[\/\\<>:"|?*\u0000-\u001f]/g,' ').replace(/\s+/g,' ').trim().slice(0,100)+' - take '+n+'.'+ext}
 function recTick(){
   var t=document.querySelector('.rec-time');
   if(t&&rec){var s=Math.floor((Date.now()-rec.start)/1000);t.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
@@ -2281,9 +2286,10 @@ function recFinish(){
   if(r.cancel){render();return}
   if(Date.now()-r.start<1500||!r.chunks.length){toast('Gravação muito curta, descartada.');render();return}
   var base=String(r.mime).split(';')[0],ext=base.indexOf('mp4')>=0?'m4a':base.indexOf('ogg')>=0?'ogg':'webm';
-  var blob=new Blob(r.chunks,{type:base}),name=recName(ext);
+  var blob=new Blob(r.chunks,{type:base}),name='';
   (ui.up||(ui.up={}))[r.songId]={p:0};render();
-  window.CE_DRIVE.upload(blob,{songId:r.songId,title:r.title,name:name,mime:base},function(p){ui.up[r.songId].p=p;recTick()}).then(function(res){
+  nextTake(r.songId).then(function(n){name=recName(r.title,n,ext);
+    return window.CE_DRIVE.upload(blob,{songId:r.songId,title:r.title,name:name,mime:base},function(p){ui.up[r.songId].p=p;recTick()})}).then(function(res){
     delete ui.up[r.songId];
     if(res.sent){(ui.recDone||(ui.recDone={}))[r.songId]=name;if(ui.recList)ui.recList[r.songId]=undefined;toast('Gravação salva no Drive: setlist/'+r.title)}
     else{ui.recPending=(ui.recPending||0)+1;toast(res.error==='not_connected'?'O Drive não está conectado. A gravação ficou guardada no aparelho.':'Sem conexão: a gravação será enviada depois.')}
