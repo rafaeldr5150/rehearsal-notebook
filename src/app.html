@@ -2138,12 +2138,15 @@ function pendNext(mid){return songs.filter(function(s){var st=partOf(s,mid).stat
 function renderReh(){
   var el=$('#reh');if(!el)return;
   var i=rehInfo();
+  if(ui.rehEdit&&el.dataset.editing==='1')return;
+  el.dataset.editing=ui.rehEdit?'1':'';
   if(ui.rehEdit||!i){
+    var dr=ui.rehDraft||(ui.rehDraft=Object.assign({date:'',time:'',place:''},rehCfg||{}));
     el.innerHTML=ui.rehEdit?'<h3>Próximo ensaio</h3><div class="fields">'+
-      '<label class="f">Data<input type="date" data-f="rehdate" value="'+esc(rehCfg&&rehCfg.date||'')+'" aria-label="Data do ensaio"></label>'+
-      '<label class="f">Hora (opcional)<input type="time" data-f="rehtime" value="'+esc(rehCfg&&rehCfg.time||'')+'" aria-label="Hora do ensaio"></label>'+
-      '<label class="f">Local (opcional)<input type="text" data-f="rehplace" data-fk="rehplace" value="'+esc(rehCfg&&rehCfg.place||'')+'" placeholder="Ex.: Estúdio do Zé" aria-label="Local do ensaio"></label></div>'+
-      '<div class="row-actions"><button type="button" class="btn small primary" data-act="reh-done">Pronto</button>'+(i?'<button type="button" class="btn small danger" data-act="reh-clear">Remover</button>':'')+'</div>'
+      '<label class="f">Data<input type="date" data-f="rehdate" value="'+esc(dr.date||'')+'" required aria-label="Data do ensaio"></label>'+
+      '<label class="f">Hora<input type="time" data-f="rehtime" value="'+esc(dr.time||'')+'" required aria-label="Hora do ensaio"></label>'+
+      '<label class="f">Local (opcional)<input type="text" data-f="rehplace" data-fk="rehplace" value="'+esc(dr.place||'')+'" placeholder="Ex.: Estúdio do Zé" aria-label="Local do ensaio"></label></div>'+
+      '<div class="row-actions"><button type="button" class="btn small primary" data-act="reh-done">Salvar</button><button type="button" class="btn small" data-act="reh-cancel">Cancelar</button>'+(i?'<button type="button" class="btn small danger" data-act="reh-clear">Remover</button>':'')+'</div>'
       :'<button type="button" class="btn small" data-act="reh-edit">Marcar o próximo ensaio</button>';
     return;
   }
@@ -2339,9 +2342,11 @@ document.addEventListener('click',function(e){
   if(act==='pill-status'){e.stopPropagation();ui.stPick={id:id,mid:t.dataset.mid};renderStPick();return}
   if(act==='st-set'){var sp=ui.stPick;ui.stPick=null;if(sp){changeStatus(sp.id,sp.mid,+t.dataset.v)}render();return}
   if(act==='st-close'){ui.stPick=null;renderStPick();return}
-  if(act==='reh-edit'){ui.rehEdit=true;renderReh();return}
-  if(act==='reh-done'){ui.rehEdit=false;renderReh();return}
-  if(act==='reh-clear'){ui.rehEdit=false;rehCfg=null;if(rehDoc)rehDoc.set({date:'',time:'',place:''}).catch(fail);render();return}
+  if(act==='reh-edit'){ui.rehEdit=true;ui.rehDraft=null;$('#reh').dataset.editing='';renderReh();return}
+  if(act==='reh-done'){var dd=ui.rehDraft||{};if(!dd.date||!dd.time){toast('Informe a data e a hora do ensaio.');return}
+    var o3={date:dd.date,time:dd.time,place:(dd.place||'').trim()};rehCfg=o3;if(rehDoc)rehDoc.set(o3).catch(fail);ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';render();return}
+  if(act==='reh-cancel'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';renderReh();return}
+  if(act==='reh-clear'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';rehCfg=null;if(rehDoc)rehDoc.set({date:'',time:'',place:''}).catch(fail);render();return}
   if(act==='push-on'){toast('Pedindo permissão…');window.CE_PUSH.enable(meMember).then(function(){ui.pushState='on';ui.pushSynced=true;toast('Lembretes ativados.');renderConfig()}).catch(function(err){refreshPush();toast(err&&err.message==='denied'?'Permissão negada. Libere as notificações nas configurações do navegador.':'Não foi possível ativar agora. Tente de novo.')});return}
   if(act==='push-off'){window.CE_PUSH.disable().then(function(){ui.pushState='off';toast('Lembretes desativados.');renderConfig()}).catch(function(){toast('Não foi possível desativar agora.')});return}
   if(act==='push-test'){window.CE_PUSH.test().then(function(r){toast(r&&r.ok?'Aviso enviado. Ele deve chegar em instantes.':'Não foi possível enviar o aviso de teste.')}).catch(function(){toast('Não foi possível enviar o aviso de teste.')});return}
@@ -2392,7 +2397,7 @@ document.addEventListener('change',function(e){
   if(t.id==='band-logo-file'){readLogo(t.files&&t.files[0]);t.value='';return}
   if(t.id==='as'){as=t.value;try{localStorage.setItem('ce-as',as)}catch(err){}render();return}
   var f=t.dataset.f,id=t.dataset.id,sid=t.dataset.sid;if(!f)return;
-  if(f==='rehdate'||f==='rehtime'||f==='rehplace'){var o2=Object.assign({date:'',time:'',place:''},rehCfg||{});o2[f==='rehdate'?'date':f==='rehtime'?'time':'place']=t.value.trim();rehCfg=o2;if(rehDoc)rehDoc.set(o2).catch(fail);if(f!=='rehplace')render();return}
+  if(f==='rehdate'||f==='rehtime'||f==='rehplace'){var dr2=ui.rehDraft||(ui.rehDraft={date:'',time:'',place:''});dr2[f==='rehdate'?'date':f==='rehtime'?'time':'place']=t.value;return}
   if(f==='showdate'){saveShow({date:t.value,name:(showCfg&&showCfg.name)||''});return}
   if(f==='showname'){saveShow({date:(showCfg&&showCfg.date)||'',name:t.value.trim()});return}
   if(f==='gap'){var gv=parseInt(t.value,10);saveSet(setIds(),isNaN(gv)?30:Math.max(0,Math.min(600,gv)));softRender();return}

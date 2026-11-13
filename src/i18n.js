@@ -19,6 +19,7 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Hora','Time','Hora'],['Salvar','Save','Guardar'],['Informe a data e a hora do ensaio.','Enter the rehearsal date and time.','Indica la fecha y la hora del ensayo.'],
 ['Lembretes','Reminders','Recordatorios'],['Lembretes do ensaio','Rehearsal reminders','Recordatorios del ensayo'],
 ['No iPhone, instale o app: Compartilhar → Adicionar à Tela de Início. Depois ative aqui.','On iPhone, install the app first: Share → Add to Home Screen. Then turn this on here.','En iPhone, instala la app primero: Compartir → Añadir a pantalla de inicio. Luego actívalo aquí.'],
 ['Este navegador não suporta avisos.','This browser does not support notifications.','Este navegador no admite avisos.'],

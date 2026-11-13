@@ -54,7 +54,11 @@ async function push(row: Row, payload: object) {
   }
 }
 
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "apikey, content-type, authorization, x-client-info, x-cron-secret", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const J = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   const url = new URL(req.url);
   let body: any = {};
   try { body = await req.json(); } catch (_) { /* empty */ }
@@ -62,13 +66,13 @@ Deno.serve(async (req) => {
   // Test notification: only for a subscription that exists (the endpoint is the proof).
   if (body.action === "test") {
     const { data } = await sb.from("ce_push").select("*").eq("band", body.band).eq("endpoint", body.endpoint).maybeSingle();
-    if (!data) return new Response(JSON.stringify({ ok: false }), { status: 404 });
+    if (!data) return J({ ok: false }, 404);
     const t = T[data.lang] || T.pt;
     const r = await push(data, { title: t.test, body: t.testBody, tag: "rehearsal-test", url: "./" });
-    return new Response(JSON.stringify({ ok: r === "sent", r }));
+    return J({ ok: r === "sent", r });
   }
 
-  if (req.headers.get("x-cron-secret") !== Deno.env.get("CRON_SECRET")) return new Response("forbidden", { status: 403 });
+  if (req.headers.get("x-cron-secret") !== Deno.env.get("CRON_SECRET")) return J({ ok: false }, 403);
   const dry = url.searchParams.get("dry") === "1";
   const now = body.now ? new Date(body.now) : new Date();
 
@@ -103,5 +107,5 @@ Deno.serve(async (req) => {
       out.push({ band, push: s.id, kind, r });
     }
   }
-  return new Response(JSON.stringify({ ok: true, dry, now: now.toISOString(), out }), { headers: { "Content-Type": "application/json" } });
+  return J({ ok: true, dry, now: now.toISOString(), out });
 });
