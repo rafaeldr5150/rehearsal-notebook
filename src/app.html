@@ -2249,7 +2249,9 @@ function driveRows(row){
   if(d.offline)return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Google Drive</b><small>Sem conexão agora.</small></span></div>'+pend;
   if(!d.configured)return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Google Drive</b><small>Indisponível no momento.</small></span></div>';
   if(!d.connected)return row('drive-connect','nota','Conectar Google Drive','Grave as músicas e salve direto no Drive da banda')+pend;
-  return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Drive conectado</b><small>'+esc(d.email||'')+' · setlist/&lt;música&gt;/</small></span></div>'+
+  return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Drive conectado</b><small>'+esc(d.email||'')+'</small></span></div>'+
+    '<div class="cfg-row static">'+svgIco('list',24)+'<span><b>Onde as gravações ficam</b><small>'+(d.root?esc(d.root)+' / '+esc(bandName()||'Banda')+' / setlist / música':'setlist / música (na raiz do Drive)')+'</small></span></div>'+
+    (window.CE_DRIVE.canPick?row('drive-pick','list',ui.pickBusy?'Abrindo o Google…':'Escolher pasta do Drive','A pasta da banda vai ficar dentro dela, com a pasta setlist e uma pasta por música'):'')+
     '<a class="cfg-row" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/'+esc(d.folder)+'">'+svgIco('list',24)+'<span><b>Abrir a pasta setlist</b><small>Só abre para a conta que conectou. Compartilhe a pasta com a banda no Drive.</small></span><i aria-hidden="true">↗</i></a>'+
     row('drive-connect','nota',ui.armDrive==='c'?'Confirmar: trocar a conta':'Trocar a conta do Drive','As próximas gravações vão para a nova conta')+
     row('drive-off','nota',ui.armDrive==='d'?'Confirmar: desconectar':'Desconectar o Drive','As gravações já enviadas continuam no Drive')+pend;
@@ -2428,6 +2430,11 @@ document.addEventListener('click',function(e){
   if(act==='rec-stop'){recStop(false);return}
   if(act==='rec-cancel'){recStop(true);return}
   if(act==='rec-flush'){toast('Enviando…');window.CE_DRIVE.flush().then(function(n){ui.recPending=n;toast(n?'Ainda há '+n+' aguardando. Tente de novo com internet.':'Tudo enviado.');render()});return}
+  if(act==='drive-pick'){if(ui.pickBusy)return;ui.pickBusy=true;renderConfig();
+    window.CE_DRIVE.pickFolder().then(function(r){ui.pickBusy=false;if(r&&r.cancelled){renderConfig();return}
+      if(r&&r.ok){toast('Pasta definida: '+r.root);refreshDrive()}
+      else toast(r&&r.error==='readonly'?'Você não tem permissão para criar pastas nessa pasta.':'Não foi possível usar essa pasta. Tente outra.');renderConfig()
+    }).catch(function(){ui.pickBusy=false;toast('Não foi possível abrir a escolha de pasta do Google.');renderConfig()});return}
   if(act==='drive-go'){location.hash='#config';return}
   if(act==='drive-connect'){var cn=ui.drive&&ui.drive.connected;if(cn&&ui.armDrive!=='c'){ui.armDrive='c';toast('Toque de novo para confirmar a troca do Drive da banda.');renderConfig();return}ui.armDrive='';window.CE_DRIVE.connect();return}
   if(act==='drive-off'){if(ui.armDrive!=='d'){ui.armDrive='d';toast('Toque de novo para desconectar o Drive da banda.');renderConfig();return}ui.armDrive='';window.CE_DRIVE.disconnect().then(function(){refreshDrive();toast('Drive desconectado.')});return}

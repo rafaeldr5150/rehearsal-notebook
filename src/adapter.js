@@ -154,6 +154,26 @@ function rpc(fn,args){
     status:function(){return call('status').catch(function(){return null})},
     connect:function(){location.href=FN+'?start=1&band='+encodeURIComponent(band)+'&ret='+encodeURIComponent(location.origin)},
     disconnect:function(){return call('disconnect')},
+    canPick:!!CFG.pickerKey,
+    pickFolder:function(){
+      function loadGapi(){return new Promise(function(res,rej){
+        if(window.gapi&&window.google&&window.google.picker)return res();
+        function ready(){window.gapi.load('picker',{callback:res,onerror:rej})}
+        if(window.gapi)return ready();
+        var s=document.createElement('script');s.src='https://apis.google.com/js/api.js';s.onload=ready;s.onerror=rej;document.head.appendChild(s);
+      })}
+      return Promise.all([call('picker-token'),loadGapi()]).then(function(r){
+        var t=r[0];if(!t||!t.ok)throw new Error('token');
+        return new Promise(function(res){
+          var view=new google.picker.DocsView(google.picker.ViewId.FOLDERS).setSelectFolderEnabled(true).setIncludeFolders(true).setMimeTypes('application/vnd.google-apps.folder');
+          new google.picker.PickerBuilder().addView(view).setOAuthToken(t.token).setDeveloperKey(CFG.pickerKey).setAppId(t.appId).setLocale(window.CE_LANG||'pt')
+            .setCallback(function(d){
+              if(d.action==='picked'&&d.docs&&d.docs[0])res(call('set-folder',{folderId:d.docs[0].id}));
+              else if(d.action==='cancel')res({cancelled:true});
+            }).build().setVisible(true);
+        });
+      });
+    },
     pending:function(){return all().then(function(l){return l.length})},
     flush:flush,
     upload:function(blob,meta,onProg){

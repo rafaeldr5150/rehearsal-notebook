@@ -5,3 +5,4 @@ create table if not exists public.ce_drive(
   folders jsonb not null default '{}'::jsonb, connected_at timestamptz not null default now());
 alter table public.ce_drive enable row level security;
 revoke all on public.ce_drive from anon, authenticated;
+alter table public.ce_drive add column if not exists root_name text not null default '';

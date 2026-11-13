@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       const folder = await mkFolder(d.access_token, "setlist");
       const { data: old } = await sb.from("ce_drive").select("refresh_token").eq("band", st.band).maybeSingle();
       if (old?.refresh_token) await fetch("https://oauth2.googleapis.com/revoke?token=" + encodeURIComponent(old.refresh_token), { method: "POST" }).catch(() => {});
-      await sb.from("ce_drive").upsert({ band: st.band, refresh_token: d.refresh_token, folder_id: folder, email: me.data.email || "", folders: {}, connected_at: new Date().toISOString() });
+      await sb.from("ce_drive").upsert({ band: st.band, refresh_token: d.refresh_token, folder_id: folder, email: me.data.email || "", folders: {}, root_name: "", connected_at: new Date().toISOString() });
       return bounce(st.ret, "drive=ok");
     } catch (_) { return bounce(st.ret, "drive=err"); }
   }
@@ -95,8 +95,28 @@ Deno.serve(async (req) => {
   if (!(await bandOk(b.band))) return J({ ok: false, error: "band" }, 404);
   const { data: row } = await sb.from("ce_drive").select("*").eq("band", b.band).maybeSingle();
 
-  if (b.action === "status") return J({ ok: true, connected: !!row, email: row?.email || "", folder: row?.folder_id || "", configured: !!(CLIENT_ID && CLIENT_SECRET) });
+  if (b.action === "status") return J({ ok: true, connected: !!row, email: row?.email || "", folder: row?.folder_id || "", root: row?.root_name || "", configured: !!(CLIENT_ID && CLIENT_SECRET) });
   if (!row) return J({ ok: false, error: "not_connected" }, 409);
+
+  // Short-lived token (drive.file only) so the browser can open Google Picker for the connected account.
+  if (b.action === "picker-token") {
+    try { return J({ ok: true, token: await accessToken(row), appId: CLIENT_ID.split("-")[0] }); } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
+  }
+
+  // The user picked a folder in Google Picker: build  <band name>/setlist/  inside it and use it from now on.
+  if (b.action === "set-folder") {
+    try {
+      const tok = await accessToken(row);
+      const g = await gj(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(String(b.folderId))}?fields=id,name,mimeType,trashed,capabilities(canAddChildren)`, tok);
+      if (g.status !== 200 || g.data.mimeType !== "application/vnd.google-apps.folder" || g.data.trashed) return J({ ok: false, error: "folder" }, 400);
+      if (g.data.capabilities && g.data.capabilities.canAddChildren === false) return J({ ok: false, error: "readonly" }, 403);
+      const { data: bd } = await sb.from("ce_docs").select("data").eq("band", b.band).eq("coll", "config").eq("id", "band").maybeSingle();
+      const bandFolder = await mkFolder(tok, clean(bd?.data?.name || "Banda"), g.data.id);
+      const setlist = await mkFolder(tok, "setlist", bandFolder);
+      await sb.from("ce_drive").update({ folder_id: setlist, folders: {}, root_name: g.data.name }).eq("band", b.band);
+      return J({ ok: true, root: g.data.name, folder: setlist });
+    } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
+  }
 
   if (b.action === "disconnect") {
     await fetch("https://oauth2.googleapis.com/revoke?token=" + encodeURIComponent(row.refresh_token), { method: "POST" }).catch(() => {});

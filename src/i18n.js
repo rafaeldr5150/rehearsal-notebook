@@ -19,6 +19,12 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Onde as gravações ficam','Where recordings go','Dónde se guardan las grabaciones'],['setlist / música (na raiz do Drive)','setlist / song (in the Drive root)','setlist / canción (en la raíz del Drive)'],
+['Escolher pasta do Drive','Choose a Drive folder','Elegir carpeta del Drive'],['Abrindo o Google…','Opening Google…','Abriendo Google…'],
+['A pasta da banda vai ficar dentro dela, com a pasta setlist e uma pasta por música','The band folder will be created inside it, with a setlist folder and one folder per song','La carpeta de la banda se creará dentro, con la carpeta setlist y una carpeta por canción'],
+['Você não tem permissão para criar pastas nessa pasta.','You don\'t have permission to create folders in that folder.','No tienes permiso para crear carpetas en esa carpeta.'],
+['Não foi possível usar essa pasta. Tente outra.','Could not use that folder. Try another.','No se pudo usar esa carpeta. Prueba otra.'],
+['Não foi possível abrir a escolha de pasta do Google.','Could not open Google\'s folder picker.','No se pudo abrir el selector de carpetas de Google.'],
 ['Gravar','Record','Grabar'],['● Gravar','● Record','● Grabar'],['Gravando','Recording','Grabando'],['Parar e salvar','Stop and save','Parar y guardar'],['Descartar','Discard','Descartar'],
 ['Você está gravando outra música.','You are recording another song.','Estás grabando otra canción.'],
 ['Conecte o Google Drive da banda para guardar as gravações.','Connect the band\'s Google Drive to store recordings.','Conecta el Google Drive de la banda para guardar las grabaciones.'],
@@ -287,6 +293,8 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^(.+) \/ (.+) \/ setlist \/ música$/,function(m){return m[1]+' / '+m[2]+' / setlist / '+(I===1?'song':'canción')}],
+[/^Pasta definida: (.+)$/,function(m){return (I===1?'Folder set: ':'Carpeta definida: ')+m[1]}],
 [/^Salva em setlist\/(.+)\/ no Drive da banda\.$/,function(m){return I===1?'Saved to setlist/'+m[1]+'/ in the band\'s Drive.':'Se guarda en setlist/'+m[1]+'/ en el Drive de la banda.'}],
 [/^Gravação salva no Drive: (.+)$/,function(m){return (I===1?'Recording saved to Drive: ':'Grabación guardada en Drive: ')+m[1]}],
 [/^Última enviada: (.+)$/,function(m){return (I===1?'Last sent: ':'Último enviado: ')+m[1]}],
