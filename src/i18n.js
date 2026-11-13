@@ -19,6 +19,19 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Deixar tudo pronto','Get everything ready','Dejar todo listo'],
+['Libere agora o que o app vai usar, para não ser interrompido depois.','Allow now what the app will use, so you are not interrupted later.','Permite ahora lo que usará la app, para que no te interrumpa después.'],
+['Microfone','Microphone','Micrófono'],['Para gravar as músicas direto no app.','To record songs right in the app.','Para grabar las canciones directo en la app.'],
+['Bloqueado. Libere o microfone nas configurações do navegador.','Blocked. Allow the microphone in your browser settings.','Bloqueado. Permite el micrófono en los ajustes del navegador.'],
+['Este navegador não grava áudio.','This browser cannot record audio.','Este navegador no graba audio.'],
+['No iPhone, instale o app na tela inicial primeiro (Compartilhar → Adicionar à Tela de Início).','On iPhone, install the app on the home screen first (Share → Add to Home Screen).','En iPhone, instala primero la app en la pantalla de inicio (Compartir → Añadir a pantalla de inicio).'],
+['Bloqueado. Libere as notificações nas configurações do navegador.','Blocked. Allow notifications in your browser settings.','Bloqueado. Permite las notificaciones en los ajustes del navegador.'],
+['Aviso na véspera e no dia do ensaio.','A notice the evening before and the day of the rehearsal.','Un aviso la víspera y el día del ensayo.'],
+['Guarda as gravações da banda no Google Drive.','Stores the band\'s recordings in Google Drive.','Guarda las grabaciones de la banda en Google Drive.'],
+['✓ Liberado','✓ Allowed','✓ Permitido'],['Permitir','Allow','Permitir'],['Ativar','Turn on','Activar'],['Conectar','Connect','Conectar'],
+['Permitir tudo','Allow all','Permitir todo'],['Agora não','Not now','Ahora no'],['Concluir','Done','Terminar'],
+['Agora conecte o Google Drive.','Now connect Google Drive.','Ahora conecta Google Drive.'],
+['Permissões e acessos','Permissions and access','Permisos y accesos'],['Microfone, lembretes e Google Drive','Microphone, reminders and Google Drive','Micrófono, recordatorios y Google Drive'],
 ['Ensaio com lembrete','Rehearsal with reminder','Ensayo con recordatorio'],
 ['Na tela Geral, marque a data e a hora do próximo ensaio. Em Configurações, ative os lembretes: o celular avisa na véspera e no dia.','On the Overview screen, set the date and time of the next rehearsal. In Settings, turn on reminders: your phone alerts you the evening before and the day of.','En la pantalla General, marca la fecha y la hora del próximo ensayo. En Ajustes, activa los recordatorios: el móvil te avisa la víspera y el día.'],
 ['Grave e ouça','Record and listen','Graba y escucha'],

@@ -913,6 +913,15 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 .rec-meta{display:flex;flex-direction:column;min-width:0}
 .rec-meta b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rec-meta small{opacity:.7;font-size:12px}
+
+#setup{position:fixed;inset:0;z-index:39;display:flex;align-items:center;justify-content:center;background:rgba(8,4,6,.82);padding:18px;overflow:auto}
+.setupbox{text-align:left!important}
+.setupbox h2{text-align:center}.setupbox>.hint{text-align:center}
+.setup-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid rgba(128,128,128,.3)}
+.setup-ico{flex:0 0 auto;opacity:.85}
+.setup-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.setup-t b{font-size:15px}.setup-t small{font-size:12.5px;opacity:.75}
+.setup-ok{font-weight:700;font-size:13px;white-space:nowrap;color:#1fa971}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -1032,6 +1041,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
 <div id="who" hidden></div>
 <div id="statuspick" hidden></div>
 <div id="tour" hidden></div>
+<div id="setup" hidden></div>
 <div id="skinpick" hidden></div>
 <div id="drawer-bg" data-act="drawer-close" hidden></div>
 <div id="drawer" hidden></div>
@@ -2193,7 +2203,48 @@ function renderTour(){
     '<button type="button" class="btn small primary" data-act="tour-next">'+(last?(ui.tourFrom?'Entendi':'Começar'):'Próximo')+'</button></div>'+
     (last?'':'<div class="row-actions" style="justify-content:center;margin-top:8px"><button type="button" class="btn small ghost" data-act="tour-skip">Pular tour</button></div>')+'</div>';
 }
-function tourEnd(){ui.tour=null;ui.tourFrom=0;try{localStorage.setItem('ce-tour',String(TOUR_V))}catch(e){}renderTour()}
+/* ---------- permissões: tudo de uma vez depois do tour ---------- */
+function micState(){
+  if(!navigator.mediaDevices||!window.MediaRecorder)return Promise.resolve('unsupported');
+  var ls='';try{ls=localStorage.getItem('ce-mic')||''}catch(e){}
+  if(!navigator.permissions||!navigator.permissions.query)return Promise.resolve(ls==='1'?'granted':'prompt');
+  return navigator.permissions.query({name:'microphone'}).then(function(r){return r.state}).catch(function(){return ls==='1'?'granted':'prompt'});
+}
+function askMic(){
+  return navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){s.getTracks().forEach(function(t){t.stop()});try{localStorage.setItem('ce-mic','1')}catch(e){}ui.micOk=true;return 'granted'}).catch(function(){return 'denied'});
+}
+function loadSetup(){
+  var P=window.CE_PUSH,D=window.CE_DRIVE;
+  return Promise.all([micState(),P?P.state():Promise.resolve('unsupported'),D?D.status():Promise.resolve(null)]).then(function(r){
+    ui.setupSt={mic:(r[0]==='prompt'&&ui.micOk)?'granted':r[0],push:r[1],drive:r[2]&&r[2].connected?'on':r[2]&&r[2].configured?'off':'unsupported',needsInstall:!!(P&&P.needsInstall)};
+    if(ui.setup)renderSetup();
+  });
+}
+function renderSetup(){
+  var el=$('#setup');if(!el)return;
+  if(!ui.setup){el.hidden=true;el.innerHTML='';return}
+  var s=ui.setupSt;
+  if(!s){el.hidden=false;el.innerHTML='<div class="who-box tourbox"><p class="hint">Carregando…</p></div>';return}
+  function row(ico,title,sub,st,act,btn){
+    var ok=st==='granted'||st==='on';
+    return '<div class="setup-row"><span class="setup-ico">'+svgIco(ico,24)+'</span><span class="setup-t"><b>'+title+'</b><small>'+sub+'</small></span>'+
+      (ok?'<span class="setup-ok">✓ Liberado</span>':act?'<button type="button" class="btn small primary" data-act="'+act+'">'+btn+'</button>':'')+'</div>';
+  }
+  var micSub=s.mic==='denied'?'Bloqueado. Libere o microfone nas configurações do navegador.':s.mic==='unsupported'?'Este navegador não grava áudio.':'Para gravar as músicas direto no app.';
+  var pushSub=s.needsInstall?'No iPhone, instale o app na tela inicial primeiro (Compartilhar → Adicionar à Tela de Início).':s.push==='denied'?'Bloqueado. Libere as notificações nas configurações do navegador.':s.push==='unsupported'?'Este navegador não suporta avisos.':'Aviso na véspera e no dia do ensaio.';
+  var drvSub=s.drive==='unsupported'?'Indisponível no momento.':'Guarda as gravações da banda no Google Drive.';
+  var canMic=s.mic==='prompt',canPush=s.push==='off'&&!s.needsInstall,canDrv=s.drive==='off';
+  var pending=(canMic?1:0)+(canPush?1:0)+(canDrv?1:0);
+  el.hidden=false;
+  el.innerHTML='<div class="who-box tourbox setupbox" role="dialog" aria-label="Permissões"><h2>Deixar tudo pronto</h2><p class="hint">Libere agora o que o app vai usar, para não ser interrompido depois.</p>'+
+    row('voz','Microfone',micSub,s.mic,canMic?'ask-mic':'','Permitir')+
+    row('nota','Lembretes do ensaio',pushSub,s.push,canPush?'ask-push':'','Ativar')+
+    row('group','Google Drive',drvSub,s.drive,canDrv?'ask-drive':'','Conectar')+
+    '<div class="row-actions" style="justify-content:center;margin-top:14px">'+(pending>1?'<button type="button" class="btn primary" data-act="ask-all">Permitir tudo</button>':'')+
+    '<button type="button" class="btn small" data-act="setup-close">'+(pending?'Agora não':'Concluir')+'</button></div></div>';
+}
+function setupDone(){ui.setup=false;try{localStorage.setItem('ce-setup','1')}catch(e){}renderSetup()}
+function tourEnd(){ui.tour=null;ui.tourFrom=0;try{localStorage.setItem('ce-tour',String(TOUR_V))}catch(e){}renderTour();var sd='';try{sd=localStorage.getItem('ce-setup')||''}catch(e){}if(!sd){ui.setupPending=true;render()}}
 function refreshDrive(){
   var D=window.CE_DRIVE;if(!D)return;
   D.status().then(function(s){ui.drive=s||{connected:false,configured:false,offline:true};return D.pending()}).then(function(n){ui.recPending=n;render()}).catch(function(){render()});
@@ -2330,7 +2381,7 @@ function renderConfig(){
      (window.CE_STANDALONE?row('copy-invite','group','Copiar link de convite','Quem abrir esse link entra no caderno da banda.')+row('copy-code','group','Copiar código','Para quem prefere colar o código na tela de entrada.'):'')+'</section>'+
    '<section class="cfg"><h3>Google Drive</h3>'+driveRows(row)+'</section>'+
    '<section class="cfg"><h3>Lembretes</h3>'+pushRows(row)+'</section>'+
-   '<section class="cfg"><h3>Ajuda</h3>'+row('tour-open','home','Ver o tour de novo','Como o app funciona, em poucos passos')+'</section>'+
+   '<section class="cfg"><h3>Ajuda</h3>'+row('setup-open','gear','Permissões e acessos','Microfone, lembretes e Google Drive')+row('tour-open','home','Ver o tour de novo','Como o app funciona, em poucos passos')+'</section>'+
    '<section class="cfg"><h3>Repertório</h3>'+row('cfg-import','list','Importar lista de músicas','Cole uma música por linha')+
      '<a class="cfg-row" target="_blank" rel="noopener" href="https://open.spotify.com/playlist/1sq08fB986YPFkc4Kw4v5U">'+svgIco('nota',24)+'<span><b>Playlist no Spotify</b><small>Abrir a playlist da banda</small></span><i aria-hidden="true">↗</i></a>'+
      (nl?row('lyrics-all','nota','Buscar letras que faltam','('+nl+')'):'')+'</section>'+
@@ -2349,6 +2400,7 @@ function render(){
   $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=true;
   if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
   renderDrawer();renderWho();renderCePick();renderStPick();
+  if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
   if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
     try{var qs=new URLSearchParams(location.search),dv=qs.get('drive');if(dv){var M={ok:'Google Drive conectado!',denied:'Conexão cancelada.',err:'Não foi possível conectar o Drive. Tente de novo.',nosecret:'O Drive ainda não está configurado no servidor.'};toast(M[dv]||'');qs.delete('drive');history.replaceState(null,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}}catch(e){}}
   if(!ui.tourChecked&&band&&members().length){ui.tourChecked=true;var seen='1';try{seen=localStorage.getItem('ce-tour')||''}catch(e){}if(!seen){ui.tourFrom=0;ui.tour=0;renderTour()}else if((+seen||1)<TOUR_V){ui.tourFrom=+seen||1;ui.tour=0;renderTour()}}
@@ -2488,6 +2540,14 @@ document.addEventListener('click',function(e){
   if(act==='push-on'){toast('Pedindo permissão…');window.CE_PUSH.enable(meMember).then(function(){ui.pushState='on';ui.pushSynced=true;toast('Lembretes ativados.');renderConfig()}).catch(function(err){refreshPush();toast(err&&err.message==='denied'?'Permissão negada. Libere as notificações nas configurações do navegador.':'Não foi possível ativar agora. Tente de novo.')});return}
   if(act==='push-off'){window.CE_PUSH.disable().then(function(){ui.pushState='off';toast('Lembretes desativados.');renderConfig()}).catch(function(){toast('Não foi possível desativar agora.')});return}
   if(act==='push-test'){window.CE_PUSH.test().then(function(r){toast(r&&r.ok?'Aviso enviado. Ele deve chegar em instantes.':'Não foi possível enviar o aviso de teste.')}).catch(function(){toast('Não foi possível enviar o aviso de teste.')});return}
+  if(act==='ask-mic'){askMic().then(function(){return loadSetup()});return}
+  if(act==='ask-push'){window.CE_PUSH.enable(meMember).then(function(){ui.pushState='on';ui.pushSynced=true}).catch(function(){}).then(function(){return loadSetup()});return}
+  if(act==='ask-drive'){setupDone();window.CE_DRIVE.connect();return}
+  if(act==='ask-all'){var S=ui.setupSt||{};
+    (S.mic==='prompt'?askMic():Promise.resolve()).then(function(){return S.push==='off'&&!S.needsInstall?window.CE_PUSH.enable(meMember).then(function(){ui.pushState='on';ui.pushSynced=true}).catch(function(){}):0})
+      .then(function(){return loadSetup()}).then(function(){if(S.drive==='off'){toast('Agora conecte o Google Drive.')}});return}
+  if(act==='setup-close'){setupDone();return}
+  if(act==='setup-open'){ui.setup=true;ui.setupSt=null;renderSetup();loadSetup();return}
   if(act==='tour-open'){ui.tourFrom=0;ui.tour=0;renderTour();return}
   if(act==='tour-next'){if(ui.tour>=tourSteps().length-1)tourEnd();else{ui.tour++;renderTour()}return}
   if(act==='tour-back'){if(ui.tour>0){ui.tour--;renderTour()}return}
