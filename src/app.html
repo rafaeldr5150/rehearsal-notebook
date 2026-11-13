@@ -935,6 +935,9 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 .acc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .acc-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line)}
 .acc-meta{display:flex;flex-direction:column;min-width:0}.acc-meta b{font-size:14px}.acc-meta small{opacity:.7;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.folders{display:flex;flex-direction:column;gap:10px}
+.folders:empty{display:none}
+.folders h3{font-size:14px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
 .inst-steps{margin:10px 0 0;padding-left:22px;text-align:left;display:flex;flex-direction:column;gap:8px;font-size:15px}
 #install{position:fixed;inset:0;z-index:38;display:flex;align-items:center;justify-content:center;background:rgba(8,4,6,.82);padding:18px;overflow:auto}
 /* ensaio, atividade, status, tour */
@@ -1023,6 +1026,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
 
     <section id="installbar" class="reh" hidden></section>
     <section id="reh" class="reh"></section>
+    <section id="folders" class="folders" hidden></section>
     <section id="lineup" class="lineup"></section>
     <section id="feed" class="feed"></section>
 
@@ -1088,7 +1092,7 @@ var met={ctx:null,running:false,beat:0,next:0,timer:null,songId:null,delta:0};
 var ui={edit:{},more:{},tr:{},arm:{},ced:{}}, fs=15, fss=26;
 var setlist=null, setDoc=null, stage=null, setChain=Promise.resolve();
 var live=null, liveDoc=null, following=false, lastLiveSong='', lyBusy=false;
-var spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0};
+var linksCfg=null, linksDoc=null, spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0};
 var pend={}, drafts={}, renderTimer=null;
 var BG=['flat','top','soft'], BGN={soft:'parede suave',top:'parede só no topo',flat:'liso'}, bgMode='flat';
 try{bgMode=localStorage.getItem('ce-bg2')||'flat'}catch(e){}
@@ -2136,7 +2140,7 @@ function commentsBlock(s){
 
 /* ---------- render principal ---------- */
 function renderHome(){
-  renderHero();renderSummary();renderInstallBar();renderReh();renderLineup();renderFeed();
+  renderHero();renderSummary();renderInstallBar();renderReh();renderFolders();renderLineup();renderFeed();
   if(!loaded)return;
   var q=query.trim().toLowerCase();
   var vis=songs.filter(function(s){
@@ -2486,6 +2490,23 @@ function installEnv(){
   var samsung=/samsungbrowser/i.test(ua);
   return {ios:ios,and:and,mobile:ios||and,standalone:standalone,safari:safari,samsung:samsung,prompt:!!window.__ceInstall};
 }
+function vidUrl(){var u=linksCfg&&linksCfg.videos;return /^https:\/\//.test(u||'')?u:''}
+function setlistUrl(){var d=ui.drive;return d&&d.connected&&d.folder?'https://drive.google.com/drive/folders/'+d.folder:''}
+function renderFolders(){
+  var el=$('#folders');if(!el)return;
+  var s=setlistUrl(),v=vidUrl(),h='';
+  if(s)h+='<a class="btn" target="_blank" rel="noopener" href="'+esc(s)+'">📁 Pasta do setlist ↗</a>';
+  h+=v?'<a class="btn" target="_blank" rel="noopener" href="'+esc(v)+'">🎬 Vídeos da banda ↗</a>':'<a class="btn" href="#config" data-act="vid-define">🎬 Definir a pasta de vídeos</a>';
+  el.hidden=!(window.CE_DRIVE||v);
+  if(el.hidden){el.innerHTML='';return}
+  el.innerHTML='<h3>Pastas da banda</h3><div class="row-actions">'+h+'</div>';
+}
+function videoRows(row){
+  if(ui.vidEdit)return '<div class="cfg-edit"><label class="f">Link da pasta de vídeos<input type="text" data-f="viddraft" data-fk="viddraft" value="'+esc(ui.vidDraft||'')+'" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off" aria-label="Link da pasta de vídeos"></label><p class="hint">Abra a pasta no Google Drive, toque em Compartilhar → Copiar link e cole aqui. Quem for abrir precisa ter acesso à pasta.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="vid-save">Salvar</button><button type="button" class="btn small" data-act="vid-cancel">Cancelar</button></div></div>';
+  var v=vidUrl();
+  if(!v)return row('vid-edit','list','Definir a pasta de vídeos','Cole o link de uma pasta do Drive com os vídeos da banda');
+  return '<a class="cfg-row" target="_blank" rel="noopener" href="'+esc(v)+'">'+svgIco('list',24)+'<span><b>Abrir a pasta de vídeos</b><small>'+esc(v.replace(/^https:\/\//,'').slice(0,48))+'</small></span><i aria-hidden="true">↗</i></a>'+row('vid-edit','list','Trocar a pasta de vídeos','Colar outro link')+row('vid-clear','list','Remover a pasta de vídeos','Tira o atalho da tela Geral');
+}
 function renderInstallBar(){
   var el=$('#installbar');if(!el)return;
   var e=installEnv(),gone='';try{gone=localStorage.getItem('ce-inst-hide')||''}catch(x){}
@@ -2546,6 +2567,7 @@ function renderConfig(){
    '<section class="cfg"><h3>Banda</h3>'+row('open-band','group','Banda','Nome, logo, integrantes e convite')+
      (window.CE_STANDALONE?row('copy-invite','group','Copiar link de convite','Quem abrir esse link entra no caderno da banda.')+row('copy-code','group','Copiar código','Para quem prefere colar o código na tela de entrada.'):'')+'</section>'+
    '<section class="cfg"><h3>Google Drive</h3>'+driveRows(row)+'</section>'+
+   '<section class="cfg"><h3>Vídeos da banda</h3>'+videoRows(row)+'</section>'+
    '<section class="cfg"><h3>Lembretes</h3>'+pushRows(row)+'</section>'+
    '<section class="cfg"><h3>Ajuda</h3>'+(installEnv().standalone?'<div class="cfg-row static">'+svgIco('home',24)+'<span><b>App instalado</b><small>Você está usando o app instalado.</small></span></div>':row('install-open','home','Instalar o app','Ícone na tela inicial, tela cheia e lembretes'))+row('setup-open','gear','Permissões e acessos','Microfone, lembretes e Google Drive')+row('tour-open','home','Ver o tour de novo','Como o app funciona, em poucos passos')+'</section>'+
    '<section class="cfg"><h3>Repertório</h3>'+row('cfg-import','list','Importar lista de músicas','Cole uma música por linha')+
@@ -2730,6 +2752,12 @@ document.addEventListener('click',function(e){
   if(act==='rec-stop'){recStop(false);return}
   if(act==='rec-cancel'){recStop(true);return}
   if(act==='rec-flush'){toast('Enviando…');window.CE_DRIVE.flush().then(function(n){ui.recPending=n;toast(n?'Ainda há '+n+' aguardando. Tente de novo com internet.':'Tudo enviado.');render()});return}
+  if(act==='vid-define'){e.preventDefault();location.hash='#config';ui.vidEdit=true;ui.vidDraft='';return}
+  if(act==='vid-edit'){ui.vidEdit=true;ui.vidDraft=vidUrl();renderConfig();return}
+  if(act==='vid-cancel'){ui.vidEdit=false;renderConfig();return}
+  if(act==='vid-save'){var vu=String(ui.vidDraft||'').trim();if(!/^https:\/\/[^\s]+$/.test(vu)){toast('Cole um link que comece com https://');return}
+    linksCfg=Object.assign({},linksCfg||{},{videos:vu});if(linksDoc)linksDoc.set(linksCfg).catch(fail);ui.vidEdit=false;toast('Pasta de vídeos salva.');render();return}
+  if(act==='vid-clear'){linksCfg=Object.assign({},linksCfg||{},{videos:''});if(linksDoc)linksDoc.set(linksCfg).catch(fail);toast('Pasta de vídeos removida.');render();return}
   if(act==='pick-cancel'){if(window.CE_DRIVE.cancelPick)window.CE_DRIVE.cancelPick();return}
   if(act==='drive-pick'){if(ui.pickBusy)return;ui.pickBusy=true;renderConfig();
     var pc=document.createElement('button');pc.id='pick-cancel';pc.type='button';pc.className='btn danger';pc.dataset.act='pick-cancel';pc.textContent='Cancelar';pc.style.cssText='position:fixed;top:12px;right:12px;z-index:2147483000';document.body.appendChild(pc);
@@ -2799,6 +2827,7 @@ document.addEventListener('change',function(e){
   if(t.id==='as'){as=t.value;try{localStorage.setItem('ce-as',as)}catch(err){}render();return}
   var f=t.dataset.f,id=t.dataset.id,sid=t.dataset.sid;if(!f)return;
   if(f==='pldraft'){ui.plDraft=t.value;return}
+  if(f==='viddraft'){ui.vidDraft=t.value;return}
   if(f==='rehdate'||f==='rehtime'||f==='rehplace'){var dr2=ui.rehDraft||(ui.rehDraft={date:'',time:'',place:''});dr2[f==='rehdate'?'date':f==='rehtime'?'time':'place']=t.value;return}
   if(f==='showdate'){saveShow({date:t.value,name:(showCfg&&showCfg.name)||''});return}
   if(f==='showname'){saveShow({date:(showCfg&&showCfg.date)||'',name:t.value.trim()});return}
@@ -2873,6 +2902,8 @@ function start(){
     if(canSync()){syncClock(6);setInterval(function(){if(!document.hidden)syncClock(4)},240000)}
     liveDoc=db.doc('config/live');
     liveDoc.onSnapshot(function(snap){live=snap.exists?snap.data():null;render()},function(){});
+    linksDoc=db.doc('config/links');
+    linksDoc.onSnapshot(function(snap){linksCfg=snap.exists?snap.data():null;if(editingField())softRender();else render()},function(){});
     spotDoc=db.doc('config/spotify');
     spotDoc.onSnapshot(function(snap){spotCfg=snap.exists?snap.data():null;if(editingField())softRender();else render()},function(){});
     rehDoc=db.doc('config/rehearsal');
