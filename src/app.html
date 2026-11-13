@@ -972,7 +972,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
       <p class="sub">Progresso das músicas tiradas para o repertório da banda.</p>
     </div>
     <div class="row-actions">
-      <a class="btn" href="https://open.spotify.com/playlist/1sq08fB986YPFkc4Kw4v5U" target="_blank" rel="noopener">Playlist no Spotify ↗</a>
+      <a class="btn" id="hdr-pl" href="#" target="_blank" rel="noopener" hidden>Playlist no Spotify ↗</a>
       <button class="btn" id="btn-skin" type="button" title="Escolher o layout do aplicativo">Layout e idioma</button>
       <button class="btn" id="btn-bg" type="button" title="Mudar o fundo da página">Fundo</button>
       <button class="btn" id="btn-band" type="button">Banda</button>
@@ -1040,6 +1040,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
       <select id="as" aria-label="Ver como"></select>
       <div class="chips" id="filters" role="group" aria-label="Filtrar por situação"></div>
       <button type="button" class="btn small" id="btn-lyrics-all" data-act="lyrics-all" hidden></button>
+      <button type="button" class="btn small" id="btn-pl" data-act="pl-sync" hidden>↻ Atualizar playlist</button>
     </div>
 
     <div id="list"><div class="empty-state"><strong>Carregando o repertório…</strong></div></div>
@@ -1079,7 +1080,7 @@ var met={ctx:null,running:false,beat:0,next:0,timer:null,songId:null,delta:0};
 var ui={edit:{},more:{},tr:{},arm:{},ced:{}}, fs=15, fss=26;
 var setlist=null, setDoc=null, stage=null, setChain=Promise.resolve();
 var live=null, liveDoc=null, following=false, lastLiveSong='', lyBusy=false;
-var acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0};
+var spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0};
 var pend={}, drafts={}, renderTimer=null;
 var BG=['flat','top','soft'], BGN={soft:'parede suave',top:'parede só no topo',flat:'liso'}, bgMode='flat';
 try{bgMode=localStorage.getItem('ce-bg2')||'flat'}catch(e){}
@@ -2267,6 +2268,46 @@ function renderSetup(){
 }
 function setupDone(){ui.setup=false;try{localStorage.setItem('ce-setup','1')}catch(e){}renderSetup()}
 function tourEnd(){ui.tour=null;ui.tourFrom=0;try{localStorage.setItem('ce-tour',String(TOUR_V))}catch(e){}renderTour();var sd='';try{sd=localStorage.getItem('ce-setup')||''}catch(e){}if(!sd){ui.setupPending=true;render()}}
+function plNorm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\([^)]*\)|\[[^\]]*\]/g,' ').replace(/\s+-\s+.*$/,'').replace(/[^a-z0-9]+/g,' ').trim()}
+function plIdOf(s){var m=String(s||'').match(/playlist[\/:]([A-Za-z0-9]{22})/)||String(s||'').trim().match(/^([A-Za-z0-9]{22})$/);return m?m[1]:''}
+function syncPlaylist(manual){
+  if(!window.CE_PLAYLIST||!spotCfg||!spotCfg.playlist||!col||ui.plBusy)return Promise.resolve();
+  ui.plBusy=true;render();
+  return window.CE_PLAYLIST(spotCfg.playlist).then(function(r){
+    if(!r||!r.ok)throw r||{};
+    var seen={};(spotCfg.seen||[]).forEach(function(i){seen[i]=1});
+    var byId={},byName={};songs.forEach(function(s){if(s.spotify)byId[s.spotify]=1;byName[plNorm(s.title)+'|'+plNorm(s.artist)]=1});
+    var add=r.tracks.filter(function(t){return !seen[t.id]&&!byId[t.id]&&!byName[plNorm(t.title)+'|'+plNorm(t.artist)]});
+    var base=Date.now(),done=[];
+    return add.reduce(function(p,t,i){return p.then(function(){return col.add({title:t.title,artist:t.artist,duration:t.duration||null,spotify:t.id,link:'',notes:'',order:base+i,parts:{}}).then(function(){done.push(t.title)})})},Promise.resolve()).then(function(){
+      var all=Object.keys(seen).concat(r.tracks.map(function(t){return t.id}));all=all.filter(function(v,i){return all.indexOf(v)===i});
+      spotCfg={playlist:spotCfg.playlist,seen:all.slice(-500),last:Date.now(),lastAdded:done.length,name:r.name||spotCfg.name||''};
+      if(spotDoc)spotDoc.set(spotCfg).catch(function(){});
+      return done;
+    });
+  }).then(function(done){
+    ui.plBusy=false;
+    if(done.length)toast(done.length+(done.length===1?' música nova da playlist: ':' músicas novas da playlist: ')+done.slice(0,3).join(', ')+(done.length>3?'…':''));
+    else if(manual)toast('Nenhuma música nova na playlist.');
+    render();
+  }).catch(function(e){
+    ui.plBusy=false;
+    if(manual)toast(e&&(e.error==='private'||e.error==='missing'||e.error==='link')?'Não consegui ler a playlist agora. Confira se ela é pública e tente de novo.':'O Spotify não respondeu como esperado. Tente de novo mais tarde.');
+    render();
+  });
+}
+function plRows(row){
+  if(!window.CE_PLAYLIST)return '';
+  var on=spotCfg&&spotCfg.playlist;
+  if(ui.plEdit||!on){
+    return ui.plEdit?'<div class="cfg-edit"><label class="f">Link da playlist do Spotify<input type="text" data-f="pldraft" data-fk="pldraft" value="'+esc(ui.plDraft||'')+'" placeholder="https://open.spotify.com/playlist/…" autocomplete="off" aria-label="Link da playlist"></label><p class="hint">A playlist precisa ser pública.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="pl-save">Salvar e buscar</button><button type="button" class="btn small" data-act="pl-cancel">Cancelar</button></div></div>'
+      :row('pl-edit','nota','Conectar playlist do Spotify','Traz as músicas da playlist para o caderno');
+  }
+  var info=spotCfg.last?'Última busca '+rel(spotCfg.last)+(spotCfg.lastAdded?' · '+spotCfg.lastAdded+(spotCfg.lastAdded===1?' nova':' novas'):''):'Ainda não buscou';
+  return row('pl-sync','nota',ui.plBusy?'Buscando…':'Atualizar músicas da playlist',info)+
+    '<a class="cfg-row" target="_blank" rel="noopener" href="https://open.spotify.com/playlist/'+esc(spotCfg.playlist)+'">'+svgIco('nota',24)+'<span><b>Playlist no Spotify</b><small>'+esc(spotCfg.name||'Abrir a playlist da banda')+'</small></span><i aria-hidden="true">↗</i></a>'+
+    row('pl-edit','nota','Trocar a playlist','Usar outra playlist pública');
+}
 function refreshDrive(){
   var D=window.CE_DRIVE;if(!D)return;
   D.status().then(function(s){ui.drive=s||{connected:false,configured:false,offline:true};return D.pending()}).then(function(n){ui.recPending=n;render()}).catch(function(){render()});
@@ -2411,7 +2452,7 @@ function renderConfig(){
    '<section class="cfg"><h3>Lembretes</h3>'+pushRows(row)+'</section>'+
    '<section class="cfg"><h3>Ajuda</h3>'+row('setup-open','gear','Permissões e acessos','Microfone, lembretes e Google Drive')+row('tour-open','home','Ver o tour de novo','Como o app funciona, em poucos passos')+'</section>'+
    '<section class="cfg"><h3>Repertório</h3>'+row('cfg-import','list','Importar lista de músicas','Cole uma música por linha')+
-     '<a class="cfg-row" target="_blank" rel="noopener" href="https://open.spotify.com/playlist/1sq08fB986YPFkc4Kw4v5U">'+svgIco('nota',24)+'<span><b>Playlist no Spotify</b><small>Abrir a playlist da banda</small></span><i aria-hidden="true">↗</i></a>'+
+     plRows(row)+
      (nl?row('lyrics-all','nota','Buscar letras que faltam','('+nl+')'):'')+'</section>'+
    (window.CE_STANDALONE?'<section class="cfg"><h3>Conta</h3><div class="row-actions"><button type="button" class="btn small danger" data-act="leave-band">Sair desta banda</button></div></section>':'');
 }
@@ -2419,6 +2460,9 @@ function render(){
   if(!band)return;
   clearTimeout(renderTimer);
   onLive();renderSide();renderTabbar();renderStage();renderLivebar();renderMetrobar();
+  var hp=$('#hdr-pl');if(hp){var okp=spotCfg&&spotCfg.playlist;hp.hidden=!okp;if(okp)hp.href='https://open.spotify.com/playlist/'+spotCfg.playlist}
+  var bp=$('#btn-pl');if(bp){bp.hidden=!(spotCfg&&spotCfg.playlist&&window.CE_PLAYLIST);bp.textContent=ui.plBusy?'Buscando…':'↻ Atualizar playlist';bp.disabled=!!ui.plBusy}
+  if(!ui.plAuto&&loaded&&band&&spotCfg&&spotCfg.playlist&&col){ui.plAuto=true;if(Date.now()-(spotCfg.last||0)>6*3600000)setTimeout(function(){syncPlaylist(false)},1500)}
   var lb=$('#btn-lyrics-all');if(lb){var nl=canFetchLyrics()?songs.filter(function(s){return !s.lyrics}).length:0;lb.hidden=!nl;lb.textContent='Buscar letras que faltam ('+nl+')'}
   var a=document.activeElement,fk=a&&a.dataset?a.dataset.fk:null,ss=null,se=null;
   if(fk){try{ss=a.selectionStart;se=a.selectionEnd}catch(e){}}
@@ -2555,6 +2599,11 @@ document.addEventListener('click',function(e){
     var o3={date:dd.date,time:dd.time,place:(dd.place||'').trim()};rehCfg=o3;if(rehDoc)rehDoc.set(o3).catch(fail);ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';render();return}
   if(act==='reh-cancel'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';renderReh();return}
   if(act==='reh-clear'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';rehCfg=null;if(rehDoc)rehDoc.set({date:'',time:'',place:''}).catch(fail);render();return}
+  if(act==='pl-sync'){syncPlaylist(true);return}
+  if(act==='pl-edit'){ui.plEdit=true;ui.plDraft='';renderConfig();return}
+  if(act==='pl-cancel'){ui.plEdit=false;renderConfig();return}
+  if(act==='pl-save'){var pid=plIdOf(ui.plDraft);if(!pid){toast('Cole o link de uma playlist do Spotify.');return}
+    spotCfg={playlist:pid,seen:[],last:0};if(spotDoc)spotDoc.set(spotCfg).catch(fail);ui.plEdit=false;render();syncPlaylist(true);return}
   if(act==='rec-play'){recPlay(t.dataset.fid);return}
   if(act==='rec-del'){var fid=t.dataset.fid;if(ui.armDel!==fid){ui.armDel=fid;render();return}
     ui.armDel='';if(ui.playId===fid&&recAudio){recAudio.pause();ui.playId=''}
@@ -2629,6 +2678,7 @@ document.addEventListener('change',function(e){
   if(t.id==='band-logo-file'){readLogo(t.files&&t.files[0]);t.value='';return}
   if(t.id==='as'){as=t.value;try{localStorage.setItem('ce-as',as)}catch(err){}render();return}
   var f=t.dataset.f,id=t.dataset.id,sid=t.dataset.sid;if(!f)return;
+  if(f==='pldraft'){ui.plDraft=t.value;return}
   if(f==='rehdate'||f==='rehtime'||f==='rehplace'){var dr2=ui.rehDraft||(ui.rehDraft={date:'',time:'',place:''});dr2[f==='rehdate'?'date':f==='rehtime'?'time':'place']=t.value;return}
   if(f==='showdate'){saveShow({date:t.value,name:(showCfg&&showCfg.name)||''});return}
   if(f==='showname'){saveShow({date:(showCfg&&showCfg.date)||'',name:t.value.trim()});return}
@@ -2703,6 +2753,8 @@ function start(){
     if(canSync()){syncClock(6);setInterval(function(){if(!document.hidden)syncClock(4)},240000)}
     liveDoc=db.doc('config/live');
     liveDoc.onSnapshot(function(snap){live=snap.exists?snap.data():null;render()},function(){});
+    spotDoc=db.doc('config/spotify');
+    spotDoc.onSnapshot(function(snap){spotCfg=snap.exists?snap.data():null;if(editingField())softRender();else render()},function(){});
     rehDoc=db.doc('config/rehearsal');
     rehDoc.onSnapshot(function(snap){rehCfg=snap.exists?snap.data():null;if(editingField())softRender();else render()},function(){});
     actCol=db.collection('activity');

@@ -206,6 +206,9 @@ function rpc(fn,args){
     }
   };
   window.addEventListener('online',function(){flush()});
+  window.CE_PLAYLIST=function(playlist){
+    return fetch(CFG.url+'/functions/v1/spotify-playlist',{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify({band:band,playlist:playlist})}).then(function(r){return r.json()});
+  };
   setTimeout(function(){if(navigator.onLine)flush()},6000);
 })();
 function applyOp(o){

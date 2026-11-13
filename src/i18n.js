@@ -19,6 +19,15 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['↻ Atualizar playlist','↻ Update playlist','↻ Actualizar lista'],['Buscando…','Fetching…','Buscando…'],
+['Conectar playlist do Spotify','Connect a Spotify playlist','Conectar una lista de Spotify'],['Traz as músicas da playlist para o caderno','Brings the playlist songs into the notebook','Trae las canciones de la lista al cuaderno'],
+['Link da playlist do Spotify','Spotify playlist link','Enlace de la lista de Spotify'],['A playlist precisa ser pública.','The playlist must be public.','La lista debe ser pública.'],
+['Salvar e buscar','Save and fetch','Guardar y buscar'],['Atualizar músicas da playlist','Update songs from the playlist','Actualizar canciones de la lista'],['Ainda não buscou','Not fetched yet','Aún no se ha buscado'],
+['Trocar a playlist','Change the playlist','Cambiar la lista'],['Usar outra playlist pública','Use another public playlist','Usar otra lista pública'],
+['Cole o link de uma playlist do Spotify.','Paste a Spotify playlist link.','Pega el enlace de una lista de Spotify.'],
+['Nenhuma música nova na playlist.','No new songs in the playlist.','No hay canciones nuevas en la lista.'],
+['Não consegui ler a playlist agora. Confira se ela é pública e tente de novo.','Could not read the playlist right now. Check that it is public and try again.','No pude leer la lista ahora. Comprueba que sea pública e inténtalo de nuevo.'],
+['O Spotify não respondeu como esperado. Tente de novo mais tarde.','Spotify did not respond as expected. Try again later.','Spotify no respondió como se esperaba. Inténtalo más tarde.'],
 ['ou','or','o'],['Criar uma banda nova','Create a new band','Crear una banda nueva'],['Criando…','Creating…','Creando…'],
 ['Primeira vez por aqui? Crie a sua banda, cadastre o pessoal e envie o convite.','First time here? Create your band, add the members and send the invite.','¿Primera vez por aquí? Crea tu banda, añade a los integrantes y envía la invitación.'],
 ['Muitas bandas criadas deste aparelho. Tente de novo mais tarde.','Too many bands created from this device. Try again later.','Demasiadas bandas creadas desde este dispositivo. Inténtalo más tarde.'],
@@ -322,6 +331,8 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^(\d+) músicas? novas? da playlist: (.+)$/,function(m){return m[1]+(I===1?(m[1]==='1'?' new song':' new songs')+' from the playlist: ':(m[1]==='1'?' canción nueva':' canciones nuevas')+' de la lista: ')+m[2]}],
+[/^Última busca (.+?)(?: · (\d+) novas?)?$/,function(m){return (I===1?'Last fetch ':'Última búsqueda ')+m[1]+(m[2]?' · '+m[2]+(I===1?' new':(m[2]==='1'?' nueva':' nuevas')):'')}],
 [/^(.+) \/ (.+) \/ setlist \/ música$/,function(m){return m[1]+' / '+m[2]+' / setlist / '+(I===1?'song':'canción')}],
 [/^Pasta definida: (.+)$/,function(m){return (I===1?'Folder set: ':'Carpeta definida: ')+m[1]}],
 [/^Salva em setlist\/(.+)\/ no Drive da banda\.$/,function(m){return I===1?'Saved to setlist/'+m[1]+'/ in the band\'s Drive.':'Se guarda en setlist/'+m[1]+'/ en el Drive de la banda.'}],
