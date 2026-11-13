@@ -19,6 +19,12 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Avançar','Next','Continuar'],['OK','OK','OK'],
+['O que ficou pendente você pode liberar depois em Configurações → Permissões e acessos.','You can allow what is still pending later in Settings → Permissions and access.','Lo que quedó pendiente puedes permitirlo después en Ajustes → Permisos y accesos.'],
+['Remover a data do show','Remove the show date','Quitar la fecha del show'],['Confirmar: remover o show','Confirm: remove the show','Confirmar: quitar el show'],
+['Toque de novo para remover a data e o nome do show.','Tap again to remove the show date and name.','Toca de nuevo para quitar la fecha y el nombre del show.'],['Data do show removida.','Show date removed.','Fecha del show quitada.'],
+['Cancelar o ensaio','Cancel the rehearsal','Cancelar el ensayo'],['Confirmar: cancelar o ensaio','Confirm: cancel the rehearsal','Confirmar: cancelar el ensayo'],
+['Toque de novo para cancelar o ensaio.','Tap again to cancel the rehearsal.','Toca de nuevo para cancelar el ensayo.'],['Ensaio removido.','Rehearsal removed.','Ensayo quitado.'],
 ['Enviar vídeo','Upload a video','Subir vídeo'],['▶ Assistir','▶ Watch','▶ Ver'],['Ver todos','See all','Ver todos'],
 ['Envio de vídeos ligado','Video uploads on','Subida de vídeos activada'],['Só abre para a conta que conectou o Drive','Only opens for the account that connected Drive','Solo abre con la cuenta que conectó el Drive'],
 ['Criar outra pasta de vídeos','Create another videos folder','Crear otra carpeta de vídeos'],['Cria "Vídeos da banda" na raiz do Drive','Creates "Band videos" in the Drive root','Crea "Vídeos de la banda" en la raíz del Drive'],

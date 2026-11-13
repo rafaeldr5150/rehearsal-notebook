@@ -1914,7 +1914,8 @@ function countdownHTML(){
 }
 function showForm(){
   return '<label class="f" style="flex-direction:row;align-items:center;gap:8px">Data do show<input type="date" data-f="showdate" value="'+esc(showCfg&&showCfg.date||'')+'" aria-label="Data do show"></label>'+
-    '<label class="f" style="flex-direction:row;align-items:center;gap:8px">Nome do show<input type="text" style="width:200px" data-f="showname" data-fk="showname" value="'+esc(showCfg&&showCfg.name||'')+'" placeholder="Ex.: Bar do Zé" aria-label="Nome do show"></label>';
+    '<label class="f" style="flex-direction:row;align-items:center;gap:8px">Nome do show<input type="text" style="width:200px" data-f="showname" data-fk="showname" value="'+esc(showCfg&&showCfg.name||'')+'" placeholder="Ex.: Bar do Zé" aria-label="Nome do show"></label>'+
+    (showCfg&&(showCfg.date||showCfg.name)?'<button type="button" class="btn small'+(ui.armShow?' danger armed':'')+'" data-act="show-clear">'+(ui.armShow?'Confirmar: remover o show':'Remover a data do show')+'</button>':'');
 }
 function showLineHTML(){var t=showText();return t?'<div class="alert" style="border-color:var(--accent)">'+esc(t)+'</div>':''}
 
@@ -2258,7 +2259,7 @@ function renderReh(){
   el.innerHTML='<div class="reh-top"><div><small>Próximo ensaio</small><b>'+esc(line)+'</b></div><span class="reh-cnt">'+cnt+'</span></div>'+
     (nx&&i.days>=0?'<div class="reh-who">'+members().map(function(m){var n=pendNext(m.id).length;return '<span class="tag'+(n?'':' ok')+'">'+esc(first(m.name)+': '+(n?n+' a tirar':'em dia'))+'</span>'}).join('')+'</div>':
       (i.days>=0?'<p class="hint">Marque com ★ as músicas do ensaio para ver o que falta para cada um.</p>':''))+
-    '<div class="row-actions"><button type="button" class="btn small" data-act="reh-edit">Editar</button></div>';
+    '<div class="row-actions"><button type="button" class="btn small" data-act="reh-edit">Editar</button><button type="button" class="btn small'+(ui.armReh?' danger armed':'')+'" data-act="reh-remove">'+(ui.armReh?'Confirmar: cancelar o ensaio':'Cancelar o ensaio')+'</button></div>';
 }
 var TOUR_V=2;
 var TOUR=[
@@ -2316,13 +2317,15 @@ function renderSetup(){
   var drvSub=s.drive==='unsupported'?'Indisponível no momento.':'Guarda as gravações da banda no Google Drive.';
   var canMic=s.mic==='prompt',canPush=s.push==='off'&&!s.needsInstall,canDrv=s.drive==='off';
   var pending=(canMic?1:0)+(canPush?1:0)+(canDrv?1:0);
+  var granted=(s.mic==='granted'?1:0)+(s.push==='on'?1:0)+(s.drive==='on'?1:0);
   el.hidden=false;
   el.innerHTML='<div class="who-box tourbox setupbox" role="dialog" aria-label="Permissões"><h2>Deixar tudo pronto</h2><p class="hint">Libere agora o que o app vai usar, para não ser interrompido depois.</p>'+
     row('voz','Microfone',micSub,s.mic,canMic?'ask-mic':'','Permitir')+
     row('nota','Lembretes do ensaio',pushSub,s.push,canPush?'ask-push':'','Ativar')+
     row('group','Google Drive',drvSub,s.drive,canDrv?'ask-drive':'','Conectar')+
-    '<div class="row-actions" style="justify-content:center;margin-top:14px">'+(pending>1?'<button type="button" class="btn primary" data-act="ask-all">Permitir tudo</button>':'')+
-    '<button type="button" class="btn small" data-act="setup-close">'+(pending?'Agora não':'Concluir')+'</button></div></div>';
+    (pending&&granted?'<p class="hint" style="margin-top:12px">O que ficou pendente você pode liberar depois em Configurações → Permissões e acessos.</p>':'')+
+    '<div class="row-actions" style="justify-content:center;margin-top:14px">'+(pending>1?'<button type="button" class="btn'+(granted?' small':' primary')+'" data-act="ask-all">Permitir tudo</button>':'')+
+    '<button type="button" class="btn'+(granted?' primary':' small')+'" data-act="setup-close">'+(!pending?'OK':granted?'Avançar':'Agora não')+'</button></div></div>';
 }
 function setupDone(){ui.setup=false;try{localStorage.setItem('ce-setup','1')}catch(e){}renderSetup()}
 function tourEnd(){ui.tour=null;ui.tourFrom=0;try{localStorage.setItem('ce-tour',String(TOUR_V))}catch(e){}renderTour();var sd='';try{sd=localStorage.getItem('ce-setup')||''}catch(e){}if(!sd){ui.setupPending=true;render()}}
@@ -2810,6 +2813,10 @@ document.addEventListener('click',function(e){
   if(act==='reh-done'){var dd=ui.rehDraft||{};if(!dd.date||!dd.time){toast('Informe a data e a hora do ensaio.');return}
     var o3={date:dd.date,time:dd.time,place:(dd.place||'').trim()};rehCfg=o3;if(rehDoc)rehDoc.set(o3).catch(fail);ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';render();return}
   if(act==='reh-cancel'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';renderReh();return}
+  if(act==='show-clear'){if(!ui.armShow){ui.armShow=true;toast('Toque de novo para remover a data e o nome do show.');render();return}
+    ui.armShow=false;saveShow({date:'',name:''});toast('Data do show removida.');return}
+  if(act==='reh-remove'){if(!ui.armReh){ui.armReh=true;toast('Toque de novo para cancelar o ensaio.');renderReh();return}
+    ui.armReh=false;rehCfg=null;if(rehDoc)rehDoc.set({date:'',time:'',place:''}).catch(fail);toast('Ensaio removido.');render();return}
   if(act==='reh-clear'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';rehCfg=null;if(rehDoc)rehDoc.set({date:'',time:'',place:''}).catch(fail);render();return}
   if(act==='pl-sync'){syncPlaylist(true);return}
   if(act==='pl-edit'){ui.plEdit=true;ui.plDraft='';renderConfig();return}
