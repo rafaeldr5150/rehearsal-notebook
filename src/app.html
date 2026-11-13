@@ -972,6 +972,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
       <p class="sub">Progresso das músicas tiradas para o repertório da banda.</p>
     </div>
     <div class="row-actions">
+      <button type="button" class="btn" id="btn-pl" data-act="pl-sync" hidden>↻ Atualizar playlist</button>
       <a class="btn" id="hdr-pl" href="#" target="_blank" rel="noopener" hidden>Playlist no Spotify ↗</a>
       <button class="btn" id="btn-skin" type="button" title="Escolher o layout do aplicativo">Layout e idioma</button>
       <button class="btn" id="btn-bg" type="button" title="Mudar o fundo da página">Fundo</button>
@@ -1040,7 +1041,6 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
       <select id="as" aria-label="Ver como"></select>
       <div class="chips" id="filters" role="group" aria-label="Filtrar por situação"></div>
       <button type="button" class="btn small" id="btn-lyrics-all" data-act="lyrics-all" hidden></button>
-      <button type="button" class="btn small" id="btn-pl" data-act="pl-sync" hidden>↻ Atualizar playlist</button>
     </div>
 
     <div id="list"><div class="empty-state"><strong>Carregando o repertório…</strong></div></div>
@@ -1103,6 +1103,7 @@ function applySkin(){
   var c=document.body.classList;
   c.toggle('sk-est',skin==='estudio');c.toggle('sk-neo',skin==='neon'||skin==='custom');c.toggle('sk-cus',skin==='custom');applyCus();c.toggle('sk-car',skin==='cartaz');
   var bb=document.getElementById('btn-bg');if(bb)bb.hidden=skin!=='cartaz';
+  document.documentElement.classList.add('ce-ready');
   var tc=document.querySelector('meta[name=theme-color]');if(tc)tc.setAttribute('content',skin==='estudio'?'#f2f3f5':(skin==='neon'||skin==='custom')?'#08080d':'#17181a');
 }
 function setSkin(k){skin=k;try{localStorage.setItem('ce-skin',k)}catch(e){}applySkin();renderSkinPick()}
@@ -2461,7 +2462,7 @@ function render(){
   clearTimeout(renderTimer);
   onLive();renderSide();renderTabbar();renderStage();renderLivebar();renderMetrobar();
   var hp=$('#hdr-pl');if(hp){var okp=spotCfg&&spotCfg.playlist;hp.hidden=!okp;if(okp)hp.href='https://open.spotify.com/playlist/'+spotCfg.playlist}
-  var bp=$('#btn-pl');if(bp){bp.hidden=!(spotCfg&&spotCfg.playlist&&window.CE_PLAYLIST);bp.textContent=ui.plBusy?'Buscando…':'↻ Atualizar playlist';bp.disabled=!!ui.plBusy}
+  var bp=$('#btn-pl');if(bp){var hh0=location.hash,onHome=!view()&&hh0!=='#setlist'&&hh0!=='#config';bp.hidden=!(onHome&&spotCfg&&spotCfg.playlist&&window.CE_PLAYLIST);bp.textContent=ui.plBusy?'Buscando…':'↻ Atualizar playlist';bp.disabled=!!ui.plBusy}
   if(!ui.plAuto&&loaded&&band&&spotCfg&&spotCfg.playlist&&col){ui.plAuto=true;if(Date.now()-(spotCfg.last||0)>6*3600000)setTimeout(function(){syncPlaylist(false)},1500)}
   var lb=$('#btn-lyrics-all');if(lb){var nl=canFetchLyrics()?songs.filter(function(s){return !s.lyrics}).length:0;lb.hidden=!nl;lb.textContent='Buscar letras que faltam ('+nl+')'}
   var a=document.activeElement,fk=a&&a.dataset?a.dataset.fk:null,ss=null,se=null;
