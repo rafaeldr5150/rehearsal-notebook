@@ -866,6 +866,7 @@ body.sk-neo #stage{--chord:#ffb020}
 .cfg{display:flex;flex-direction:column;gap:8px;margin-top:18px}
 .cfg>h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.75;padding:0 2px}
 .cfg-row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;min-height:58px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;text-decoration:none;cursor:pointer}
+.cfg-row.static{cursor:default}
 .cfg-row .ico{flex:0 0 auto;opacity:.85}
 .cfg-row span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .cfg-row b{font-size:15px}
@@ -2176,6 +2177,23 @@ function renderTour(){
     (last?'':'<div class="row-actions" style="justify-content:center;margin-top:8px"><button type="button" class="btn small ghost" data-act="tour-skip">Pular tour</button></div>')+'</div>';
 }
 function tourEnd(){ui.tour=null;try{localStorage.setItem('ce-tour','1')}catch(e){}renderTour()}
+function refreshPush(){
+  var P=window.CE_PUSH;if(!P)return;
+  P.state().then(function(s){
+    ui.pushState=s;
+    if(s==='on'&&!ui.pushSynced){ui.pushSynced=true;P.enable(meMember).catch(function(){})}
+    if(location.hash==='#config')renderConfig();
+  });
+}
+function pushRows(row){
+  var P=window.CE_PUSH;if(!P)return '';
+  var s=ui.pushState;
+  if(P.needsInstall)return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Lembretes do ensaio</b><small>No iPhone, instale o app: Compartilhar → Adicionar à Tela de Início. Depois ative aqui.</small></span></div>';
+  if(!P.supported)return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Lembretes do ensaio</b><small>Este navegador não suporta avisos.</small></span></div>';
+  if(s==='denied')return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Lembretes do ensaio</b><small>Bloqueados. Libere as notificações deste site nas configurações do navegador.</small></span></div>';
+  if(s==='on')return row('push-off','nota','Lembretes ativados','Aviso na véspera (18h) e no dia do ensaio (8h). Toque para desativar.')+row('push-test','nota','Enviar aviso de teste','Confira se a notificação chega neste aparelho');
+  return row('push-on','nota','Ativar lembretes do ensaio','Aviso na véspera (18h) e no dia do ensaio (8h)');
+}
 function renderConfig(){
   var el=$('#cfgview');if(!el)return;
   var me=meMember&&member(meMember),sk=SKINS.filter(function(x){return x[0]===skin})[0];
@@ -2188,6 +2206,7 @@ function renderConfig(){
      (skin==='cartaz'?row('bg-cycle','list','Fundo da página',BGN[bgMode]):'')+'</section>'+
    '<section class="cfg"><h3>Banda</h3>'+row('open-band','group','Banda','Nome, logo, integrantes e convite')+
      (window.CE_STANDALONE?row('copy-invite','group','Copiar link de convite','Quem abrir esse link entra no caderno da banda.')+row('copy-code','group','Copiar código','Para quem prefere colar o código na tela de entrada.'):'')+'</section>'+
+   '<section class="cfg"><h3>Lembretes</h3>'+pushRows(row)+'</section>'+
    '<section class="cfg"><h3>Ajuda</h3>'+row('tour-open','home','Ver o tour de novo','Como o app funciona, em poucos passos')+'</section>'+
    '<section class="cfg"><h3>Repertório</h3>'+row('cfg-import','list','Importar lista de músicas','Cole uma música por linha')+
      '<a class="cfg-row" target="_blank" rel="noopener" href="https://open.spotify.com/playlist/1sq08fB986YPFkc4Kw4v5U">'+svgIco('nota',24)+'<span><b>Playlist no Spotify</b><small>Abrir a playlist da banda</small></span><i aria-hidden="true">↗</i></a>'+
@@ -2205,14 +2224,14 @@ function render(){
   var h1=document.querySelector('header h1');if(h1)h1.textContent=bandName()||'Caderno de Ensaio';
   $('#home').hidden=!!pid||isSet||isCfg;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;
   $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=true;
-  if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg)renderConfig();else renderHome();
+  if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
   renderDrawer();renderWho();renderCePick();renderStPick();
   if(!ui.tourChecked&&band&&members().length){ui.tourChecked=true;var seen='1';try{seen=localStorage.getItem('ce-tour')||''}catch(e){}if(!seen){ui.tour=0;renderTour()}}
   if(fk){var el=document.querySelector('[data-fk="'+fk+'"]');if(el){el.focus();try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
 }
 function route(){
   metStop();openId=null;taps=[];stage=null;met.delta=0;closeStageSilent();
-  window.scrollTo(0,0);render();
+  window.scrollTo(0,0);ui.pushAsked=false;render();
 }
 window.addEventListener('hashchange',route);
 document.addEventListener('pointerdown',function(){if(smOn()&&!audioReady())ensureAudio()},{passive:true});
@@ -2323,6 +2342,9 @@ document.addEventListener('click',function(e){
   if(act==='reh-edit'){ui.rehEdit=true;renderReh();return}
   if(act==='reh-done'){ui.rehEdit=false;renderReh();return}
   if(act==='reh-clear'){ui.rehEdit=false;rehCfg=null;if(rehDoc)rehDoc.set({date:'',time:'',place:''}).catch(fail);render();return}
+  if(act==='push-on'){toast('Pedindo permissão…');window.CE_PUSH.enable(meMember).then(function(){ui.pushState='on';ui.pushSynced=true;toast('Lembretes ativados.');renderConfig()}).catch(function(err){refreshPush();toast(err&&err.message==='denied'?'Permissão negada. Libere as notificações nas configurações do navegador.':'Não foi possível ativar agora. Tente de novo.')});return}
+  if(act==='push-off'){window.CE_PUSH.disable().then(function(){ui.pushState='off';toast('Lembretes desativados.');renderConfig()}).catch(function(){toast('Não foi possível desativar agora.')});return}
+  if(act==='push-test'){window.CE_PUSH.test().then(function(r){toast(r&&r.ok?'Aviso enviado. Ele deve chegar em instantes.':'Não foi possível enviar o aviso de teste.')}).catch(function(){toast('Não foi possível enviar o aviso de teste.')});return}
   if(act==='tour-open'){ui.tour=0;renderTour();return}
   if(act==='tour-next'){if(ui.tour>=TOUR.length-1)tourEnd();else{ui.tour++;renderTour()}return}
   if(act==='tour-back'){if(ui.tour>0){ui.tour--;renderTour()}return}

@@ -19,6 +19,21 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Lembretes','Reminders','Recordatorios'],['Lembretes do ensaio','Rehearsal reminders','Recordatorios del ensayo'],
+['No iPhone, instale o app: Compartilhar → Adicionar à Tela de Início. Depois ative aqui.','On iPhone, install the app first: Share → Add to Home Screen. Then turn this on here.','En iPhone, instala la app primero: Compartir → Añadir a pantalla de inicio. Luego actívalo aquí.'],
+['Este navegador não suporta avisos.','This browser does not support notifications.','Este navegador no admite avisos.'],
+['Bloqueados. Libere as notificações deste site nas configurações do navegador.','Blocked. Allow notifications for this site in your browser settings.','Bloqueados. Permite las notificaciones de este sitio en los ajustes del navegador.'],
+['Lembretes ativados','Reminders on','Recordatorios activados'],
+['Aviso na véspera (18h) e no dia do ensaio (8h). Toque para desativar.','A notice the evening before (6 pm) and the morning of (8 am). Tap to turn off.','Un aviso la víspera (18 h) y el día del ensayo (8 h). Toca para desactivar.'],
+['Enviar aviso de teste','Send a test notice','Enviar aviso de prueba'],['Confira se a notificação chega neste aparelho','Check that the notification reaches this device','Comprueba que la notificación llega a este dispositivo'],
+['Ativar lembretes do ensaio','Turn on rehearsal reminders','Activar recordatorios del ensayo'],
+['Aviso na véspera (18h) e no dia do ensaio (8h)','A notice the evening before (6 pm) and the morning of (8 am)','Un aviso la víspera (18 h) y el día del ensayo (8 h)'],
+['Pedindo permissão…','Asking for permission…','Pidiendo permiso…'],['Lembretes ativados.','Reminders turned on.','Recordatorios activados.'],['Lembretes desativados.','Reminders turned off.','Recordatorios desactivados.'],
+['Permissão negada. Libere as notificações nas configurações do navegador.','Permission denied. Allow notifications in your browser settings.','Permiso denegado. Permite las notificaciones en los ajustes del navegador.'],
+['Não foi possível ativar agora. Tente de novo.','Could not turn on right now. Try again.','No se pudo activar ahora. Inténtalo de nuevo.'],
+['Não foi possível desativar agora.','Could not turn off right now.','No se pudo desactivar ahora.'],
+['Aviso enviado. Ele deve chegar em instantes.','Notice sent. It should arrive in a moment.','Aviso enviado. Debería llegar en unos instantes.'],
+['Não foi possível enviar o aviso de teste.','Could not send the test notice.','No se pudo enviar el aviso de prueba.'],
 ['Mudar o status','Change status','Cambiar el estado'],['Como está essa música para você?','How is this song going for you?','¿Cómo va esta canción para ti?'],
 ['Não toco essa','I don\'t play this','No toco esta'],
 ['Atividade recente','Recent activity','Actividad reciente'],

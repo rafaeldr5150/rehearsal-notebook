@@ -86,6 +86,41 @@ function rpc(fn,args){
   return fetch(CFG.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify(args)})
     .then(function(r){if(!r.ok)return r.text().then(function(t){var e=new Error(t);e.status=r.status;throw e});return r.json()});
 }
+/* Lembretes do ensaio (web push). Só existe quando o navegador suporta. */
+(function(){
+  var ok='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window&&!!CFG.vapid;
+  function b64(s){var p='='.repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/')),o=new Uint8Array(r.length);for(var i=0;i<r.length;i++)o[i]=r.charCodeAt(i);return o}
+  function reg(){return navigator.serviceWorker.ready}
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent),standalone=window.matchMedia&&matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  window.CE_PUSH={
+    supported:ok,
+    needsInstall:!ok&&ios&&!standalone,
+    state:function(){
+      if(!ok)return Promise.resolve('unsupported');
+      if(Notification.permission==='denied')return Promise.resolve('denied');
+      return reg().then(function(r){return r.pushManager.getSubscription()}).then(function(s){return s?'on':'off'}).catch(function(){return 'off'});
+    },
+    enable:function(mid){
+      if(!ok)return Promise.reject(new Error('unsupported'));
+      return Notification.requestPermission().then(function(p){
+        if(p!=='granted')throw new Error('denied');
+        return reg()}).then(function(r){
+          return r.pushManager.getSubscription().then(function(s){return s||r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(CFG.vapid)})})})
+        .then(function(s){
+          var tz='';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone}catch(e){}
+          return rpc('ce_push_save',{p_band:band,p_sub:s.toJSON(),p_mid:mid||null,p_tz:tz,p_lang:window.CE_LANG||'pt'}).then(function(){return s})});
+    },
+    disable:function(){
+      return reg().then(function(r){return r.pushManager.getSubscription()}).then(function(s){
+        if(!s)return;var ep=s.endpoint;return s.unsubscribe().then(function(){return rpc('ce_push_remove',{p_band:band,p_endpoint:ep})})});
+    },
+    test:function(){
+      return reg().then(function(r){return r.pushManager.getSubscription()}).then(function(s){
+        if(!s)throw new Error('off');
+        return fetch(CFG.url+'/functions/v1/reminders',{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify({action:'test',band:band,endpoint:s.endpoint})}).then(function(r){return r.json()})});
+    }
+  };
+})();
 function applyOp(o){
   var c=cache[o.coll]||(cache[o.coll]={});
   if(o.op==='delete')delete c[o.id];

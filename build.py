@@ -26,6 +26,10 @@ ver=hashlib.sha1(html.encode()).hexdigest()[:10]
 sw='''const V="ce-%s";const CORE=["./","index.html","supabase.js","manifest.webmanifest","icon-192.png","icon-512.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener("push",e=>{let d={};try{d=e.data.json()}catch(_){}
+  e.waitUntil(self.registration.showNotification(d.title||"Caderno de Ensaio",{body:d.body||"",icon:"icon-192.png",badge:"icon-192.png",tag:d.tag,data:{url:d.url||"./"}}))});
+self.addEventListener("notificationclick",e=>{e.notification.close();
+  e.waitUntil(clients.matchAll({type:"window",includeUncached:true}).then(l=>{for(const c of l){if("focus" in c)return c.focus()}return clients.openWindow(e.notification.data.url||"./")}))});
 self.addEventListener("fetch",e=>{
   const u=new URL(e.request.url);
   if(e.request.method!=="GET"||u.origin!==location.origin)return;
