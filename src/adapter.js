@@ -309,7 +309,7 @@ function rpc(fn,args){
   function del(id){return tx('readwrite',function(s){return s.delete(id)})}
   function all(){return tx('readonly',function(s){return s.getAll()}).then(function(a){return (a||[]).filter(function(x){return x.band===band})}).catch(function(){return []})}
   function send(it,onProg){
-    return call('upload',{songId:it.songId,title:it.title,name:it.name,mime:it.mime,origin:location.origin}).then(function(r){
+    return call('upload',{songId:it.songId,title:it.title,name:it.name,mime:it.mime,origin:location.origin,kind:it.kind||''}).then(function(r){
       if(!r||!r.ok){var e=new Error(r&&r.error||'upload');e.code=r&&r.error;throw e}
       return new Promise(function(res,rej){
         var x=new XMLHttpRequest();x.open('PUT',r.url);x.setRequestHeader('Content-Type',it.mime);
@@ -331,6 +331,10 @@ function rpc(fn,args){
     connect:function(){location.href=FN+'?start=1&band='+encodeURIComponent(band)+'&ret='+encodeURIComponent(location.origin)},
     disconnect:function(){return call('disconnect')},
     list:function(songId){return call('list',{songId:songId})},
+    listVideos:function(){return call('list',{kind:'video'})},
+    createVideos:function(){return call('videos-create')},
+    clearVideos:function(){return call('clear-videos')},
+    streamUrl:function(id){return call('picker-token').then(function(t){if(!t||!t.ok)throw new Error('token');return 'https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(id)+'?alt=media&access_token='+encodeURIComponent(t.token)})},
     remove:function(fileId){return call('delete',{fileId:fileId})},
     blob:function(fileId){
       return call('picker-token').then(function(t){
@@ -339,7 +343,7 @@ function rpc(fn,args){
       }).then(function(r){if(!r.ok)throw new Error('get '+r.status);return r.blob()});
     },
     canPick:!!CFG.pickerKey,
-    pickFolder:function(){
+    pickFolder:function(target){
       var cur=null;
       function loadGapi(){return new Promise(function(res,rej){
         if(window.gapi&&window.google&&window.google.picker)return res();
@@ -353,7 +357,7 @@ function rpc(fn,args){
           var view=new google.picker.DocsView(google.picker.ViewId.FOLDERS).setSelectFolderEnabled(true).setIncludeFolders(true).setMimeTypes('application/vnd.google-apps.folder');
           cur=new google.picker.PickerBuilder().addView(view).setOAuthToken(t.token).setDeveloperKey(CFG.pickerKey).setAppId(t.appId).setLocale(window.CE_LANG||'pt')
             .setCallback(function(d){
-              if(d.action==='picked'&&d.docs&&d.docs[0])res(call('set-folder',{folderId:d.docs[0].id}));
+              if(d.action==='picked'&&d.docs&&d.docs[0])res(call(target==='videos'?'set-videos':'set-folder',{folderId:d.docs[0].id}));
               else if(d.action==='cancel')res({cancelled:true});
             }).build();cur.setVisible(true);
           window.CE_DRIVE.cancelPick=function(){try{cur.setVisible(false);cur.dispose()}catch(e){}res({cancelled:true})};
@@ -363,8 +367,9 @@ function rpc(fn,args){
     pending:function(){return all().then(function(l){return l.length})},
     flush:flush,
     upload:function(blob,meta,onProg){
-      var it={id:Math.random().toString(36).slice(2)+Date.now(),band:band,songId:meta.songId,title:meta.title,name:meta.name,mime:meta.mime,blob:blob,at:Date.now()};
+      var it={id:Math.random().toString(36).slice(2)+Date.now(),band:band,songId:meta.songId,title:meta.title,name:meta.name,mime:meta.mime,kind:meta.kind||'',blob:blob,at:Date.now()};
       return send(it,onProg).then(function(f){return {sent:true,file:f}},function(e){
+        if(meta.noQueue)throw e;
         return put(it).then(function(){return {sent:false,queued:true,error:e&&e.code}},function(){throw e});
       });
     }

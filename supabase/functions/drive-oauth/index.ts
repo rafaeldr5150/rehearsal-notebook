@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
   if (!(await bandOk(b.band))) return J({ ok: false, error: "band" }, 404);
   const { data: row } = await sb.from("ce_drive").select("*").eq("band", b.band).maybeSingle();
 
-  if (b.action === "status") return J({ ok: true, connected: !!row, email: row?.email || "", folder: row?.folder_id || "", root: row?.root_name || "", configured: !!(CLIENT_ID && CLIENT_SECRET) });
+  if (b.action === "status") return J({ ok: true, connected: !!row, email: row?.email || "", folder: row?.folder_id || "", root: row?.root_name || "", videos: row?.videos_id || "", videosName: row?.videos_name || "", configured: !!(CLIENT_ID && CLIENT_SECRET) });
   if (!row) return J({ ok: false, error: "not_connected" }, 409);
 
   // Short-lived token (drive.file only) so the browser can open Google Picker for the connected account.
@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
   // Recordings of one song (only inside this band's song folder).
   if (b.action === "list") {
     try {
-      const sf = (row.folders || {})[b.songId];
+      const sf = b.kind === "video" ? row.videos_id : (row.folders || {})[b.songId];
       if (!sf) return J({ ok: true, files: [] });
       const tok = await accessToken(row);
       const q = encodeURIComponent(`'${sf}' in parents and trashed=false`);
@@ -135,11 +135,35 @@ Deno.serve(async (req) => {
     try {
       const tok = await accessToken(row);
       const g = await gj(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(String(b.fileId))}?fields=id,parents`, tok);
-      const mine = new Set(Object.values(row.folders || {}));
+      const mine = new Set([...Object.values(row.folders || {}), row.videos_id].filter(Boolean));
       if (g.status !== 200 || !(g.data.parents || []).some((p: string) => mine.has(p))) return J({ ok: false, error: "not_found" }, 404);
       const u = await gj(`https://www.googleapis.com/drive/v3/files/${g.data.id}`, tok, { method: "PATCH", body: JSON.stringify({ trashed: true }) });
       return J({ ok: u.status === 200 });
     } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
+  }
+
+  // Band videos folder: create one in the Drive root, or use the folder picked in Google Picker.
+  if (b.action === "videos-create") {
+    try {
+      const tok = await accessToken(row);
+      const id = await mkFolder(tok, "Vídeos da banda");
+      await sb.from("ce_drive").update({ videos_id: id, videos_name: "Vídeos da banda" }).eq("band", b.band);
+      return J({ ok: true, folder: id, name: "Vídeos da banda" });
+    } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
+  }
+  if (b.action === "set-videos") {
+    try {
+      const tok = await accessToken(row);
+      const g = await gj(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(String(b.folderId))}?fields=id,name,mimeType,trashed,capabilities(canAddChildren)`, tok);
+      if (g.status !== 200 || g.data.mimeType !== "application/vnd.google-apps.folder" || g.data.trashed) return J({ ok: false, error: "folder" }, 400);
+      if (g.data.capabilities && g.data.capabilities.canAddChildren === false) return J({ ok: false, error: "readonly" }, 403);
+      await sb.from("ce_drive").update({ videos_id: g.data.id, videos_name: g.data.name }).eq("band", b.band);
+      return J({ ok: true, folder: g.data.id, name: g.data.name });
+    } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
+  }
+  if (b.action === "clear-videos") {
+    await sb.from("ce_drive").update({ videos_id: "", videos_name: "" }).eq("band", b.band);
+    return J({ ok: true });
   }
 
   if (b.action === "disconnect") {
@@ -152,11 +176,17 @@ Deno.serve(async (req) => {
     if (!ORIGINS.includes(b.origin)) return J({ ok: false, error: "origin" }, 400);
     try {
       const tok = await accessToken(row);
-      let setlist = row.folder_id, folders: Record<string, string> = row.folders || {};
-      if (!(await alive(tok, setlist))) { setlist = await mkFolder(tok, "setlist"); folders = {}; }
-      let sf = folders[b.songId];
-      if (!sf || !(await alive(tok, sf))) { sf = await mkFolder(tok, clean(b.title), setlist); folders[b.songId] = sf; }
-      await sb.from("ce_drive").update({ folder_id: setlist, folders }).eq("band", b.band);
+      let sf = "";
+      if (b.kind === "video") {
+        if (!row.videos_id || !(await alive(tok, row.videos_id))) return J({ ok: false, error: "videos_missing" }, 409);
+        sf = row.videos_id;
+      } else {
+        let setlist = row.folder_id, folders: Record<string, string> = row.folders || {};
+        if (!(await alive(tok, setlist))) { setlist = await mkFolder(tok, "setlist"); folders = {}; }
+        sf = folders[b.songId];
+        if (!sf || !(await alive(tok, sf))) { sf = await mkFolder(tok, clean(b.title), setlist); folders[b.songId] = sf; }
+        await sb.from("ce_drive").update({ folder_id: setlist, folders }).eq("band", b.band);
+      }
       const mime = String(b.mime || "application/octet-stream").slice(0, 80);
       const init = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,webViewLink", {
         method: "POST",

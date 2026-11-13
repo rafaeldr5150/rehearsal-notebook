@@ -935,6 +935,12 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 .acc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .acc-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line)}
 .acc-meta{display:flex;flex-direction:column;min-width:0}.acc-meta b{font-size:14px}.acc-meta small{opacity:.7;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.vid-box{display:flex;flex-direction:column;gap:8px}
+#watch{position:fixed;inset:0;z-index:41;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.88);padding:14px}
+.watch-box{width:min(900px,100%);display:flex;flex-direction:column;gap:10px;color:#fff}
+.watch-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.watch-top b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.watch-box video{width:100%;max-height:70vh;background:#000;border-radius:12px}
 .folders{display:flex;flex-direction:column;gap:10px}
 .folders:empty{display:none}
 .folders h3{font-size:14px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
@@ -1065,6 +1071,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
 <div id="tour" hidden></div>
 <div id="setup" hidden></div>
 <div id="install" hidden></div>
+<div id="watch" hidden></div>
 <div id="skinpick" hidden></div>
 <div id="drawer-bg" data-act="drawer-close" hidden></div>
 <div id="drawer" hidden></div>
@@ -2433,6 +2440,20 @@ function filesBlock(s){
   else body='<div class="row-actions"><button type="button" class="btn small primary" data-act="file-pick" data-id="'+id+'">Enviar arquivo</button></div><p class="hint">PDF, cifra, partitura, imagem… vai para a pasta setlist/'+esc(s.title||'Sem título')+'/ no Drive.</p>';
   return '<div class="block rec"><h3>Arquivos</h3>'+body+recListHTML(s,'file')+'</div>';
 }
+var videoInp=document.createElement('input');videoInp.type='file';videoInp.accept='video/*';videoInp.multiple=true;videoInp.hidden=true;document.body.appendChild(videoInp);
+videoInp.onchange=function(){
+  var files=Array.prototype.slice.call(videoInp.files||[]);videoInp.value='';
+  if(!files.length||!window.CE_DRIVE)return;
+  var LIM=1024*1048576,big=files.filter(function(f){return f.size>LIM});
+  if(big.length){toast('Vídeo muito grande (máximo 1 GB): '+big[0].name);files=files.filter(function(f){return f.size<=LIM});if(!files.length)return}
+  var ok=0,msg='';
+  files.reduce(function(pr,f,i){return pr.then(function(){
+    ui.vup={name:f.name,i:i+1,n:files.length,p:0};render();
+    return window.CE_DRIVE.upload(f,{kind:'video',songId:'',title:'',name:f.name,mime:f.type||'video/mp4',noQueue:true},function(p){ui.vup.p=p;var e=document.querySelector('.vup-prog');if(e)e.textContent=Math.round(p*100)+'%'}).then(function(){ok++});
+  })},Promise.resolve()).catch(function(e){msg=e&&e.code==='videos_missing'?'A pasta de vídeos não existe mais. Defina de novo em Configurações.':'Não foi possível enviar o vídeo. Confira a internet e tente de novo.'}).then(function(){
+    ui.vup=null;ui.vidFiles=undefined;toast(msg||(ok+(ok===1?' vídeo enviado para o Drive.':' vídeos enviados para o Drive.')));render();
+  });
+};
 var fileInp=document.createElement('input');fileInp.type='file';fileInp.multiple=true;fileInp.hidden=true;document.body.appendChild(fileInp);
 fileInp.onchange=function(){
   var id=ui.fupSong,s=get(id),files=Array.prototype.slice.call(fileInp.files||[]);fileInp.value='';
@@ -2461,7 +2482,7 @@ function driveRows(row){
   return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Drive conectado</b><small>'+esc(d.email||'')+'</small></span></div>'+
     '<div class="cfg-row static">'+svgIco('list',24)+'<span><b>Onde as gravações ficam</b><small>'+(d.root?esc(d.root)+' / '+esc(bandName()||'Banda')+' / setlist / música':'setlist / música (na raiz do Drive)')+'</small></span></div>'+
     (window.CE_DRIVE.canPick?(installEnv().ios?'<div class="cfg-row static">'+svgIco('list',24)+'<span><b>Escolher outra pasta</b><small>No iPhone o Google costuma bloquear a janela de escolha (cookies do Safari). Faça pelo computador ou por um Android. Ou, no app Google Drive, mova a pasta setlist para onde quiser: o app continua usando a mesma pasta depois de movida.</small></span></div>'+row('drive-pick','list',ui.pickBusy?'Abrindo o Google…':'Tentar mesmo assim','Se a janela do Google der erro, toque em Cancelar'):row('drive-pick','list',ui.pickBusy?'Abrindo o Google…':'Escolher pasta do Drive','A pasta da banda vai ficar dentro dela, com a pasta setlist e uma pasta por música')):'')+
-    '<a class="cfg-row" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/'+esc(d.folder)+'">'+svgIco('list',24)+'<span><b>Abrir a pasta setlist</b><small>Só abre para a conta que conectou. Compartilhe a pasta com a banda no Drive.</small></span><i aria-hidden="true">↗</i></a>'+
+    '<a class="cfg-row" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/'+esc(d.folder)+'">'+svgIco('list',24)+'<span><b>Abrir a pasta das gravações</b><small>Só abre para a conta que conectou. Compartilhe a pasta com a banda no Drive.</small></span><i aria-hidden="true">↗</i></a>'+
     row('drive-connect','nota',ui.armDrive==='c'?'Confirmar: trocar a conta':'Trocar a conta do Drive','As próximas gravações vão para a nova conta')+
     row('drive-off','nota',ui.armDrive==='d'?'Confirmar: desconectar':'Desconectar o Drive','As gravações já enviadas continuam no Drive')+pend;
 }
@@ -2490,22 +2511,54 @@ function installEnv(){
   var samsung=/samsungbrowser/i.test(ua);
   return {ios:ios,and:and,mobile:ios||and,standalone:standalone,safari:safari,samsung:samsung,prompt:!!window.__ceInstall};
 }
-function vidUrl(){var u=linksCfg&&linksCfg.videos;return /^https:\/\//.test(u||'')?u:''}
+function vidUrl(){var d=ui.drive;if(d&&d.connected&&d.videos)return 'https://drive.google.com/drive/folders/'+d.videos;var u=linksCfg&&linksCfg.videos;return /^https:\/\//.test(u||'')?u:''}
 function setlistUrl(){var d=ui.drive;return d&&d.connected&&d.folder?'https://drive.google.com/drive/folders/'+d.folder:''}
+function renderWatch(){
+  var el=$('#watch');if(!el)return;
+  if(!ui.watch){el.hidden=true;el.innerHTML='';return}
+  el.hidden=false;
+  el.innerHTML='<div class="watch-box" role="dialog" aria-label="Vídeo"><div class="watch-top"><b>'+esc(ui.watch.name)+'</b><button type="button" class="btn small" data-act="watch-close">Fechar</button></div><video controls autoplay playsinline src="'+esc(ui.watch.url)+'"></video><p class="hint">Se o vídeo não tocar neste aparelho, abra pelo Drive.</p></div>';
+}
+function ensureVidList(){
+  if(ui.vidFiles!==undefined||ui.vidLoad)return;
+  ui.vidLoad=true;
+  window.CE_DRIVE.listVideos().then(function(r){ui.vidFiles=r&&r.ok?r.files:[]}).catch(function(){ui.vidFiles=null}).then(function(){ui.vidLoad=false;render()});
+}
 function renderFolders(){
   var el=$('#folders');if(!el)return;
-  var s=setlistUrl(),v=vidUrl(),h='';
-  if(s)h+='<a class="btn" target="_blank" rel="noopener" href="'+esc(s)+'">📁 Pasta do setlist ↗</a>';
+  var d=ui.drive,s=setlistUrl(),v=vidUrl(),h='',extra='';
+  if(s)h+='<a class="btn" target="_blank" rel="noopener" href="'+esc(s)+'">📁 Pasta das gravações ↗</a>';
   h+=v?'<a class="btn" target="_blank" rel="noopener" href="'+esc(v)+'">🎬 Vídeos da banda ↗</a>':'<a class="btn" href="#config" data-act="vid-define">🎬 Definir a pasta de vídeos</a>';
   el.hidden=!(window.CE_DRIVE||v);
   if(el.hidden){el.innerHTML='';return}
-  el.innerHTML='<h3>Pastas da banda</h3><div class="row-actions">'+h+'</div>';
+  if(window.CE_DRIVE&&d&&d.connected&&d.videos){
+    ensureVidList();
+    var u=ui.vup,l=ui.vidFiles;
+    extra='<div class="vid-box">'+(u?'<p class="hint">Enviando '+esc(u.name)+' ('+u.i+' de '+u.n+')… <span class="vup-prog mono">'+Math.round(u.p*100)+'%</span></p>':'<div class="row-actions"><button type="button" class="btn small primary" data-act="vid-upload">Enviar vídeo</button></div>');
+    if(l===null)extra+='<p class="hint">Não foi possível carregar a lista agora.</p>';
+    else if(l&&l.length)extra+='<ul class="rec-list">'+l.slice(0,ui.vidAll?50:5).map(function(f){var arm=ui.armDel===f.id;
+      return '<li><div class="rec-meta"><b>'+esc(f.name)+'</b><small>'+esc(f.createdTime?new Date(f.createdTime).toLocaleDateString(window.CE_LOCALE||'pt-BR'):'')+(f.size?' · '+fileSize(f.size):'')+'</small></div><div class="row-actions"><button type="button" class="btn small primary" data-act="vid-watch" data-fid="'+f.id+'" data-name="'+esc(f.name)+'">'+(ui.watchLoad===f.id?'Carregando…':'▶ Assistir')+'</button>'+
+        '<button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="vid-del" data-fid="'+f.id+'">'+(arm?'Confirmar: apagar':'Apagar')+'</button>'+(f.webViewLink?'<a class="btn small" target="_blank" rel="noopener" href="'+esc(f.webViewLink)+'">Drive ↗</a>':'')+'</div></li>'}).join('')+'</ul>'+(l.length>5&&!ui.vidAll?'<div class="row-actions"><button type="button" class="btn small" data-act="vid-all">Ver todos ('+l.length+')</button></div>':'');
+    extra+='</div>';
+  }
+  el.innerHTML='<h3>Pastas da banda</h3><div class="row-actions">'+h+'</div>'+extra;
 }
 function videoRows(row){
+  var d=ui.drive,api='';
+  if(window.CE_DRIVE&&d&&d.connected){
+    if(d.videos)api='<div class="cfg-row static">'+svgIco('list',24)+'<span><b>Envio de vídeos ligado</b><small>Pasta: '+esc(d.videosName||'Vídeos')+'</small></span></div>'+
+      '<a class="cfg-row" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/'+esc(d.videos)+'">'+svgIco('list',24)+'<span><b>Abrir a pasta de vídeos</b><small>Só abre para a conta que conectou o Drive</small></span><i aria-hidden="true">↗</i></a>'+
+      row('vid-create','list','Criar outra pasta de vídeos','Cria "Vídeos da banda" na raiz do Drive')+
+      (window.CE_DRIVE.canPick&&!installEnv().ios?row('vid-pick-folder','list','Escolher outra pasta existente','Pelo seletor do Google'):'')+
+      row('vid-api-clear','list','Parar de enviar vídeos pelo app','Os vídeos já enviados continuam no Drive');
+    else api=row('vid-create','list','Criar a pasta de vídeos no Drive','Cria "Vídeos da banda" na raiz do Drive. Permite enviar vídeos pelo app e funciona no iPhone.')+
+      (window.CE_DRIVE.canPick&&!installEnv().ios?row('vid-pick-folder','list','Escolher uma pasta existente','Pelo seletor do Google (computador ou Android)'):'');
+    if(d.videos)return api;
+  }
   if(ui.vidEdit)return '<div class="cfg-edit"><label class="f">Link da pasta de vídeos<input type="text" data-f="viddraft" data-fk="viddraft" value="'+esc(ui.vidDraft||'')+'" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off" aria-label="Link da pasta de vídeos"></label><p class="hint">Abra a pasta no Google Drive, toque em Compartilhar → Copiar link e cole aqui. Quem for abrir precisa ter acesso à pasta.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="vid-save">Salvar</button><button type="button" class="btn small" data-act="vid-cancel">Cancelar</button></div></div>';
   var v=vidUrl();
-  if(!v)return row('vid-edit','list','Definir a pasta de vídeos','Cole o link de uma pasta do Drive com os vídeos da banda');
-  return '<a class="cfg-row" target="_blank" rel="noopener" href="'+esc(v)+'">'+svgIco('list',24)+'<span><b>Abrir a pasta de vídeos</b><small>'+esc(v.replace(/^https:\/\//,'').slice(0,48))+'</small></span><i aria-hidden="true">↗</i></a>'+row('vid-edit','list','Trocar a pasta de vídeos','Colar outro link')+row('vid-clear','list','Remover a pasta de vídeos','Tira o atalho da tela Geral');
+  if(!v)return api+row('vid-edit','list','Só guardar um link da pasta','Cole o link de uma pasta do Drive. Serve só como atalho, sem envio pelo app');
+  return api+'<a class="cfg-row" target="_blank" rel="noopener" href="'+esc(v)+'">'+svgIco('list',24)+'<span><b>Abrir a pasta de vídeos</b><small>'+esc(v.replace(/^https:\/\//,'').slice(0,48))+'</small></span><i aria-hidden="true">↗</i></a>'+row('vid-edit','list','Trocar a pasta de vídeos','Colar outro link')+row('vid-clear','list','Remover a pasta de vídeos','Tira o atalho da tela Geral');
 }
 function renderInstallBar(){
   var el=$('#installbar');if(!el)return;
@@ -2591,7 +2644,7 @@ function render(){
   $('#home').hidden=!!pid||isSet||isCfg;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;
   $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=true;
   if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
-  renderDrawer();renderWho();renderCePick();renderStPick();renderInstall();
+  renderDrawer();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();
   if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
   if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
     try{var qs=new URLSearchParams(location.search),dv=qs.get('drive');if(dv){var M={ok:'Google Drive conectado!',denied:'Conexão cancelada.',err:'Não foi possível conectar o Drive. Tente de novo.',nosecret:'O Drive ainda não está configurado no servidor.'};toast(M[dv]||'');qs.delete('drive');history.replaceState(null,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}}catch(e){}}
@@ -2752,6 +2805,21 @@ document.addEventListener('click',function(e){
   if(act==='rec-stop'){recStop(false);return}
   if(act==='rec-cancel'){recStop(true);return}
   if(act==='rec-flush'){toast('Enviando…');window.CE_DRIVE.flush().then(function(n){ui.recPending=n;toast(n?'Ainda há '+n+' aguardando. Tente de novo com internet.':'Tudo enviado.');render()});return}
+  if(act==='vid-upload'){videoInp.click();return}
+  if(act==='vid-all'){ui.vidAll=true;render();return}
+  if(act==='vid-watch'){var wf=t.dataset.fid,wn=t.dataset.name;if(ui.watchLoad)return;ui.watchLoad=wf;render();
+    window.CE_DRIVE.streamUrl(wf).then(function(u){ui.watch={url:u,name:wn};renderWatch()}).catch(function(){toast('Não foi possível abrir o vídeo. Tente pelo Drive.')}).then(function(){ui.watchLoad='';render()});return}
+  if(act==='watch-close'){ui.watch=null;renderWatch();return}
+  if(act==='vid-del'){var vf=t.dataset.fid;if(ui.armDel!==vf){ui.armDel=vf;render();return}
+    ui.armDel='';window.CE_DRIVE.remove(vf).then(function(r){if(r&&r.ok){toast('Vídeo apagado. Ele foi para a lixeira do Drive.');ui.vidFiles=undefined}else toast('Não foi possível apagar agora.');render()}).catch(function(){toast('Não foi possível apagar agora.');render()});return}
+  if(act==='vid-create'){toast('Criando a pasta…');window.CE_DRIVE.createVideos().then(function(r){if(r&&r.ok){ui.vidFiles=undefined;toast('Pasta de vídeos criada no seu Drive.');refreshDrive()}else toast('Não foi possível criar a pasta agora.')}).catch(function(){toast('Não foi possível criar a pasta agora.')});return}
+  if(act==='vid-api-clear'){window.CE_DRIVE.clearVideos().then(function(){ui.vidFiles=undefined;toast('Envio de vídeos desligado.');refreshDrive()});return}
+  if(act==='vid-pick-folder'){if(ui.pickBusy)return;ui.pickBusy=true;
+    var pc2=document.createElement('button');pc2.id='pick-cancel';pc2.type='button';pc2.className='btn danger';pc2.dataset.act='pick-cancel';pc2.textContent='Cancelar';pc2.style.cssText='position:fixed;top:12px;right:12px;z-index:2147483000';document.body.appendChild(pc2);
+    window.CE_DRIVE.pickFolder('videos').then(function(r){ui.pickBusy=false;var pb=document.getElementById('pick-cancel');if(pb)pb.remove();if(r&&r.cancelled){renderConfig();return}
+      if(r&&r.ok){ui.vidFiles=undefined;toast('Pasta de vídeos definida: '+r.name);refreshDrive()}
+      else toast(r&&r.error==='readonly'?'Você não tem permissão para criar arquivos nessa pasta.':'Não foi possível usar essa pasta. Tente outra.');renderConfig()
+    }).catch(function(){ui.pickBusy=false;var pb=document.getElementById('pick-cancel');if(pb)pb.remove();toast('Não foi possível abrir a escolha de pasta do Google.');renderConfig()});return}
   if(act==='vid-define'){e.preventDefault();location.hash='#config';ui.vidEdit=true;ui.vidDraft='';return}
   if(act==='vid-edit'){ui.vidEdit=true;ui.vidDraft=vidUrl();renderConfig();return}
   if(act==='vid-cancel'){ui.vidEdit=false;renderConfig();return}

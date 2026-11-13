@@ -19,7 +19,24 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
-['Pastas da banda','Band folders','Carpetas de la banda'],['📁 Pasta do setlist ↗','📁 Setlist folder ↗','📁 Carpeta del setlist ↗'],['🎬 Vídeos da banda ↗','🎬 Band videos ↗','🎬 Vídeos de la banda ↗'],['🎬 Definir a pasta de vídeos','🎬 Set the videos folder','🎬 Definir la carpeta de vídeos'],
+['Enviar vídeo','Upload a video','Subir vídeo'],['▶ Assistir','▶ Watch','▶ Ver'],['Ver todos','See all','Ver todos'],
+['Envio de vídeos ligado','Video uploads on','Subida de vídeos activada'],['Só abre para a conta que conectou o Drive','Only opens for the account that connected Drive','Solo abre con la cuenta que conectó el Drive'],
+['Criar outra pasta de vídeos','Create another videos folder','Crear otra carpeta de vídeos'],['Cria "Vídeos da banda" na raiz do Drive','Creates "Band videos" in the Drive root','Crea "Vídeos de la banda" en la raíz del Drive'],
+['Escolher outra pasta existente','Choose another existing folder','Elegir otra carpeta existente'],['Pelo seletor do Google','With Google\'s picker','Con el selector de Google'],
+['Parar de enviar vídeos pelo app','Stop uploading videos from the app','Dejar de subir vídeos desde la app'],['Os vídeos já enviados continuam no Drive','Videos already sent stay in Drive','Los vídeos ya enviados siguen en el Drive'],
+['Criar a pasta de vídeos no Drive','Create the videos folder in Drive','Crear la carpeta de vídeos en el Drive'],
+['Cria "Vídeos da banda" na raiz do Drive. Permite enviar vídeos pelo app e funciona no iPhone.','Creates "Band videos" in the Drive root. Lets you upload videos from the app and works on iPhone.','Crea "Vídeos de la banda" en la raíz del Drive. Permite subir vídeos desde la app y funciona en iPhone.'],
+['Escolher uma pasta existente','Choose an existing folder','Elegir una carpeta existente'],['Pelo seletor do Google (computador ou Android)','With Google\'s picker (computer or Android)','Con el selector de Google (ordenador o Android)'],
+['Só guardar um link da pasta','Just save a folder link','Solo guardar un enlace de la carpeta'],['Cole o link de uma pasta do Drive. Serve só como atalho, sem envio pelo app','Paste a Drive folder link. It is only a shortcut, with no upload from the app','Pega el enlace de una carpeta del Drive. Sirve solo como atajo, sin subida desde la app'],
+['Vídeo apagado. Ele foi para a lixeira do Drive.','Video deleted. It went to the Drive trash.','Vídeo borrado. Fue a la papelera del Drive.'],['Criando a pasta…','Creating the folder…','Creando la carpeta…'],
+['Pasta de vídeos criada no seu Drive.','Videos folder created in your Drive.','Carpeta de vídeos creada en tu Drive.'],['Não foi possível criar a pasta agora.','Could not create the folder right now.','No se pudo crear la carpeta ahora.'],
+['Envio de vídeos desligado.','Video uploads turned off.','Subida de vídeos desactivada.'],
+['Você não tem permissão para criar arquivos nessa pasta.','You don\'t have permission to create files in that folder.','No tienes permiso para crear archivos en esa carpeta.'],
+['Não foi possível abrir o vídeo. Tente pelo Drive.','Could not open the video. Try it in Drive.','No se pudo abrir el vídeo. Prueba desde el Drive.'],
+['Se o vídeo não tocar neste aparelho, abra pelo Drive.','If the video does not play on this device, open it in Drive.','Si el vídeo no se reproduce en este dispositivo, ábrelo desde el Drive.'],
+['A pasta de vídeos não existe mais. Defina de novo em Configurações.','The videos folder no longer exists. Set it again in Settings.','La carpeta de vídeos ya no existe. Defínela de nuevo en Ajustes.'],
+['Não foi possível enviar o vídeo. Confira a internet e tente de novo.','Could not upload the video. Check your internet and try again.','No se pudo subir el vídeo. Revisa internet e inténtalo de nuevo.'],
+['Pastas da banda','Band folders','Carpetas de la banda'],['📁 Pasta das gravações ↗','📁 Recordings folder ↗','📁 Carpeta de grabaciones ↗'],['🎬 Vídeos da banda ↗','🎬 Band videos ↗','🎬 Vídeos de la banda ↗'],['🎬 Definir a pasta de vídeos','🎬 Set the videos folder','🎬 Definir la carpeta de vídeos'],
 ['Vídeos da banda','Band videos','Vídeos de la banda'],['Link da pasta de vídeos','Videos folder link','Enlace de la carpeta de vídeos'],
 ['Abra a pasta no Google Drive, toque em Compartilhar → Copiar link e cole aqui. Quem for abrir precisa ter acesso à pasta.','Open the folder in Google Drive, tap Share → Copy link and paste it here. Anyone opening it needs access to the folder.','Abre la carpeta en Google Drive, toca Compartir → Copiar enlace y pégalo aquí. Quien la abra necesita acceso a la carpeta.'],
 ['Definir a pasta de vídeos','Set the videos folder','Definir la carpeta de vídeos'],['Cole o link de uma pasta do Drive com os vídeos da banda','Paste the link of a Drive folder with the band\'s videos','Pega el enlace de una carpeta del Drive con los vídeos de la banda'],
@@ -139,7 +156,7 @@ var D=[
 ['Tudo enviado.','All sent.','Todo enviado.'],
 ['Google Drive','Google Drive','Google Drive'],['Drive conectado','Drive connected','Drive conectado'],['Sem conexão agora.','Offline right now.','Sin conexión ahora.'],['Indisponível no momento.','Unavailable right now.','No disponible por ahora.'],
 ['Conectar Google Drive','Connect Google Drive','Conectar Google Drive'],['Grave as músicas e salve direto no Drive da banda','Record songs and save straight to the band\'s Drive','Graba las canciones y guárdalas directo en el Drive de la banda'],
-['Abrir a pasta setlist','Open the setlist folder','Abrir la carpeta setlist'],['Só abre para a conta que conectou. Compartilhe a pasta com a banda no Drive.','Only opens for the account that connected it. Share the folder with the band in Drive.','Solo abre con la cuenta que lo conectó. Comparte la carpeta con la banda en Drive.'],
+['Abrir a pasta das gravações','Open the recordings folder','Abrir la carpeta de grabaciones'],['Só abre para a conta que conectou. Compartilhe a pasta com a banda no Drive.','Only opens for the account that connected it. Share the folder with the band in Drive.','Solo abre con la cuenta que lo conectó. Comparte la carpeta con la banda en Drive.'],
 ['Trocar a conta do Drive','Switch the Drive account','Cambiar la cuenta del Drive'],['Confirmar: trocar a conta','Confirm: switch account','Confirmar: cambiar la cuenta'],['As próximas gravações vão para a nova conta','Future recordings go to the new account','Las próximas grabaciones irán a la nueva cuenta'],
 ['Desconectar o Drive','Disconnect Drive','Desconectar el Drive'],['Confirmar: desconectar','Confirm: disconnect','Confirmar: desconectar'],['As gravações já enviadas continuam no Drive','Recordings already sent stay in Drive','Las grabaciones ya enviadas siguen en el Drive'],
 ['Toque para enviar agora','Tap to send now','Toca para enviar ahora'],
@@ -394,6 +411,11 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^Pasta: (.+)$/,function(m){return (I===1?'Folder: ':'Carpeta: ')+m[1]}],
+[/^Pasta de vídeos definida: (.+)$/,function(m){return (I===1?'Videos folder set: ':'Carpeta de vídeos definida: ')+m[1]}],
+[/^Vídeo muito grande \(máximo 1 GB\): (.+)$/,function(m){return (I===1?'Video too large (max 1 GB): ':'Vídeo demasiado grande (máx. 1 GB): ')+m[1]}],
+[/^Ver todos \((\d+)\)$/,function(m){return (I===1?'See all (':'Ver todos (')+m[1]+')'}],
+[/^(\d+) vídeos? enviados? para o Drive\.$/,function(m){return I===1?m[1]+(m[1]==='1'?' video sent to Drive.':' videos sent to Drive.'):m[1]+(m[1]==='1'?' vídeo enviado al Drive.':' vídeos enviados al Drive.')}],
 [/^PDF, cifra, partitura, imagem… vai para a pasta setlist\/(.+)\/ no Drive\.$/,function(m){return I===1?'PDF, chart, score, image… goes to the setlist/'+m[1]+'/ folder in Drive.':'PDF, cifra, partitura, imagen… va a la carpeta setlist/'+m[1]+'/ en el Drive.'}],
 [/^Enviando (.+) \((\d+) de (\d+)\)… (.+)$/,function(m){return (I===1?'Sending ':'Enviando ')+m[1]+' ('+m[2]+(I===1?' of ':' de ')+m[3]+')… '+m[4]}],
 [/^Arquivo muito grande \(máximo 150 MB\): (.+)$/,function(m){return (I===1?'File too large (max 150 MB): ':'Archivo demasiado grande (máx. 150 MB): ')+m[1]}],
