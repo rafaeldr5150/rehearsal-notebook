@@ -118,6 +118,30 @@ Deno.serve(async (req) => {
     } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
   }
 
+  // Recordings of one song (only inside this band's song folder).
+  if (b.action === "list") {
+    try {
+      const sf = (row.folders || {})[b.songId];
+      if (!sf) return J({ ok: true, files: [] });
+      const tok = await accessToken(row);
+      const q = encodeURIComponent(`'${sf}' in parents and trashed=false`);
+      const r = await gj(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=createdTime desc&pageSize=50&fields=files(id,name,mimeType,size,createdTime,webViewLink)`, tok);
+      if (r.status === 404) return J({ ok: true, files: [] });
+      return J({ ok: r.status === 200, files: r.data.files || [] });
+    } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
+  }
+  // Move one recording to the Drive trash (recoverable). Only files inside this band's song folders.
+  if (b.action === "delete") {
+    try {
+      const tok = await accessToken(row);
+      const g = await gj(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(String(b.fileId))}?fields=id,parents`, tok);
+      const mine = new Set(Object.values(row.folders || {}));
+      if (g.status !== 200 || !(g.data.parents || []).some((p: string) => mine.has(p))) return J({ ok: false, error: "not_found" }, 404);
+      const u = await gj(`https://www.googleapis.com/drive/v3/files/${g.data.id}`, tok, { method: "PATCH", body: JSON.stringify({ trashed: true }) });
+      return J({ ok: u.status === 200 });
+    } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
+  }
+
   if (b.action === "disconnect") {
     await fetch("https://oauth2.googleapis.com/revoke?token=" + encodeURIComponent(row.refresh_token), { method: "POST" }).catch(() => {});
     await sb.from("ce_drive").delete().eq("band", b.band);

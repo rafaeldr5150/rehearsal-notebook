@@ -19,6 +19,16 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Ensaio com lembrete','Rehearsal with reminder','Ensayo con recordatorio'],
+['Na tela Geral, marque a data e a hora do próximo ensaio. Em Configurações, ative os lembretes: o celular avisa na véspera e no dia.','On the Overview screen, set the date and time of the next rehearsal. In Settings, turn on reminders: your phone alerts you the evening before and the day of.','En la pantalla General, marca la fecha y la hora del próximo ensayo. En Ajustes, activa los recordatorios: el móvil te avisa la víspera y el día.'],
+['Grave e ouça','Record and listen','Graba y escucha'],
+['Conecte o Google Drive em Configurações. Em cada música, toque em Gravar: o arquivo vai para a pasta setlist do Drive da banda. Dá para ouvir ali mesmo e apagar se não gostar.','Connect Google Drive in Settings. In each song, tap Record: the file goes to the setlist folder in the band\'s Drive. You can listen right there and delete it if you don\'t like it.','Conecta Google Drive en Ajustes. En cada canción, toca Grabar: el archivo va a la carpeta setlist del Drive de la banda. Puedes escucharlo ahí mismo y borrarlo si no te gusta.'],
+['Entendi','Got it','Entendido'],
+['Carregando gravações…','Loading recordings…','Cargando grabaciones…'],['Não foi possível carregar a lista agora.','Could not load the list right now.','No se pudo cargar la lista ahora.'],
+['▶ Ouvir','▶ Play','▶ Escuchar'],['⏸ Pausar','⏸ Pause','⏸ Pausar'],['Apagar','Delete','Borrar'],['Confirmar: apagar','Confirm: delete','Confirmar: borrar'],['Carregando…','Loading…','Cargando…'],
+['Não foi possível tocar. Tente abrir pelo Drive.','Could not play. Try opening it in Drive.','No se pudo reproducir. Prueba abrirlo en Drive.'],
+['Gravação apagada. Ela foi para a lixeira do Drive.','Recording deleted. It went to the Drive trash.','Grabación borrada. Fue a la papelera del Drive.'],
+['Não foi possível apagar agora.','Could not delete right now.','No se pudo borrar ahora.'],
 ['Onde as gravações ficam','Where recordings go','Dónde se guardan las grabaciones'],['setlist / música (na raiz do Drive)','setlist / song (in the Drive root)','setlist / canción (en la raíz del Drive)'],
 ['Escolher pasta do Drive','Choose a Drive folder','Elegir carpeta del Drive'],['Abrindo o Google…','Opening Google…','Abriendo Google…'],
 ['A pasta da banda vai ficar dentro dela, com a pasta setlist e uma pasta por música','The band folder will be created inside it, with a setlist folder and one folder per song','La carpeta de la banda se creará dentro, con la carpeta setlist y una carpeta por canción'],

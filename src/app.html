@@ -907,6 +907,12 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 .rec-live{display:flex;align-items:center;gap:8px;font-size:18px}
 .rec-dot{width:12px;height:12px;border-radius:50%;background:#e5322d;animation:recp 1s infinite}
 @keyframes recp{50%{opacity:.25}}
+
+.rec-list{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.rec-list li{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface2,transparent)}
+.rec-meta{display:flex;flex-direction:column;min-width:0}
+.rec-meta b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-meta small{opacity:.7;font-size:12px}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -2163,27 +2169,31 @@ function renderReh(){
       (i.days>=0?'<p class="hint">Marque com ★ as músicas do ensaio para ver o que falta para cada um.</p>':''))+
     '<div class="row-actions"><button type="button" class="btn small" data-act="reh-edit">Editar</button></div>';
 }
+var TOUR_V=2;
 var TOUR=[
- ['home','Bem-vindo ao Caderno de Ensaio','Aqui a banda acompanha as músicas que cada um precisa tirar para o ensaio e para o show.'],
- ['user','Escolha quem você é','Cada integrante tem a sua página, só com as músicas dele. O aparelho lembra de você.'],
- ['nota','Acompanhe o status','Cada música está Não iniciada, Em andamento ou Pronta. Toque na etiqueta para mudar. A estrela ★ marca as músicas do próximo ensaio.'],
- ['list','Estude dentro da música','Toque numa música para ver a letra, a cifra, o metrônomo e o link do Spotify. Dá para transpor a cifra para o seu tom.'],
- ['group','Setlist e modo show','Monte o setlist e use o modo show no palco, com rolagem automática e metrônomo sincronizado entre os celulares.'],
- ['gear','Convide a banda','Em Configurações você copia o link ou o código de convite, troca o layout e o idioma, e vê este tour de novo. O app funciona sem internet e pode ser instalado na tela inicial.']
+ ['home','Bem-vindo ao Caderno de Ensaio','Aqui a banda acompanha as músicas que cada um precisa tirar para o ensaio e para o show.',1],
+ ['user','Escolha quem você é','Cada integrante tem a sua página, só com as músicas dele. O aparelho lembra de você.',1],
+ ['nota','Acompanhe o status','Cada música está Não iniciada, Em andamento ou Pronta. Toque na etiqueta para mudar. A estrela ★ marca as músicas do próximo ensaio.',1],
+ ['list','Estude dentro da música','Toque numa música para ver a letra, a cifra, o metrônomo e o link do Spotify. Dá para transpor a cifra para o seu tom.',1],
+ ['gear','Ensaio com lembrete','Na tela Geral, marque a data e a hora do próximo ensaio. Em Configurações, ative os lembretes: o celular avisa na véspera e no dia.',2],
+ ['voz','Grave e ouça','Conecte o Google Drive em Configurações. Em cada música, toque em Gravar: o arquivo vai para a pasta setlist do Drive da banda. Dá para ouvir ali mesmo e apagar se não gostar.',2],
+ ['group','Setlist e modo show','Monte o setlist e use o modo show no palco, com rolagem automática e metrônomo sincronizado entre os celulares.',1],
+ ['gear','Convide a banda','Em Configurações você copia o link ou o código de convite, troca o layout e o idioma, e vê este tour de novo. O app funciona sem internet e pode ser instalado na tela inicial.',1]
 ];
+function tourSteps(){return ui.tourFrom?TOUR.filter(function(x){return x[3]>ui.tourFrom}):TOUR}
 function renderTour(){
   var el=$('#tour');if(!el)return;
   var n=ui.tour;
   if(n==null){el.hidden=true;el.innerHTML='';return}
-  var st=TOUR[n],last=n===TOUR.length-1;
+  var T=tourSteps(),st=T[n],last=n===T.length-1;
   el.hidden=false;
   el.innerHTML='<div class="who-box tourbox" role="dialog" aria-label="Tour"><div class="tour-ico">'+svgIco(st[0],54)+'</div><h2>'+st[1]+'</h2><p class="hint">'+st[2]+'</p>'+
-    '<div class="tour-dots" aria-hidden="true">'+TOUR.map(function(_,i){return '<i'+(i===n?' class="on"':'')+'></i>'}).join('')+'</div>'+
+    '<div class="tour-dots" aria-hidden="true">'+T.map(function(_,i){return '<i'+(i===n?' class="on"':'')+'></i>'}).join('')+'</div>'+
     '<div class="row-actions" style="justify-content:center"><button type="button" class="btn small" data-act="tour-back"'+(n?'':' hidden')+'>Voltar</button>'+
-    '<button type="button" class="btn small primary" data-act="tour-next">'+(last?'Começar':'Próximo')+'</button></div>'+
+    '<button type="button" class="btn small primary" data-act="tour-next">'+(last?(ui.tourFrom?'Entendi':'Começar'):'Próximo')+'</button></div>'+
     (last?'':'<div class="row-actions" style="justify-content:center;margin-top:8px"><button type="button" class="btn small ghost" data-act="tour-skip">Pular tour</button></div>')+'</div>';
 }
-function tourEnd(){ui.tour=null;try{localStorage.setItem('ce-tour','1')}catch(e){}renderTour()}
+function tourEnd(){ui.tour=null;ui.tourFrom=0;try{localStorage.setItem('ce-tour',String(TOUR_V))}catch(e){}renderTour()}
 function refreshDrive(){
   var D=window.CE_DRIVE;if(!D)return;
   D.status().then(function(s){ui.drive=s||{connected:false,configured:false,offline:true};return D.pending()}).then(function(n){ui.recPending=n;render()}).catch(function(){render()});
@@ -2224,12 +2234,44 @@ function recFinish(){
   (ui.up||(ui.up={}))[r.songId]={p:0};render();
   window.CE_DRIVE.upload(blob,{songId:r.songId,title:r.title,name:name,mime:base},function(p){ui.up[r.songId].p=p;recTick()}).then(function(res){
     delete ui.up[r.songId];
-    if(res.sent){(ui.recDone||(ui.recDone={}))[r.songId]=name;toast('Gravação salva no Drive: setlist/'+r.title)}
+    if(res.sent){(ui.recDone||(ui.recDone={}))[r.songId]=name;if(ui.recList)ui.recList[r.songId]=undefined;toast('Gravação salva no Drive: setlist/'+r.title)}
     else{ui.recPending=(ui.recPending||0)+1;toast(res.error==='not_connected'?'O Drive não está conectado. A gravação ficou guardada no aparelho.':'Sem conexão: a gravação será enviada depois.')}
     render();
   }).catch(function(){delete ui.up[r.songId];toast('Não foi possível guardar a gravação.');render()});
 }
 window.addEventListener('beforeunload',function(e){if(rec){e.preventDefault();e.returnValue=''}});
+var recAudio=null;
+function fileSize(n){n=+n||0;return n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB'}
+function ensureRecList(id){
+  ui.recList=ui.recList||{};ui.recLoad=ui.recLoad||{};
+  if(ui.recList[id]!==undefined||ui.recLoad[id])return;
+  ui.recLoad[id]=true;
+  window.CE_DRIVE.list(id).then(function(r){ui.recList[id]=r&&r.ok?r.files:[]}).catch(function(){ui.recList[id]=null}).then(function(){ui.recLoad[id]=false;render()});
+}
+function recPlay(fid,btn){
+  if(!recAudio){recAudio=new Audio();recAudio.onended=function(){ui.playId='';render()};
+    recAudio.ontimeupdate=function(){var e=document.querySelector('.rec-pl[data-fid="'+ui.playId+'"]');if(e)e.textContent=Math.floor(recAudio.currentTime/60)+':'+String(Math.floor(recAudio.currentTime%60)).padStart(2,'0')}}
+  if(ui.playId===fid){if(recAudio.paused)recAudio.play();else recAudio.pause();render();return}
+  ui.playLoad=fid;render();
+  window.CE_DRIVE.blob(fid).then(function(b){
+    try{if(recAudio.src)URL.revokeObjectURL(recAudio.src)}catch(e){}
+    recAudio.src=URL.createObjectURL(b);ui.playId=fid;ui.playLoad='';
+    return recAudio.play();
+  }).then(function(){render()}).catch(function(){ui.playLoad='';ui.playId='';toast('Não foi possível tocar. Tente abrir pelo Drive.');render()});
+}
+function recListHTML(s){
+  var id=s.id,l=ui.recList&&ui.recList[id];
+  if(ui.recLoad&&ui.recLoad[id]&&l===undefined)return '<p class="hint">Carregando gravações…</p>';
+  if(l===null)return '<p class="hint">Não foi possível carregar a lista agora.</p>';
+  if(!l||!l.length)return '';
+  return '<ul class="rec-list">'+l.map(function(f){
+    var playing=ui.playId===f.id&&recAudio&&!recAudio.paused,arm=ui.armDel===f.id,
+        when=f.createdTime?new Date(f.createdTime).toLocaleString(window.CE_LOCALE||'pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+    return '<li><div class="rec-meta"><b>'+esc(f.name)+'</b><small>'+esc(when)+(f.size?' · '+fileSize(f.size):'')+' <span class="rec-pl mono" data-fid="'+f.id+'"></span></small></div><div class="row-actions">'+
+      '<button type="button" class="btn small primary" data-act="rec-play" data-fid="'+f.id+'">'+(ui.playLoad===f.id?'Carregando…':playing?'⏸ Pausar':'▶ Ouvir')+'</button>'+
+      '<button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="rec-del" data-fid="'+f.id+'" data-id="'+id+'">'+(arm?'Confirmar: apagar':'Apagar')+'</button>'+
+      (f.webViewLink?'<a class="btn small" target="_blank" rel="noopener" href="'+esc(f.webViewLink)+'">Drive ↗</a>':'')+'</div></li>'}).join('')+'</ul>';
+}
 function recBlock(s){
   if(!window.CE_DRIVE)return '';
   var d=ui.drive,id=s.id,body='';
@@ -2239,6 +2281,7 @@ function recBlock(s){
   else if(rec)body='<p class="hint">Você está gravando outra música.</p>';
   else if(!d.connected)body='<p class="hint">Conecte o Google Drive da banda para guardar as gravações.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="drive-go">Conectar o Drive</button></div>';
   else body='<div class="row-actions"><button type="button" class="btn primary" data-act="rec-start" data-id="'+id+'">● Gravar</button></div><p class="hint">Salva em setlist/'+esc(s.title||'Sem título')+'/ no Drive da banda.</p>'+(ui.recDone&&ui.recDone[id]?'<p class="hint">Última enviada: '+esc(ui.recDone[id])+'</p>':'');
+  if(d.connected){ensureRecList(id);body+=recListHTML(s)}
   if(ui.recPending>0&&!(rec&&rec.songId===id))body+='<p class="hint">'+ui.recPending+(ui.recPending===1?' gravação aguardando envio.':' gravações aguardando envio.')+'</p><div class="row-actions"><button type="button" class="btn small" data-act="rec-flush">Enviar agora</button></div>';
   return '<div class="block rec"><h3>Gravar</h3>'+body+'</div>';
 }
@@ -2308,7 +2351,7 @@ function render(){
   renderDrawer();renderWho();renderCePick();renderStPick();
   if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
     try{var qs=new URLSearchParams(location.search),dv=qs.get('drive');if(dv){var M={ok:'Google Drive conectado!',denied:'Conexão cancelada.',err:'Não foi possível conectar o Drive. Tente de novo.',nosecret:'O Drive ainda não está configurado no servidor.'};toast(M[dv]||'');qs.delete('drive');history.replaceState(null,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}}catch(e){}}
-  if(!ui.tourChecked&&band&&members().length){ui.tourChecked=true;var seen='1';try{seen=localStorage.getItem('ce-tour')||''}catch(e){}if(!seen){ui.tour=0;renderTour()}}
+  if(!ui.tourChecked&&band&&members().length){ui.tourChecked=true;var seen='1';try{seen=localStorage.getItem('ce-tour')||''}catch(e){}if(!seen){ui.tourFrom=0;ui.tour=0;renderTour()}else if((+seen||1)<TOUR_V){ui.tourFrom=+seen||1;ui.tour=0;renderTour()}}
   if(fk){var el=document.querySelector('[data-fk="'+fk+'"]');if(el){el.focus();try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
 }
 function route(){
@@ -2426,6 +2469,10 @@ document.addEventListener('click',function(e){
     var o3={date:dd.date,time:dd.time,place:(dd.place||'').trim()};rehCfg=o3;if(rehDoc)rehDoc.set(o3).catch(fail);ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';render();return}
   if(act==='reh-cancel'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';renderReh();return}
   if(act==='reh-clear'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';rehCfg=null;if(rehDoc)rehDoc.set({date:'',time:'',place:''}).catch(fail);render();return}
+  if(act==='rec-play'){recPlay(t.dataset.fid);return}
+  if(act==='rec-del'){var fid=t.dataset.fid;if(ui.armDel!==fid){ui.armDel=fid;render();return}
+    ui.armDel='';if(ui.playId===fid&&recAudio){recAudio.pause();ui.playId=''}
+    window.CE_DRIVE.remove(fid).then(function(r){if(r&&r.ok){toast('Gravação apagada. Ela foi para a lixeira do Drive.');ui.recList[id]=undefined}else toast('Não foi possível apagar agora.');render()}).catch(function(){toast('Não foi possível apagar agora.');render()});return}
   if(act==='rec-start'){recStart(id);return}
   if(act==='rec-stop'){recStop(false);return}
   if(act==='rec-cancel'){recStop(true);return}
@@ -2441,8 +2488,8 @@ document.addEventListener('click',function(e){
   if(act==='push-on'){toast('Pedindo permissão…');window.CE_PUSH.enable(meMember).then(function(){ui.pushState='on';ui.pushSynced=true;toast('Lembretes ativados.');renderConfig()}).catch(function(err){refreshPush();toast(err&&err.message==='denied'?'Permissão negada. Libere as notificações nas configurações do navegador.':'Não foi possível ativar agora. Tente de novo.')});return}
   if(act==='push-off'){window.CE_PUSH.disable().then(function(){ui.pushState='off';toast('Lembretes desativados.');renderConfig()}).catch(function(){toast('Não foi possível desativar agora.')});return}
   if(act==='push-test'){window.CE_PUSH.test().then(function(r){toast(r&&r.ok?'Aviso enviado. Ele deve chegar em instantes.':'Não foi possível enviar o aviso de teste.')}).catch(function(){toast('Não foi possível enviar o aviso de teste.')});return}
-  if(act==='tour-open'){ui.tour=0;renderTour();return}
-  if(act==='tour-next'){if(ui.tour>=TOUR.length-1)tourEnd();else{ui.tour++;renderTour()}return}
+  if(act==='tour-open'){ui.tourFrom=0;ui.tour=0;renderTour();return}
+  if(act==='tour-next'){if(ui.tour>=tourSteps().length-1)tourEnd();else{ui.tour++;renderTour()}return}
   if(act==='tour-back'){if(ui.tour>0){ui.tour--;renderTour()}return}
   if(act==='tour-skip'){tourEnd();return}
   if(act==='del'){

@@ -154,6 +154,14 @@ function rpc(fn,args){
     status:function(){return call('status').catch(function(){return null})},
     connect:function(){location.href=FN+'?start=1&band='+encodeURIComponent(band)+'&ret='+encodeURIComponent(location.origin)},
     disconnect:function(){return call('disconnect')},
+    list:function(songId){return call('list',{songId:songId})},
+    remove:function(fileId){return call('delete',{fileId:fileId})},
+    blob:function(fileId){
+      return call('picker-token').then(function(t){
+        if(!t||!t.ok)throw new Error('token');
+        return fetch('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+'?alt=media',{headers:{Authorization:'Bearer '+t.token}});
+      }).then(function(r){if(!r.ok)throw new Error('get '+r.status);return r.blob()});
+    },
     canPick:!!CFG.pickerKey,
     pickFolder:function(){
       function loadGapi(){return new Promise(function(res,rej){
