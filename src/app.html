@@ -985,6 +985,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
   <section class="panel welcome" id="panel-band" hidden>
     <h2 id="band-title">Quem toca na banda?</h2>
     <p class="hint" id="band-hint">Cadastre as pessoas e o instrumento de cada uma. Depois disso, cada música ganha uma linha por pessoa para dividir quem faz o quê e acompanhar quem já tirou a sua parte.</p>
+    <div class="row-actions" id="band-exit" hidden></div>
     <div class="row-actions" id="invite-row" hidden><button type="button" class="btn small primary" data-act="copy-invite">Copiar link de convite</button><button type="button" class="btn small" data-act="copy-code">Copiar código</button><button type="button" class="btn small" data-act="leave-band">Sair desta banda</button><span class="hint">Quem abrir esse link, ou colar o código na tela de entrada, entra no caderno da banda.</span></div>
     <div class="fields" id="band-meta">
       <label class="f">Nome da banda<input type="text" id="band-name" autocomplete="off" placeholder="Ex.: Os Ensaiados"></label>
@@ -1203,6 +1204,7 @@ function renderBandPanel(){
   $('#band-cancel').hidden=!band;
   $('#band-title').textContent=band?'Banda':'Quem toca na banda?';
   $('#band-hint').hidden=!!band;
+  var bx=$('#band-exit');if(bx){var lg=window.CE_AUTH&&window.CE_AUTH.user;bx.hidden=!needs;bx.innerHTML=needs?(lg?'<button type="button" class="btn small" data-act="my-bands">Voltar às minhas bandas</button>':'<button type="button" class="btn small" data-act="leave-band">Sair desta banda</button>'):''}
   if(!show)return;
   var bn=$('#band-name'),bt=$('#band-tag'),pv=$('#band-logo-prev'),rm=$('#band-logo-rm');
   if(bn&&document.activeElement!==bn)bn.value=bandMeta.name||'';
@@ -2437,6 +2439,14 @@ function pushRows(row){
   if(s==='on')return row('push-off','nota','Lembretes ativados','Aviso na véspera (18h) e no dia do ensaio (8h). Toque para desativar.')+row('push-test','nota','Enviar aviso de teste','Confira se a notificação chega neste aparelho');
   return row('push-on','nota','Ativar lembretes do ensaio','Aviso na véspera (18h) e no dia do ensaio (8h)');
 }
+function accountRows(row){
+  var A=window.CE_AUTH;if(!A)return '';
+  if(A.user){
+    return '<div class="cfg-row static">'+svgIco('user',24)+'<span><b>Conectado</b><small>'+esc(A.user.email||A.user.name||'')+(A.role?' · '+(A.role==='owner'?'dono da banda':'integrante'):'')+'</small></span></div>'+
+      row('my-bands','group','Minhas bandas','Ver a lista e trocar de banda')+row('auth-out','user','Sair da conta','Este aparelho deixa de mostrar as suas bandas');
+  }
+  return row('auth-open','user','Entrar ou criar conta','Com Google ou e-mail, para ver as suas bandas em qualquer aparelho');
+}
 function renderConfig(){
   var el=$('#cfgview');if(!el)return;
   var me=meMember&&member(meMember),sk=SKINS.filter(function(x){return x[0]===skin})[0];
@@ -2455,7 +2465,7 @@ function renderConfig(){
    '<section class="cfg"><h3>Repertório</h3>'+row('cfg-import','list','Importar lista de músicas','Cole uma música por linha')+
      plRows(row)+
      (nl?row('lyrics-all','nota','Buscar letras que faltam','('+nl+')'):'')+'</section>'+
-   (window.CE_STANDALONE?'<section class="cfg"><h3>Conta</h3><div class="row-actions"><button type="button" class="btn small danger" data-act="leave-band">Sair desta banda</button></div></section>':'');
+   (window.CE_STANDALONE?'<section class="cfg"><h3>Conta</h3>'+accountRows(row)+'<div class="row-actions"><button type="button" class="btn small danger" data-act="leave-band">Sair desta banda</button></div></section>':'');
 }
 function render(){
   if(!band)return;
@@ -2484,6 +2494,7 @@ function route(){
   window.scrollTo(0,0);ui.pushAsked=false;render();
 }
 window.addEventListener('hashchange',route);
+window.addEventListener('ce-auth',function(){try{renderBandPanel()}catch(e){}var A=window.CE_AUTH;if(A&&A.mid&&!meMember&&member(A.mid)){meMember=A.mid;try{localStorage.setItem('ce-me',A.mid)}catch(e){}}render()});
 document.addEventListener('pointerdown',function(){if(smOn()&&!audioReady())ensureAudio()},{passive:true});
 var rzT=0;window.addEventListener('resize',function(){if(stage&&stage.kind==='chords'&&!cwrapOn()&&ui.fit!==false){clearTimeout(rzT);rzT=setTimeout(applyFit,150)}});
 
@@ -2588,8 +2599,8 @@ document.addEventListener('click',function(e){
   if(act==='who-nav'){whoMode='nav';whoOpen=true;render();return}
   if(act==='who-close'){whoOpen=false;try{sessionStorage.setItem('ce-who-skip','1')}catch(err){}render();return}
   if(act==='go-member'){whoOpen=false;render();return}
-  if(act==='pick-me'){meMember=id;try{localStorage.setItem('ce-me',id)}catch(err){}whoOpen=false;render();return}
-  if(act==='set-me'){meMember=id;try{localStorage.setItem('ce-me',id)}catch(err){}render();toast('Pronto, esta é a sua página.');return}
+  if(act==='pick-me'){meMember=id;try{localStorage.setItem('ce-me',id)}catch(err){}if(window.CE_AUTH)window.CE_AUTH.setMe(id);whoOpen=false;render();return}
+  if(act==='set-me'){meMember=id;try{localStorage.setItem('ce-me',id)}catch(err){}if(window.CE_AUTH)window.CE_AUTH.setMe(id);render();toast('Pronto, esta é a sua página.');return}
   if(act==='band-rm'){bandDraft.splice(+t.dataset.i,1);renderBandPanel();return}
   if(act==='cyc-part'){e.stopPropagation();var cp=partOf(get(id),t.dataset.mid).status;changeStatus(id,t.dataset.mid,(cp+1)%4);render();return}
   if(act==='pill-status'){e.stopPropagation();ui.stPick={id:id,mid:t.dataset.mid};renderStPick();return}
@@ -2605,6 +2616,8 @@ document.addEventListener('click',function(e){
   if(act==='pl-cancel'){ui.plEdit=false;renderConfig();return}
   if(act==='pl-save'){var pid=plIdOf(ui.plDraft);if(!pid){toast('Cole o link de uma playlist do Spotify.');return}
     spotCfg={playlist:pid,seen:[],last:0};if(spotDoc)spotDoc.set(spotCfg).catch(fail);ui.plEdit=false;render();syncPlaylist(true);return}
+  if(act==='my-bands'||act==='auth-open'){window.CE_AUTH.openEntry();return}
+  if(act==='auth-out'){window.CE_AUTH.signOut();return}
   if(act==='rec-play'){recPlay(t.dataset.fid);return}
   if(act==='rec-del'){var fid=t.dataset.fid;if(ui.armDel!==fid){ui.armDel=fid;render();return}
     ui.armDel='';if(ui.playId===fid&&recAudio){recAudio.pause();ui.playId=''}

@@ -21,9 +21,9 @@ function parseCode(txt){
   if(m)return m[1].toLowerCase();
   return txt.toLowerCase().replace(/[^a-z0-9-]/g,'');
 }
-function showJoin(msg){
-  if(document.getElementById('join'))return;
-  var css=document.createElement('style');
+function joinCss(){
+  if(document.getElementById('join-css'))return;
+  var css=document.createElement('style');css.id='join-css';
   css.textContent='#join{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(900px 520px at 10% -10%,rgba(255,61,139,.28),transparent 60%),radial-gradient(800px 520px at 100% 100%,rgba(255,154,61,.2),transparent 60%),#0b0b10;color:#f4f4f9;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;overflow:auto}'+
    '#join .jbox{width:min(440px,100%);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:22px;padding:28px 24px 22px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,0,0,.5)}'+
    '#join h1{margin:0 0 6px;font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1.05}'+
@@ -37,22 +37,33 @@ function showJoin(msg){
    '#join .jor{display:flex;align-items:center;gap:10px;margin:18px 0 12px;color:#8c8ca6;font-size:13px}#join .jor:before,#join .jor:after{content:"";flex:1;height:1px;background:rgba(255,255,255,.14)}'+
    '#join #join-new{width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;font:700 16px/1 Inter,system-ui,sans-serif;cursor:pointer}'+
    '#join .jnew{margin-top:10px}'+
+   '#join .gbtn{width:100%;padding:15px 16px;border-radius:14px;border:0;background:#fff;color:#1b1b22;font:800 17px/1 Inter,system-ui,sans-serif;cursor:pointer}'+
+   '#join #a-go,#join #b-go{width:100%;margin-top:12px;padding:15px 16px;border-radius:14px;border:0;background:linear-gradient(135deg,#ff3d8b,#ff9a3d);color:#fff;font:800 17px/1 Inter,system-ui,sans-serif;cursor:pointer}'+
+   '#join #a-code,#join #b-new{width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;font:700 16px/1 Inter,system-ui,sans-serif;cursor:pointer}'+
+   '#join .jlabel{margin:6px 0 8px;font:700 13px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#9a9ab2}'+
+   '#join .bandbtn{display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;padding:15px 16px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font:700 17px/1.2 Inter,sans-serif;cursor:pointer;text-align:left}#join .bandbtn small{font:600 12px Inter,sans-serif;color:#b4b4c8;text-transform:uppercase;letter-spacing:.05em}'+
    '#join .jlang{display:flex;gap:8px;justify-content:center;margin-top:16px}'+
    '#join .jlang button{background:transparent;border:1px solid rgba(255,255,255,.2);color:#cfcfe0;border-radius:999px;padding:6px 12px;font:600 13px Inter,sans-serif;cursor:pointer}'+
    '#join .jlang button.on{background:rgba(255,255,255,.14);color:#fff}';
   document.head.appendChild(css);
+}
+function showJoin(msg){
+  var old=document.getElementById('join');if(old)old.remove();
+  joinCss();
   var box=document.createElement('div');box.id='join';
   box.innerHTML='<div class="jbox"><h1>Rehearsal Notebook</h1><p>Cole o código de convite da sua banda para entrar.</p>'+
     '<form id="join-form" autocomplete="off"><input id="join-code" type="text" inputmode="text" placeholder="Código ou link de convite" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código ou link de convite"><button type="submit" id="join-go">Entrar na banda</button></form>'+
     '<div id="join-msg" role="status" aria-live="polite"></div>'+
     '<p class="jhint">Não tem um código? Peça o link ou o código a alguém da banda.</p>'+
     '<div class="jor"><span>ou</span></div><button type="button" id="join-new">Criar uma banda nova</button><p class="jhint jnew">Primeira vez por aqui? Crie a sua banda, cadastre o pessoal e envie o convite.</p>'+
+    '<p class="jhint"><a href="#" id="join-acct" style="color:#ffb3d0">Entrar com uma conta</a></p>'+
     '<div class="jlang">'+['pt','en','es'].map(function(l){return '<button type="button" data-l="'+l+'" class="'+((window.CE_LANG||'pt')===l?'on':'')+'">'+{pt:'Português',en:'English',es:'Español'}[l]+'</button>'}).join('')+'</div></div>';
   document.body.appendChild(box);
   var msgEl=box.querySelector('#join-msg'),inp=box.querySelector('#join-code'),go=box.querySelector('#join-go');
   function say(t){msgEl.textContent=t||''}
   if(msg)say(msg);
   box.querySelector('.jlang').addEventListener('click',function(e){var b=e.target.closest('button[data-l]');if(b&&window.CE_SET_LANG)window.CE_SET_LANG(b.dataset.l)});
+  box.querySelector('#join-acct').addEventListener('click',function(e){e.preventDefault();showEntry()});
   box.querySelector('#join-form').addEventListener('submit',function(e){
     e.preventDefault();
     var code=parseCode(inp.value);
@@ -78,8 +89,157 @@ function showJoin(msg){
   });
   setTimeout(function(){try{inp.focus()}catch(e){}},50);
 }
+
+/* ---------- contas: Google ou e-mail e senha, e a lista "Minhas bandas" ---------- */
+var AUTH=null;
+function authClient(){
+  if(AUTH)return AUTH;
+  AUTH=window.supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'ce-auth',flowType:'pkce'}});
+  AUTH.auth.onAuthStateChange(function(ev){if(ev==='PASSWORD_RECOVERY')showNewPass()});
+  return AUTH;
+}
+function sess(){return authClient().auth.getSession().then(function(r){return r.data&&r.data.session||null})}
+function arpc(fn,args){
+  return sess().then(function(s){
+    if(!s)throw new Error('auth');
+    return fetch(CFG.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:CFG.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json'},body:JSON.stringify(args||{})})
+      .then(function(r){return r.ok?r.json():r.text().then(function(t){throw new Error(t)})});
+  });
+}
+function uname(s){var u=s.user||{},m=u.user_metadata||{};return {email:u.email||'',name:m.full_name||m.name||''}}
+window.CE_AUTH={
+  user:null,role:'',
+  openEntry:function(){try{sessionStorage.setItem('ce-entry','1')}catch(e){}location.href=location.pathname},
+  signOut:function(){return authClient().auth.signOut().then(function(){try{sessionStorage.removeItem('ce-entry');localStorage.removeItem('ce-band');localStorage.removeItem('ce-me')}catch(e){}location.href=location.pathname})},
+  setMe:function(mid){if(window.CE_AUTH.user&&band)arpc('ce_set_me',{p_code:band,p_mid:mid||''}).catch(function(){})}
+};
+function pickBand(code,mid){
+  try{localStorage.setItem('ce-band',code);sessionStorage.removeItem('ce-entry');if(mid)localStorage.setItem('ce-me',mid);else localStorage.removeItem('ce-me')}catch(e){}
+  location.href=location.pathname;
+}
+function mountScreen(inner){
+  var old=document.getElementById('join');if(old)old.remove();
+  joinCss();
+  var box=document.createElement('div');box.id='join';
+  box.innerHTML='<div class="jbox">'+inner+'<div class="jlang">'+['pt','en','es'].map(function(l){return '<button type="button" data-l="'+l+'" class="'+((window.CE_LANG||'pt')===l?'on':'')+'">'+{pt:'Português',en:'English',es:'Español'}[l]+'</button>'}).join('')+'</div></div>';
+  document.body.appendChild(box);
+  box.querySelector('.jlang').addEventListener('click',function(e){var b=e.target.closest('button[data-l]');if(b&&window.CE_SET_LANG)window.CE_SET_LANG(b.dataset.l)});
+  return box;
+}
+function errTxt(e){
+  var m=String(e&&e.message||e||'');
+  if(/Invalid login/i.test(m))return 'E-mail ou senha incorretos.';
+  if(/already registered|already been registered/i.test(m))return 'Esse e-mail já tem conta. Toque em Entrar.';
+  if(/at least|weak|short/i.test(m))return 'A senha precisa ter pelo menos 8 caracteres.';
+  if(/not confirmed/i.test(m))return 'Confirme o seu e-mail pelo link que enviamos e depois entre.';
+  if(/rate limit|too many|after \d+ seconds/i.test(m))return 'Muitas tentativas agora. Espere um pouco e tente de novo.';
+  if(/valid email|invalid format/i.test(m))return 'Digite um e-mail válido.';
+  if(/network|fetch/i.test(m))return 'Sem internet agora.';
+  return 'Não foi possível agora. Tente de novo.';
+}
+function showEntry(msg){
+  mountScreen('<h1>Rehearsal Notebook</h1><p>Carregando…</p>');
+  if(!window.supabase||!navigator.onLine){showJoin(navigator.onLine?'':'Sem internet agora.');return}
+  sess().then(function(s){if(s)showBands();else showLogin(msg)}).catch(function(){showJoin()});
+}
+function showLogin(msg){
+  var mode='in';
+  var box=mountScreen('<h1>Rehearsal Notebook</h1><p>Entre para ver as suas bandas em qualquer aparelho.</p>'+
+    '<button type="button" id="a-google" class="gbtn">Continuar com o Google</button>'+
+    '<div class="jor"><span>ou</span></div>'+
+    '<form id="a-form" autocomplete="on"><input id="a-mail" type="email" inputmode="email" placeholder="E-mail" autocomplete="email" aria-label="E-mail" style="margin-bottom:10px"><input id="a-pass" type="password" placeholder="Senha (mínimo 8 caracteres)" autocomplete="current-password" aria-label="Senha"><button type="submit" id="a-go">Entrar</button></form>'+
+    '<p class="jhint"><a href="#" id="a-toggle" style="color:#ffb3d0">Não tem conta? Criar conta</a> · <a href="#" id="a-forgot" style="color:#ffb3d0">Esqueci a senha</a></p>'+
+    '<div id="join-msg" role="status" aria-live="polite"></div>'+
+    '<div class="jor"><span>ou</span></div><button type="button" id="a-code">Só tenho um código de convite</button>');
+  var msgEl=box.querySelector('#join-msg'),go=box.querySelector('#a-go');
+  function say(t){msgEl.textContent=t||''}if(msg)say(msg);
+  box.querySelector('#a-code').addEventListener('click',function(){showJoin()});
+  box.querySelector('#a-google').addEventListener('click',function(){
+    say('Abrindo o Google…');
+    authClient().auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}}).then(function(r){if(r.error)say(errTxt(r.error))});
+  });
+  box.querySelector('#a-toggle').addEventListener('click',function(e){
+    e.preventDefault();mode=mode==='in'?'up':'in';
+    go.textContent=mode==='in'?'Entrar':'Criar conta';
+    this.textContent=mode==='in'?'Não tem conta? Criar conta':'Já tem conta? Entrar';
+    box.querySelector('#a-pass').autocomplete=mode==='in'?'current-password':'new-password';say('');
+  });
+  box.querySelector('#a-forgot').addEventListener('click',function(e){
+    e.preventDefault();var em=box.querySelector('#a-mail').value.trim();
+    if(!em){say('Digite o seu e-mail acima.');return}
+    authClient().auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname}).then(function(r){say(r.error?errTxt(r.error):'Se esse e-mail tiver conta, enviamos um link para criar uma senha nova.')});
+  });
+  box.querySelector('#a-form').addEventListener('submit',function(e){
+    e.preventDefault();
+    var em=box.querySelector('#a-mail').value.trim(),pw=box.querySelector('#a-pass').value;
+    if(!em||!pw){say('Digite o e-mail e a senha.');return}
+    if(mode==='up'&&pw.length<8){say('A senha precisa ter pelo menos 8 caracteres.');return}
+    go.disabled=true;say(mode==='in'?'Entrando…':'Criando a conta…');
+    var A=authClient().auth;
+    (mode==='in'?A.signInWithPassword({email:em,password:pw}):A.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname}})).then(function(r){
+      go.disabled=false;
+      if(r.error){say(errTxt(r.error));return}
+      if(r.data&&r.data.session){showBands();return}
+      say('Enviamos um e-mail de confirmação. Abra o link dele e depois volte aqui para entrar.');
+    }).catch(function(err){go.disabled=false;say(errTxt(err))});
+  });
+}
+function showNewPass(){
+  var box=mountScreen('<h1>Rehearsal Notebook</h1><p>Escolha uma senha nova.</p><form id="a-form"><input id="a-pass" type="password" placeholder="Senha nova (mínimo 8 caracteres)" autocomplete="new-password"><button type="submit" id="a-go">Salvar senha</button></form><div id="join-msg" role="status"></div>');
+  var msgEl=box.querySelector('#join-msg');
+  box.querySelector('#a-form').addEventListener('submit',function(e){
+    e.preventDefault();var pw=box.querySelector('#a-pass').value;
+    if(pw.length<8){msgEl.textContent='A senha precisa ter pelo menos 8 caracteres.';return}
+    authClient().auth.updateUser({password:pw}).then(function(r){if(r.error)msgEl.textContent=errTxt(r.error);else showBands()});
+  });
+}
+function showBands(){
+  var box=mountScreen('<h1>Rehearsal Notebook</h1><p id="b-hello">Carregando…</p><div id="b-list"></div>');
+  sess().then(function(s){
+    if(!s){showLogin();return}
+    var u=uname(s);
+    var pre=band?arpc('ce_band_join',{p_code:band}).catch(function(){}):Promise.resolve();
+    return pre.then(function(){return arpc('ce_my_bands')}).then(function(list){
+      var b=mountScreen('<h1>Rehearsal Notebook</h1><p>'+esc(u.name||u.email)+'</p>'+
+        '<div class="jlabel">Suas bandas</div><div id="b-list">'+
+        (list.length?list.map(function(x){return '<button type="button" class="bandbtn" data-c="'+esc(x.code)+'" data-m="'+esc(x.mid||'')+'"><b>'+esc(x.name||'Banda sem nome')+'</b><small>'+(x.role==='owner'?'dono':'integrante')+'</small></button>'}).join(''):'<p class="jhint">Você ainda não está em nenhuma banda. Crie uma ou entre com um código.</p>')+'</div>'+
+        '<div class="jor"><span>ou</span></div>'+
+        '<form id="b-join" autocomplete="off"><input id="b-code" type="text" placeholder="Código ou link de convite" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Código ou link de convite"><button type="submit" id="b-go">Entrar na banda</button></form>'+
+        '<button type="button" id="b-new" style="margin-top:12px">Criar uma banda nova</button>'+
+        '<div id="join-msg" role="status" aria-live="polite"></div>'+
+        '<p class="jhint">'+(band?'<a href="#" id="b-back" style="color:#ffb3d0">Voltar para a banda atual</a> · ':'')+'<a href="#" id="b-out" style="color:#ffb3d0">Sair da conta</a></p>');
+      var msgEl=b.querySelector('#join-msg');function say(t){msgEl.textContent=t||''}
+      b.querySelector('#b-list').addEventListener('click',function(e){var x=e.target.closest('.bandbtn');if(x)pickBand(x.dataset.c,x.dataset.m)});
+      b.querySelector('#b-out').addEventListener('click',function(e){e.preventDefault();window.CE_AUTH.signOut()});
+      var bk=b.querySelector('#b-back');if(bk)bk.addEventListener('click',function(e){e.preventDefault();try{sessionStorage.removeItem('ce-entry')}catch(x){}location.href=location.pathname});
+      b.querySelector('#b-join').addEventListener('submit',function(e){
+        e.preventDefault();var code=parseCode(b.querySelector('#b-code').value);
+        if(!code){say('Digite o código ou cole o link de convite.');return}
+        say('Verificando…');
+        arpc('ce_band_join',{p_code:code}).then(function(){var hit=null;return arpc('ce_my_bands').then(function(l){hit=l.filter(function(y){return y.code===code})[0];pickBand(code,hit&&hit.mid)})})
+          .catch(function(err){say(/unknown/i.test(String(err&&err.message))?'Código não encontrado. Confira e tente de novo.':errTxt(err))});
+      });
+      b.querySelector('#b-new').addEventListener('click',function(){
+        this.disabled=true;say('Criando…');
+        arpc('ce_band_create').then(function(code){pickBand(code,'')}).catch(function(err){b.querySelector('#b-new').disabled=false;say(/rate/i.test(String(err&&err.message))?'Muitas bandas criadas deste aparelho. Tente de novo mais tarde.':'Não foi possível criar a banda agora. Tente de novo.')});
+      });
+    });
+  }).catch(function(){showJoin()});
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+/* quem está logado na banda aberta */
+if(band&&window.supabase){
+  sess().then(function(s){
+    if(!s)return;var u=uname(s);window.CE_AUTH.user=u;
+    return arpc('ce_band_join',{p_code:band}).catch(function(){}).then(function(){return arpc('ce_my_bands')}).then(function(l){
+      var me=l.filter(function(x){return x.code===band})[0];if(me){window.CE_AUTH.role=me.role;window.CE_AUTH.mid=me.mid||''}
+      window.dispatchEvent(new Event('ce-auth'));
+    });
+  }).catch(function(){});
+}
 window.CE_SHOW_JOIN=showJoin;
-if(!band){showJoin();window.claude={use:function(){return Promise.resolve(null)}};window.CE_STANDALONE=true;return}
+var forceEntry=false;try{forceEntry=sessionStorage.getItem('ce-entry')==='1'}catch(e){}
+if(!band||forceEntry){showEntry();window.claude={use:function(){return Promise.resolve(null)}};window.CE_STANDALONE=true;return}
 /* se o código salvo não existir mais, volta para a tela de entrada */
 if(navigator.onLine){
   fetch(CFG.url+'/rest/v1/rpc/ce_band_exists',{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify({p_code:band})})
