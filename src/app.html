@@ -946,6 +946,18 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 .folders h3{font-size:14px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
 .inst-steps{margin:10px 0 0;padding-left:22px;text-align:left;display:flex;flex-direction:column;gap:8px;font-size:15px}
 #install{position:fixed;inset:0;z-index:38;display:flex;align-items:center;justify-content:center;background:rgba(8,4,6,.82);padding:18px;overflow:auto}
+
+#spplayer{position:fixed;left:8px;right:8px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:39;background:#101116;color:#f1f1f6;border:1px solid #33353d;border-radius:14px;padding:8px 10px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:6px;max-width:560px;margin:0 auto}
+#spplayer.in-stage{z-index:60;bottom:calc(74px + env(safe-area-inset-bottom,0px))}
+#spplayer .sp-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#spplayer .sp-title{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#spplayer .sp-btns{display:flex;gap:6px}
+#spplayer #sp-wrap{border-radius:12px;overflow:hidden}
+#spplayer #sp-wrap iframe{display:block;width:100%;border:0}
+#spplayer.min #sp-wrap{height:0;opacity:0;pointer-events:none}
+#spplayer .sp-ctl .row-actions{gap:6px}
+#spplayer .sp-status{margin:4px 0 0;font-size:12.5px}
+#spplayer .hint{color:#a9abb8}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -1293,13 +1305,129 @@ function sched(){
     met.next+=iv;met.beat++;
   }
 }
+/* ---------- player do Spotify com clique alinhado ---------- */
+var sp={api:null,loading:null,ctl:null,songId:null,sync:true,playing:false,anchor:null,samples:[],k:-1,timer:null,taps:[],min:false,pos:0,dur:0,ready:false};
+function loadSpApi(){
+  if(sp.api)return Promise.resolve(sp.api);
+  if(sp.loading)return sp.loading;
+  sp.loading=new Promise(function(res,rej){
+    window.onSpotifyIframeApiReady=function(api){sp.api=api;res(api)};
+    var s=document.createElement('script');s.src='https://open.spotify.com/embed/iframe-api/v1';s.async=true;
+    s.onerror=function(){sp.loading=null;rej(new Error('spotify'))};document.body.appendChild(s);
+  });
+  return sp.loading;
+}
+function spReset(){sp.samples=[];sp.anchor=null;sp.playing=false;sp.k=-1;sp.pos=0}
+function spUpdate(d){
+  var now=performance.now(),playing=!d.isPaused&&!d.isBuffering;
+  sp.dur=d.duration||sp.dur;sp.pos=d.position||0;
+  if(!playing){var was=sp.playing;if(sp.playing){sp.playing=false;sp.k=-1;flash(-1)}if(was)spCtl();else spStatus();return}
+  var sample=now-d.position;
+  if(sp.samples.length){
+    var sorted=sp.samples.slice().sort(function(a,b){return a.v-b.v}),med=sorted[Math.floor(sorted.length/2)].v;
+    if(Math.abs(sample-med)>500){sp.samples=[];sp.k=-1}
+  }
+  sp.samples.push({v:sample,t:now});
+  sp.samples=sp.samples.filter(function(x){return now-x.t<12000});
+  sp.anchor=Math.min.apply(null,sp.samples.map(function(x){return x.v}));
+  var first=!sp.playing;
+  if(first){sp.playing=true;sp.k=-1}
+  if(!sp.timer)sp.timer=setInterval(spTick,25);
+  if(first)spCtl();else spStatus();
+}
+function spTick(){
+  var s=get(sp.songId);
+  if(!sp.sync||!sp.playing||sp.anchor==null||!s||!s.bpm||!met.ctx||met.ctx.state!=='running')return;
+  var T=60000/s.bpm,O=s.beatOffset||0,bt=s.beats||4,now=performance.now(),P=now-sp.anchor,look=220,lat=(met.ctx.outputLatency||0)*1000;
+  var k0=Math.max(0,Math.ceil((P-O)/T));
+  if(sp.k<k0)sp.k=k0;
+  while(O+sp.k*T<P+look){
+    var dl=O+sp.k*T-P-lat;
+    if(dl>-5){
+      clickAt(met.ctx.currentTime+Math.max(0,dl)/1000,sp.k%bt===0);
+      (function(b,d){setTimeout(function(){if(sp.playing)flash(b)},d)})(sp.k%bt,Math.max(0,dl));
+    }
+    sp.k++;
+  }
+}
+function spOpen(id){
+  var s=get(id);if(!s||!s.spotify){toast('Esta música não tem link do Spotify.');return}
+  if(!s.bpm){toast('Defina o BPM da música primeiro.');return}
+  ensureAudio();metStop();
+  var changed=sp.songId!==id;sp.songId=id;sp.min=false;if(changed)spReset();
+  ui.spOpen=true;spPanel();
+  loadSpApi().then(function(api){
+    var uri='spotify:track:'+s.spotify;
+    if(sp.ctl){if(changed)sp.ctl.loadUri(uri);spCtl();return}
+    api.createController(document.getElementById('sp-host'),{uri:uri,width:'100%',height:80},function(ctl){
+      sp.ctl=ctl;
+      ctl.addListener('playback_update',function(e){if(e&&e.data)spUpdate(e.data)});
+      ctl.addListener('ready',function(){sp.ready=true;spCtl()});
+      spCtl();
+    });
+  }).catch(function(){toast('Não foi possível carregar o player do Spotify.');ui.spOpen=false;spPanel()});
+}
+function spClose(){
+  try{if(sp.ctl)sp.ctl.pause()}catch(e){}
+  spReset();clearInterval(sp.timer);sp.timer=null;flash(-1);ui.spOpen=false;spPanel();
+}
+function spPanel(){
+  var el=document.getElementById('spplayer');
+  if(!el){
+    el=document.createElement('div');el.id='spplayer';el.hidden=true;
+    el.innerHTML='<div class="sp-top"><b class="sp-title"></b><span class="sp-btns"></span></div><div id="sp-wrap"><div id="sp-host"></div></div><div class="sp-ctl"></div>';
+    document.body.appendChild(el);
+  }
+  el.hidden=!ui.spOpen;
+  var st=document.getElementById('stage');el.classList.toggle('in-stage',!!(st&&!st.hidden));el.classList.toggle('min',!!sp.min);
+  if(ui.spOpen)spCtl();
+}
+function spCtl(){
+  var el=document.getElementById('spplayer');if(!el||!ui.spOpen)return;
+  var s=get(sp.songId);if(!s){return}
+  var T=60000/(s.bpm||120),B=T*(s.beats||4),O=s.beatOffset;
+  el.querySelector('.sp-title').textContent=(s.title||'')+(s.artist?' · '+s.artist:'');
+  el.querySelector('.sp-btns').innerHTML='<button type="button" class="btn small" data-act="sp-min">'+(sp.min?'Abrir':'Recolher')+'</button><button type="button" class="btn small" data-act="sp-close">Fechar</button>';
+  el.querySelector('.sp-ctl').innerHTML=
+    '<div class="row-actions"><button type="button" class="btn small'+(sp.sync?' primary':'')+'" data-act="sp-sync">Clique: '+(sp.sync?'ligado':'desligado')+'</button>'+
+    (sp.min?'<button type="button" class="btn small" data-act="sp-toggle">'+(sp.playing?'⏸ Pausar':'▶ Tocar')+'</button>':'')+
+    '<button type="button" class="btn small primary" data-act="sp-tap">Alinhar (tempo 1)</button>'+
+    '<button type="button" class="btn small" data-act="sp-nudge" data-d="-20" aria-label="Clique 20 ms mais cedo">−20 ms</button><button type="button" class="btn small" data-act="sp-nudge" data-d="20" aria-label="Clique 20 ms mais tarde">+20 ms</button></div>'+
+    '<p class="hint sp-status"></p>'+
+    (sp.min?'':'<p class="hint">Se a música tocar só 30 segundos, entre na sua conta do Spotify neste navegador.</p>');
+  spStatus();
+}
+function spStatus(){
+  var el=document.querySelector('#spplayer .sp-status'),s=get(sp.songId);if(!el||!s)return;
+  var tm=function(ms){ms=Math.max(0,Math.round(ms/1000));return Math.floor(ms/60)+':'+String(ms%60).padStart(2,'0')};
+  var msg=!sp.playing?'Dê play na música (no player acima).':(s.beatOffset==null?'Falta alinhar: toque em “Alinhar” no tempo 1 do compasso.':sp.sync?'Clique sincronizado com a música ✓':'Clique desligado');
+  el.innerHTML=''; el.appendChild(document.createTextNode(msg+' '));
+  var sm=document.createElement('span');sm.className='mono';sm.textContent=(s.bpm||'—')+' BPM'+(sp.dur?' · '+tm(sp.pos)+' / '+tm(sp.dur):'');el.appendChild(sm);
+}
+function spTap(){
+  var s=get(sp.songId);if(!s||!s.bpm)return;
+  if(!sp.playing||sp.anchor==null){toast('Dê play na música primeiro.');return}
+  var now=performance.now(),T=60000/s.bpm,B=T*(s.beats||4),P=now-sp.anchor;
+  if(sp.taps.length&&now-sp.taps[sp.taps.length-1].t>4000)sp.taps=[];
+  sp.taps.push({t:now,ph:((P%B)+B)%B});if(sp.taps.length>6)sp.taps.shift();
+  var cx=0,sy=0;sp.taps.forEach(function(x){var a=2*Math.PI*x.ph/B;cx+=Math.cos(a);sy+=Math.sin(a)});
+  var ang=Math.atan2(sy,cx),O=Math.round(((ang/(2*Math.PI)*B)+B)%B);
+  patch(s.id,{beatOffset:O},true);sp.k=-1;
+  toast('Alinhado com '+sp.taps.length+(sp.taps.length===1?' toque':' toques')+'. Toque mais vezes para afinar.');
+  spCtl();
+}
+function spNudge(d){
+  var s=get(sp.songId);if(!s||!s.bpm)return;
+  var T=60000/s.bpm,B=T*(s.beats||4),O=(((s.beatOffset||0)+d)%B+B)%B;
+  patch(s.id,{beatOffset:Math.round(O)},true);sp.k=-1;spCtl();
+}
 function metStop(){met.running=false;clearInterval(met.timer);met.timer=null;flash(-1)}
 function metStart(id){
   var AC=window.AudioContext||window.webkitAudioContext;
   if(!AC){toast('Este navegador não toca o metrônomo.');return}
   if(!get(id)||!get(id).bpm){toast('Defina o BPM da música primeiro.');return}
   if(!met.ctx)met.ctx=new AC();
-  met.ctx.resume();metStop();
+  met.ctx.resume();metStop();if(sp.sync&&sp.playing){sp.sync=false;spCtl()}
   met.running=true;met.songId=id;met.beat=0;met.next=met.ctx.currentTime+0.1;
   met.timer=setInterval(sched,25);
 }
@@ -1653,6 +1781,7 @@ function renderStage(){
       '<div class="row"><span class="lbl">Espera</span><button type="button" class="btn small" data-act="wait-step" data-id="'+s.id+'" data-d="-5" aria-label="Menos espera">−5</button><span class="mono">'+(s.wait||0)+'s</span><button type="button" class="btn small" data-act="wait-step" data-id="'+s.id+'" data-d="5" aria-label="Mais espera">+5</button><span class="faint" style="font-size:13px">antes de rolar</span></div>'+
       (s.bpm?'<div class="row multi"><span class="lbl">Clique</span>'+nb(-5)+nb(-1)+'<b class="mono bpmv'+(eff>=300?' cesar':'')+'">'+bpmTxt(eff)+(d?' <small>('+(d>0?'+':'−')+Math.abs(d)+')</small>':'')+'</b>'+nb(1)+nb(5)+'<button type="button" class="btn small '+(on?'danger':'primary')+'" data-act="'+(on?'met-stop':'met-start')+'" data-id="'+s.id+'">'+(on?'Parar':'Iniciar')+'</button></div>':'')+
       (isL?'':'<div class="row"><span class="lbl">Tom</span><button type="button" class="btn small" data-act="tr" data-id="'+s.id+'" data-d="-1" aria-label="Descer um semitom">−1</button><span class="mono">'+(tr>0?'+':'')+tr+'</span><button type="button" class="btn small" data-act="tr" data-id="'+s.id+'" data-d="1" aria-label="Subir um semitom">+1</button></div>')+
+      (s.spotify&&s.bpm?'<div class="row"><span class="lbl">Spotify</span><button type="button" class="btn small primary" data-act="sp-open" data-id="'+s.id+'">♫ Clique com o player</button></div>':'')+
       (canSync()&&s.bpm?'<div class="row"><span class="lbl">Banda</span>'+(smOn()?'<button type="button" class="btn small danger" data-act="sm-stop">Parar clique da banda</button>':'<button type="button" class="btn small primary" data-act="sm-start" data-id="'+s.id+'">Clique para todos ('+bpmTxt(eff)+')</button>')+'</div>':'')+
       '<div class="row"><a class="btn small" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">Ouvir no Spotify ↗</a></div>'+
     '</div>':'')+
@@ -1812,6 +1941,7 @@ function metroBlock(s){
     '<div class="mdots" aria-hidden="true">'+dots+'</div>'+
     '<div class="row-actions"><button type="button" class="btn '+(on?'danger':'primary')+'" data-act="'+(on?'met-stop':'met-start')+'" data-id="'+s.id+'">'+(on?'Parar':'Iniciar')+'</button>'+
     '<button type="button" class="btn" data-act="met-tap" data-id="'+s.id+'">Tocar no ritmo</button>'+
+    (s.spotify&&s.bpm&&!window.CE_ARTIFACT?'<button type="button" class="btn" data-act="sp-open" data-id="'+s.id+'">♫ Tocar com o Spotify</button>':'')+
     '<select data-f="beats" data-id="'+s.id+'" aria-label="Compasso">'+opts+'</select></div>'+
     '<p class="hint">Os botões de BPM mudam só o treino de agora; o BPM salvo da música não é alterado, a menos que você toque em “Salvar”. Para descobrir o BPM, toque em “Tocar no ritmo” acompanhando a música (3 toques ou mais).</p></div></div>';
 }
@@ -2684,7 +2814,7 @@ function render(){
   $('#home').hidden=!!pid||isSet||isCfg;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;
   $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=true;
   if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
-  renderDrawer();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();
+  renderDrawer();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.spOpen)spPanel();
   if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
   if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
     try{var qs=new URLSearchParams(location.search),dv=qs.get('drive');if(dv){var M={ok:'Google Drive conectado!',denied:'Conexão cancelada.',err:'Não foi possível conectar o Drive. Tente de novo.',nosecret:'O Drive ainda não está configurado no servidor.'};toast(M[dv]||'');qs.delete('drive');history.replaceState(null,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}}catch(e){}}
@@ -2735,6 +2865,13 @@ document.addEventListener('click',function(e){
   if(act==='bg-cycle'){bgMode=BG[(BG.indexOf(bgMode)+1)%BG.length];try{localStorage.setItem('ce-bg2',bgMode)}catch(err){}applyBg();toast('Fundo: '+BGN[bgMode]);render();return}
   if(act==='cfg-import'){location.hash='#geral';setTimeout(function(){toggle('#panel-import','#import-text')},60);return}
   if(act==='open-band'){openBand();window.scrollTo(0,0);return}
+  if(act==='sp-open'){spOpen(id);return}
+  if(act==='sp-close'){spClose();return}
+  if(act==='sp-min'){sp.min=!sp.min;spPanel();return}
+  if(act==='sp-sync'){sp.sync=!sp.sync;if(sp.sync)sp.k=-1;spCtl();return}
+  if(act==='sp-toggle'){try{sp.ctl.togglePlay()}catch(err){}return}
+  if(act==='sp-tap'){spTap();return}
+  if(act==='sp-nudge'){spNudge(+t.dataset.d);return}
   if(act==='met-start'){metStart(id);render();return}
   if(act==='met-stop'){metStop();render();return}
   if(act==='met-tap'){tapBpm(id);return}
@@ -2809,7 +2946,7 @@ document.addEventListener('click',function(e){
   if(act==='band-rm'){bandDraft.splice(+t.dataset.i,1);renderBandPanel();return}
   if(act==='cyc-part'){e.stopPropagation();var cp=partOf(get(id),t.dataset.mid).status;changeStatus(id,t.dataset.mid,(cp+1)%4);render();return}
   if(act==='pill-status'){e.stopPropagation();ui.stPick={id:id,mid:t.dataset.mid};renderStPick();return}
-  if(act==='st-set'){var sp=ui.stPick;ui.stPick=null;if(sp){changeStatus(sp.id,sp.mid,+t.dataset.v)}render();return}
+  if(act==='st-set'){var stp=ui.stPick;ui.stPick=null;if(stp){changeStatus(stp.id,stp.mid,+t.dataset.v)}render();return}
   if(act==='st-close'){ui.stPick=null;renderStPick();return}
   if(act==='reh-edit'){ui.rehEdit=true;ui.rehDraft=null;$('#reh').dataset.editing='';renderReh();return}
   if(act==='reh-done'){var dd=ui.rehDraft||{};if(!dd.date||!dd.time){toast('Informe a data e a hora do ensaio.');return}

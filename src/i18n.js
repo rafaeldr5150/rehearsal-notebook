@@ -19,6 +19,15 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['♫ Tocar com o Spotify','♫ Play with Spotify','♫ Tocar con Spotify'],['Spotify','Spotify','Spotify'],['♫ Clique com o player','♫ Click with the player','♫ Clic con el reproductor'],
+['Recolher','Collapse','Contraer'],['Abrir','Open','Abrir'],['⏸ Pausar','⏸ Pause','⏸ Pausar'],['▶ Tocar','▶ Play','▶ Tocar'],
+['Alinhar (tempo 1)','Align (beat 1)','Alinear (tiempo 1)'],['−20 ms','−20 ms','−20 ms'],['+20 ms','+20 ms','+20 ms'],
+['Dê play na música (no player acima).','Press play on the song (in the player above).','Dale play a la canción (en el reproductor de arriba).'],
+['Falta alinhar: toque em “Alinhar” no tempo 1 do compasso.','Needs aligning: tap “Align” on beat 1 of the bar.','Falta alinear: toca “Alinear” en el tiempo 1 del compás.'],
+['Clique sincronizado com a música ✓','Click synced with the song ✓','Clic sincronizado con la canción ✓'],['Clique desligado','Click off','Clic desactivado'],
+['Se a música tocar só 30 segundos, entre na sua conta do Spotify neste navegador.','If the song only plays 30 seconds, sign in to your Spotify account in this browser.','Si la canción solo suena 30 segundos, inicia sesión en tu cuenta de Spotify en este navegador.'],
+['Dê play na música primeiro.','Press play on the song first.','Dale play a la canción primero.'],['Esta música não tem link do Spotify.','This song has no Spotify link.','Esta canción no tiene enlace de Spotify.'],
+['Não foi possível carregar o player do Spotify.','Could not load the Spotify player.','No se pudo cargar el reproductor de Spotify.'],
 ['Avançar','Next','Continuar'],['OK','OK','OK'],
 ['O que ficou pendente você pode liberar depois em Configurações → Permissões e acessos.','You can allow what is still pending later in Settings → Permissions and access.','Lo que quedó pendiente puedes permitirlo después en Ajustes → Permisos y accesos.'],
 ['Remover a data do show','Remove the show date','Quitar la fecha del show'],['Confirmar: remover o show','Confirm: remove the show','Confirmar: quitar el show'],
@@ -417,6 +426,8 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^Clique: (ligado|desligado)$/,function(m){return (I===1?'Click: ':'Clic: ')+(m[1]==='ligado'?(I===1?'on':'activado'):(I===1?'off':'desactivado'))}],
+[/^Alinhado com (\d+) toques?\. Toque mais vezes para afinar\.$/,function(m){return I===1?'Aligned with '+m[1]+(m[1]==='1'?' tap':' taps')+'. Tap more times to fine-tune.':'Alineado con '+m[1]+(m[1]==='1'?' toque':' toques')+'. Toca más veces para afinar.'}],
 [/^Pasta: (.+)$/,function(m){return (I===1?'Folder: ':'Carpeta: ')+m[1]}],
 [/^Pasta de vídeos definida: (.+)$/,function(m){return (I===1?'Videos folder set: ':'Carpeta de vídeos definida: ')+m[1]}],
 [/^Vídeo muito grande \(máximo 1 GB\): (.+)$/,function(m){return (I===1?'Video too large (max 1 GB): ':'Vídeo demasiado grande (máx. 1 GB): ')+m[1]}],
