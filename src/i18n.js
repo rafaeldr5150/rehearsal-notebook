@@ -19,6 +19,17 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Não estou ouvindo som. Aumente o volume ou chegue mais perto.','I can\'t hear any sound. Turn the volume up or get closer.','No oigo sonido. Sube el volumen o acércate.'],
+['×2','×2','×2'],['÷2','÷2','÷2'],['Andamento dobrado.','Tempo doubled.','Tempo duplicado.'],['Andamento pela metade.','Tempo halved.','Tempo a la mitad.'],
+['🎧 Escutar e sincronizar','🎧 Listen and sync','🎧 Escuchar y sincronizar'],['Escutar','Listen','Escuchar'],
+['Escutando a música','Listening to the music','Escuchando la música'],['Parar','Stop','Parar'],
+['Mudar o tempo 1','Move beat 1','Mover el tiempo 1'],['−10 ms','−10 ms','−10 ms'],['+10 ms','+10 ms','+10 ms'],['Salvar este BPM','Save this BPM','Guardar este BPM'],
+['O microfone precisa ouvir a música (caixa de som ou a banda). Com fone no ouvido ele não escuta.','The microphone needs to hear the music (speaker or the band). With headphones it hears nothing.','El micrófono necesita oír la música (altavoz o la banda). Con auriculares no oye nada.'],
+['Clique acompanhando a música','Click following the music','Clic siguiendo la música'],['Escutando…','Listening…','Escuchando…'],
+['Ainda sem batida clara. Aumente o volume ou chegue mais perto da caixa.','No clear beat yet. Turn the volume up or get closer to the speaker.','Aún sin pulso claro. Sube el volumen o acércate al altavoz.'],
+['Este navegador não consegue escutar o som para sincronizar.','This browser cannot listen to the sound to sync.','Este navegador no puede escuchar el sonido para sincronizar.'],
+['Permissão do microfone negada. Libere nas configurações do navegador.','Microphone permission denied. Allow it in your browser settings.','Permiso del micrófono denegado. Permítelo en los ajustes del navegador.'],
+['Não foi possível escutar agora.','Could not listen right now.','No se pudo escuchar ahora.'],['Tempo 1 mudou de lugar.','Beat 1 moved.','El tiempo 1 cambió de lugar.'],
 ['♫ Tocar com o Spotify','♫ Play with Spotify','♫ Tocar con Spotify'],['Spotify','Spotify','Spotify'],['♫ Clique com o player','♫ Click with the player','♫ Clic con el reproductor'],
 ['Recolher','Collapse','Contraer'],['Abrir','Open','Abrir'],['⏸ Pausar','⏸ Pause','⏸ Pausar'],['▶ Tocar','▶ Play','▶ Tocar'],
 ['Alinhar (tempo 1)','Align (beat 1)','Alinear (tiempo 1)'],['−20 ms','−20 ms','−20 ms'],['+20 ms','+20 ms','+20 ms'],
@@ -426,6 +437,8 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^Ajuste do clique: ([+-]?\d+) ms$/,function(m){return (I===1?'Click adjustment: ':'Ajuste del clic: ')+m[1]+' ms'}],
+[/^BPM salvo: (.+)\.$/,function(m){return (I===1?'BPM saved: ':'BPM guardado: ')+m[1]+'.'}],
 [/^Clique: (ligado|desligado)$/,function(m){return (I===1?'Click: ':'Clic: ')+(m[1]==='ligado'?(I===1?'on':'activado'):(I===1?'off':'desactivado'))}],
 [/^Alinhado com (\d+) toques?\. Toque mais vezes para afinar\.$/,function(m){return I===1?'Aligned with '+m[1]+(m[1]==='1'?' tap':' taps')+'. Tap more times to fine-tune.':'Alineado con '+m[1]+(m[1]==='1'?' toque':' toques')+'. Toca más veces para afinar.'}],
 [/^Pasta: (.+)$/,function(m){return (I===1?'Folder: ':'Carpeta: ')+m[1]}],

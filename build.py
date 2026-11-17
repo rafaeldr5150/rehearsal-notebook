@@ -7,9 +7,10 @@ cfg=json.load(open(os.path.join(ROOT,'src','config.json')))
 page=open(SRC,encoding='utf8').read()
 adapter=open(os.path.join(ROOT,'src','adapter.js'),encoding='utf8').read()
 i18n=open(os.path.join(ROOT,'src','i18n.js'),encoding='utf8').read()
+beat=open(os.path.join(ROOT,'src','beat.js'),encoding='utf8').read()
 shutil.copy(os.path.join(ROOT,'src','supabase.js'),os.path.join(PUB,'supabase.js'))
 i=page.index('<script>\n(function(){')
-inject=('<script>\n'+i18n+'\n</script>\n<script src="supabase.js"></script>\n<script>window.CE_CONFIG='+json.dumps(cfg)+';</script>\n<script>\n'+adapter+'\n</script>\n')
+inject=('<script>\n'+i18n+'\n</script>\n<script>\n'+beat+'\n</script>\n<script src="supabase.js"></script>\n<script>window.CE_CONFIG='+json.dumps(cfg)+';</script>\n<script>\n'+adapter+'\n</script>\n')
 page=page[:i]+inject+page[i:]
 page=page.replace('<meta name="claude:viewport-fit-sides" content="cover">\n','')
 head=('<!doctype html>\n<html lang="pt-BR">\n<head>\n<meta charset="utf-8">\n'

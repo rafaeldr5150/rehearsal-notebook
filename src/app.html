@@ -958,6 +958,15 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 #spplayer .sp-ctl .row-actions{gap:6px}
 #spplayer .sp-status{margin:4px 0 0;font-size:12.5px}
 #spplayer .hint{color:#a9abb8}
+
+#micfollow{position:fixed;left:8px;right:8px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:39;background:#101116;color:#f1f1f6;border:1px solid #33353d;border-radius:14px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:8px;max-width:560px;margin:0 auto}
+#micfollow.in-stage{z-index:61;bottom:calc(74px + env(safe-area-inset-bottom,0px))}
+#micfollow .sp-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#micfollow .mic-read{display:flex;align-items:baseline;gap:12px}
+#micfollow .mic-bpm{font-size:30px;font-weight:700}
+#micfollow .mic-bar{height:6px;border-radius:6px;background:#2a2c34;overflow:hidden}
+#micfollow .mic-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff3d8b,#2ee6a6);transition:width .4s}
+#micfollow .hint{color:#a9abb8;margin:0;font-size:12.5px}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -1307,6 +1316,7 @@ function sched(){
 }
 /* ---------- player do Spotify com clique alinhado ---------- */
 var sp={api:null,loading:null,ctl:null,songId:null,sync:true,playing:false,anchor:null,samples:[],k:-1,timer:null,taps:[],min:false,pos:0,dur:0,ready:false};
+function bpmOf(s){return s.bpmFine&&Math.abs(s.bpmFine-s.bpm)<1?s.bpmFine:(s.bpm||120)}
 function loadSpApi(){
   if(sp.api)return Promise.resolve(sp.api);
   if(sp.loading)return sp.loading;
@@ -1338,7 +1348,7 @@ function spUpdate(d){
 function spTick(){
   var s=get(sp.songId);
   if(!sp.sync||!sp.playing||sp.anchor==null||!s||!s.bpm||!met.ctx||met.ctx.state!=='running')return;
-  var T=60000/s.bpm,O=s.beatOffset||0,bt=s.beats||4,now=performance.now(),P=now-sp.anchor,look=220,lat=(met.ctx.outputLatency||0)*1000;
+  var T=60000/bpmOf(s),O=s.beatOffset||0,bt=s.beats||4,now=performance.now(),P=now-sp.anchor,look=220,lat=(met.ctx.outputLatency||0)*1000;
   var k0=Math.max(0,Math.ceil((P-O)/T));
   if(sp.k<k0)sp.k=k0;
   while(O+sp.k*T<P+look){
@@ -1407,7 +1417,7 @@ function spStatus(){
 function spTap(){
   var s=get(sp.songId);if(!s||!s.bpm)return;
   if(!sp.playing||sp.anchor==null){toast('Dê play na música primeiro.');return}
-  var now=performance.now(),T=60000/s.bpm,B=T*(s.beats||4),P=now-sp.anchor;
+  var now=performance.now(),T=60000/bpmOf(s),B=T*(s.beats||4),P=now-sp.anchor;
   if(sp.taps.length&&now-sp.taps[sp.taps.length-1].t>4000)sp.taps=[];
   sp.taps.push({t:now,ph:((P%B)+B)%B});if(sp.taps.length>6)sp.taps.shift();
   var cx=0,sy=0;sp.taps.forEach(function(x){var a=2*Math.PI*x.ph/B;cx+=Math.cos(a);sy+=Math.sin(a)});
@@ -1418,8 +1428,120 @@ function spTap(){
 }
 function spNudge(d){
   var s=get(sp.songId);if(!s||!s.bpm)return;
-  var T=60000/s.bpm,B=T*(s.beats||4),O=(((s.beatOffset||0)+d)%B+B)%B;
+  var T=60000/bpmOf(s),B=T*(s.beats||4),O=(((s.beatOffset||0)+d)%B+B)%B;
   patch(s.id,{beatOffset:Math.round(O)},true);sp.k=-1;spCtl();
+}
+
+/* ---------- escutar a música pelo microfone: descobre o BPM e acompanha as variações ---------- */
+var MIC_WORKLET="class P extends AudioWorkletProcessor{constructor(){super();this.aL=1-Math.exp(-2*Math.PI*220/sampleRate);this.aH=1-Math.exp(-2*Math.PI*3500/sampleRate);this.l1=0;this.l2=0;this.h1=0;this.eL=0;this.eH=0;this.c=0;this.buf=[]}process(i){var x=i[0]&&i[0][0];if(!x)return true;for(var k=0;k<x.length;k++){var s=x[k];this.l1+=this.aL*(s-this.l1);this.l2+=this.aL*(this.l1-this.l2);this.h1+=this.aH*(s-this.h1);var h=s-this.h1;this.eL+=this.l2*this.l2;this.eH+=h*h;this.c++;if(this.c===256){this.buf.push(Math.sqrt(this.eL/256),Math.sqrt(this.eH/256));this.eL=0;this.eH=0;this.c=0;if(this.buf.length>=16){this.port.postMessage({t:currentTime+(k+1)/sampleRate,b:this.buf});this.buf=[]}}}return true}}registerProcessor('ce-onset',P);";
+var mic={on:false,stream:null,src:null,node:null,mute:null,fl:[],idx0:0,tFirst:null,tEnd:0,hs:0,fs:0,prevL:0,prevH:0,trk:{on:false},ref:null,shift:0,lastT:-1,songId:null,est:null,estTimer:null,tickTimer:null,clicks:[],bpm:0,conf:0,nudge:0};
+try{mic.nudge=+localStorage.getItem('ce-mnudge')||0}catch(e){}
+function micSupported(){var AC=window.AudioContext||window.webkitAudioContext;return !!(AC&&window.AudioWorkletNode&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.CE_BEAT)}
+function micCompress(x){return Math.log(1+x*60)}
+function micFeed(m){
+  var b=m.b,n=b.length/2,hs=mic.hs;
+  if(mic.tFirst==null)mic.tFirst=m.t-(n-1)*hs;
+  for(var j=0;j<n;j++){
+    var L=micCompress(b[2*j]),H=micCompress(b[2*j+1]);
+    var t=m.t-(n-1-j)*hs,fl=Math.max(0,L-mic.prevL),fh=Math.max(0,H-mic.prevH);
+    /* ignora o agudo perto dos nossos próprios cliques, para o app não seguir o próprio clique */
+    var own=false;for(var c=mic.clicks.length-1;c>=0&&c>mic.clicks.length-24;c--){if(Math.abs(t-mic.clicks[c])<0.05){own=true;break}}
+    mic.fl.push(fl+(own?0:0.35*fh));mic.prevL=L;mic.prevH=H;
+    if(b[2*j]>0.004)mic.lastLoud=t;
+  }
+  mic.tEnd=m.t;
+  var keep=Math.round(14*mic.fs);if(mic.fl.length>keep){var d=mic.fl.length-keep;mic.fl.splice(0,d);mic.idx0+=d}
+}
+function micEstimate(){
+  if(!mic.on||!window.CE_BEAT)return;
+  var fs=mic.fs,win=Math.round((mic.trk.on?5.5:8)*fs);if(mic.fl.length<4*fs)return;
+  var start=Math.max(0,mic.fl.length-win),seg=Float32Array.from(mic.fl.slice(start));
+  var s=get(mic.songId),prior=mic.trk.on?60/mic.trk.T:(s&&s.bpm?bpmOf(s):0);
+  var est=window.CE_BEAT.estimate(seg,fs,{prior:(mic.lowN>=3?0:prior)});
+  if((est.conf||0)<0.5)mic.lowN=(mic.lowN||0)+1;else mic.lowN=0;
+  var t0=mic.tFirst+(mic.idx0+start)*mic.hs;
+  mic.est=est;mic.conf=est.conf||0;if(est.bpm&&est.conf>=0.5)mic.bpm=est.bpm;
+  var prev=mic.trk.on;
+  mic.trk=window.CE_BEAT.track(mic.trk,est,t0,mic.tEnd,{minConf:prev?0.36:0.5});
+  if(mic.trk.on&&!prev){mic.ref=mic.trk.tb;mic.lastT=-1}
+  micUi();
+}
+function micTick(){
+  if(!mic.on||!mic.trk.on||!met.ctx||met.ctx.state!=='running')return;
+  var ctx=met.ctx,now=ctx.currentTime,T=mic.trk.T,tb=mic.trk.tb,lat=(ctx.outputLatency||ctx.baseLatency||0)+0.02+mic.nudge/1000,s=get(mic.songId),bt=(s&&s.beats)||4;
+  /* se o som sumiu faz tempo, para de clicar */
+  if(now-mic.tEnd>1.5||now-(mic.lastLoud||0)>1.5)return;
+  var n=Math.ceil((now+0.005+lat-tb)/T);
+  for(;;n++){
+    var bT=tb+n*T,tt=bT-lat;
+    if(tt>now+0.2)break;
+    if(bT<=mic.lastT+T*0.5)continue;
+    if(tt<now-0.005){mic.lastT=bT;continue}
+    var idx=Math.round((bT-mic.ref)/T),acc=((idx+mic.shift)%bt+bt)%bt===0;
+    clickAt(Math.max(now,tt),acc);mic.lastT=bT;
+    mic.clicks.push(tt+(ctx.outputLatency||0));if(mic.clicks.length>60)mic.clicks.shift();
+    (function(b,d){setTimeout(function(){if(mic.on)flash(b)},d)})(((idx+mic.shift)%bt+bt)%bt,Math.max(0,(tt-now)*1000));
+  }
+}
+function micStart(id){
+  if(mic.on)return;
+  if(!micSupported()){toast('Este navegador não consegue escutar o som para sincronizar.');return}
+  ensureAudio();metStop();sp.sync=false;
+  var ctx=met.ctx;mic.songId=id||null;
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}}).then(function(stream){
+    var url=URL.createObjectURL(new Blob([MIC_WORKLET],{type:'application/javascript'}));
+    return ctx.audioWorklet.addModule(url).then(function(){
+      URL.revokeObjectURL(url);
+      mic.stream=stream;mic.src=ctx.createMediaStreamSource(stream);
+      mic.node=new AudioWorkletNode(ctx,'ce-onset');
+      mic.mute=ctx.createGain();mic.mute.gain.value=0;
+      mic.src.connect(mic.node);mic.node.connect(mic.mute);mic.mute.connect(ctx.destination);
+      mic.hs=256/ctx.sampleRate;mic.fs=ctx.sampleRate/256;
+      mic.lastLoud=0;mic.fl=[];mic.idx0=0;mic.tFirst=null;mic.prevL=0;mic.prevH=0;mic.trk={on:false};mic.ref=null;mic.lastT=-1;mic.bpm=0;mic.conf=0;mic.clicks=[];mic.est=null;
+      mic.node.port.onmessage=function(e){if(mic.on)micFeed(e.data)};
+      mic.on=true;
+      mic.estTimer=setInterval(micEstimate,1000);mic.tickTimer=setInterval(micTick,25);
+      window.__mic=mic;micPanel();
+    });
+  }).catch(function(err){
+    try{console.warn('mic',err)}catch(e){}
+    micStop();
+    toast(err&&/denied|permission/i.test(String(err.name+err.message))?'Permissão do microfone negada. Libere nas configurações do navegador.':'Não foi possível escutar agora.');
+  });
+}
+function micStop(){
+  mic.on=false;clearInterval(mic.estTimer);clearInterval(mic.tickTimer);
+  try{if(mic.node){mic.node.port.onmessage=null;mic.node.disconnect()}}catch(e){}
+  try{if(mic.src)mic.src.disconnect()}catch(e){}
+  try{if(mic.mute)mic.mute.disconnect()}catch(e){}
+  try{if(mic.stream)mic.stream.getTracks().forEach(function(t){t.stop()})}catch(e){}
+  mic.node=null;mic.src=null;mic.mute=null;mic.stream=null;mic.trk={on:false};flash(-1);micPanel();
+}
+function micPanel(){
+  var el=document.getElementById('micfollow');
+  if(!el){el=document.createElement('div');el.id='micfollow';el.hidden=true;document.body.appendChild(el)}
+  el.hidden=!mic.on;
+  var st=document.getElementById('stage');el.classList.toggle('in-stage',!!(st&&!st.hidden));
+  if(mic.on){
+    el.innerHTML='<div class="sp-top"><b>Escutando a música</b><button type="button" class="btn small danger" data-act="mic-stop">Parar</button></div>'+
+      '<div class="mic-read"><span class="mic-bpm mono">—</span><span class="mic-state hint"></span></div><div class="mic-bar"><i></i></div>'+
+      '<div class="row-actions"><button type="button" class="btn small" data-act="mic-shift">Mudar o tempo 1</button>'+
+      '<button type="button" class="btn small" data-act="mic-oct" data-d="2" aria-label="Dobrar o andamento">×2</button><button type="button" class="btn small" data-act="mic-oct" data-d="0.5" aria-label="Metade do andamento">÷2</button>'+
+      '<button type="button" class="btn small" data-act="mic-nudge" data-d="-10" aria-label="Clique 10 ms mais cedo">−10 ms</button><button type="button" class="btn small" data-act="mic-nudge" data-d="10" aria-label="Clique 10 ms mais tarde">+10 ms</button>'+
+      (mic.songId?'<button type="button" class="btn small primary mic-save" data-act="mic-save" hidden>Salvar este BPM</button>':'')+'</div>'+
+      '<p class="hint">O microfone precisa ouvir a música (caixa de som ou a banda). Com fone no ouvido ele não escuta.</p>';
+    micUi();
+  }
+}
+function micUi(){
+  var el=document.getElementById('micfollow');if(!el||!mic.on)return;
+  var bpmEl=el.querySelector('.mic-bpm'),stEl=el.querySelector('.mic-state'),bar=el.querySelector('.mic-bar i'),sv=el.querySelector('.mic-save');
+  var tr=mic.trk.on?60/mic.trk.T:0;
+  if(bpmEl)bpmEl.textContent=tr?(Math.round(tr*10)/10).toString().replace('.',',')+' BPM':'—';
+  var quiet=met.ctx&&met.ctx.currentTime-(mic.lastLoud||0)>1.5;
+  if(stEl)stEl.textContent=quiet&&mic.fl.length>4*mic.fs?'Não estou ouvindo som. Aumente o volume ou chegue mais perto.':mic.trk.on?'Clique acompanhando a música':(mic.fl.length<4*mic.fs?'Escutando…':'Ainda sem batida clara. Aumente o volume ou chegue mais perto da caixa.');
+  if(bar)bar.style.width=Math.round((mic.conf||0)*100)+'%';
+  if(sv)sv.hidden=!(mic.trk.on&&mic.conf>=0.6);
 }
 function metStop(){met.running=false;clearInterval(met.timer);met.timer=null;flash(-1)}
 function metStart(id){
@@ -1427,7 +1549,7 @@ function metStart(id){
   if(!AC){toast('Este navegador não toca o metrônomo.');return}
   if(!get(id)||!get(id).bpm){toast('Defina o BPM da música primeiro.');return}
   if(!met.ctx)met.ctx=new AC();
-  met.ctx.resume();metStop();if(sp.sync&&sp.playing){sp.sync=false;spCtl()}
+  met.ctx.resume();metStop();if(mic.on)micStop();if(sp.sync&&sp.playing){sp.sync=false;spCtl()}
   met.running=true;met.songId=id;met.beat=0;met.next=met.ctx.currentTime+0.1;
   met.timer=setInterval(sched,25);
 }
@@ -1781,6 +1903,7 @@ function renderStage(){
       '<div class="row"><span class="lbl">Espera</span><button type="button" class="btn small" data-act="wait-step" data-id="'+s.id+'" data-d="-5" aria-label="Menos espera">−5</button><span class="mono">'+(s.wait||0)+'s</span><button type="button" class="btn small" data-act="wait-step" data-id="'+s.id+'" data-d="5" aria-label="Mais espera">+5</button><span class="faint" style="font-size:13px">antes de rolar</span></div>'+
       (s.bpm?'<div class="row multi"><span class="lbl">Clique</span>'+nb(-5)+nb(-1)+'<b class="mono bpmv'+(eff>=300?' cesar':'')+'">'+bpmTxt(eff)+(d?' <small>('+(d>0?'+':'−')+Math.abs(d)+')</small>':'')+'</b>'+nb(1)+nb(5)+'<button type="button" class="btn small '+(on?'danger':'primary')+'" data-act="'+(on?'met-stop':'met-start')+'" data-id="'+s.id+'">'+(on?'Parar':'Iniciar')+'</button></div>':'')+
       (isL?'':'<div class="row"><span class="lbl">Tom</span><button type="button" class="btn small" data-act="tr" data-id="'+s.id+'" data-d="-1" aria-label="Descer um semitom">−1</button><span class="mono">'+(tr>0?'+':'')+tr+'</span><button type="button" class="btn small" data-act="tr" data-id="'+s.id+'" data-d="1" aria-label="Subir um semitom">+1</button></div>')+
+      '<div class="row"><span class="lbl">Escutar</span><button type="button" class="btn small primary" data-act="mic-open" data-id="'+s.id+'">🎧 Escutar e sincronizar</button></div>'+
       (s.spotify&&s.bpm?'<div class="row"><span class="lbl">Spotify</span><button type="button" class="btn small primary" data-act="sp-open" data-id="'+s.id+'">♫ Clique com o player</button></div>':'')+
       (canSync()&&s.bpm?'<div class="row"><span class="lbl">Banda</span>'+(smOn()?'<button type="button" class="btn small danger" data-act="sm-stop">Parar clique da banda</button>':'<button type="button" class="btn small primary" data-act="sm-start" data-id="'+s.id+'">Clique para todos ('+bpmTxt(eff)+')</button>')+'</div>':'')+
       '<div class="row"><a class="btn small" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">Ouvir no Spotify ↗</a></div>'+
@@ -1941,6 +2064,7 @@ function metroBlock(s){
     '<div class="mdots" aria-hidden="true">'+dots+'</div>'+
     '<div class="row-actions"><button type="button" class="btn '+(on?'danger':'primary')+'" data-act="'+(on?'met-stop':'met-start')+'" data-id="'+s.id+'">'+(on?'Parar':'Iniciar')+'</button>'+
     '<button type="button" class="btn" data-act="met-tap" data-id="'+s.id+'">Tocar no ritmo</button>'+
+    '<button type="button" class="btn" data-act="mic-open" data-id="'+s.id+'">🎧 Escutar e sincronizar</button>'+
     (s.spotify&&s.bpm&&!window.CE_ARTIFACT?'<button type="button" class="btn" data-act="sp-open" data-id="'+s.id+'">♫ Tocar com o Spotify</button>':'')+
     '<select data-f="beats" data-id="'+s.id+'" aria-label="Compasso">'+opts+'</select></div>'+
     '<p class="hint">Os botões de BPM mudam só o treino de agora; o BPM salvo da música não é alterado, a menos que você toque em “Salvar”. Para descobrir o BPM, toque em “Tocar no ritmo” acompanhando a música (3 toques ou mais).</p></div></div>';
@@ -2865,6 +2989,12 @@ document.addEventListener('click',function(e){
   if(act==='bg-cycle'){bgMode=BG[(BG.indexOf(bgMode)+1)%BG.length];try{localStorage.setItem('ce-bg2',bgMode)}catch(err){}applyBg();toast('Fundo: '+BGN[bgMode]);render();return}
   if(act==='cfg-import'){location.hash='#geral';setTimeout(function(){toggle('#panel-import','#import-text')},60);return}
   if(act==='open-band'){openBand();window.scrollTo(0,0);return}
+  if(act==='mic-open'){micStart(id);return}
+  if(act==='mic-stop'){micStop();return}
+  if(act==='mic-shift'){mic.shift=(mic.shift+1)%((get(mic.songId)||{}).beats||4);toast('Tempo 1 mudou de lugar.');return}
+  if(act==='mic-oct'){if(mic.trk.on){var f=+t.dataset.d;mic.trk=Object.assign({},mic.trk,{T:mic.trk.T/f,cand:0,cn:0,strikes:0});mic.lastT=-1;micUi();toast(f===2?'Andamento dobrado.':'Andamento pela metade.')}return}
+  if(act==='mic-nudge'){mic.nudge=Math.max(-300,Math.min(300,mic.nudge+(+t.dataset.d)));try{localStorage.setItem('ce-mnudge',mic.nudge)}catch(err){}toast('Ajuste do clique: '+(mic.nudge>0?'+':'')+mic.nudge+' ms');return}
+  if(act==='mic-save'){var ms=get(mic.songId);if(ms&&mic.trk.on){var fine=Math.round(60/mic.trk.T*10)/10;patch(ms.id,{bpm:Math.round(fine),bpmFine:fine},true);toast('BPM salvo: '+String(fine).replace('.',',')+'.');render()}return}
   if(act==='sp-open'){spOpen(id);return}
   if(act==='sp-close'){spClose();return}
   if(act==='sp-min'){sp.min=!sp.min;spPanel();return}
