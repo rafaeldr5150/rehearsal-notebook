@@ -113,6 +113,9 @@ body.sk-cus{--rec-on:var(--cb,#33d6a0)}
 .bd-box{text-align:left;display:flex;flex-direction:column;gap:14px;width:min(460px,100%)}
 .bd-btns{justify-content:space-between}.bd-btns .btn{flex:1 1 0}
 .cfg-row.danger b{color:#ff6b6b}.cfg-row.danger svg{color:#ff6b6b}
+.mus-ac{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:12px;background:var(--surface2,#1f2029)}
+.mus-ac button{width:100%;min-height:46px;text-align:left;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);font-size:16px}
+.mus-ac button:hover,.mus-ac button:focus-visible{background:rgba(255,255,255,.08)}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -2193,7 +2196,7 @@ function renderSide(){
 /* ---------- rede de músicos (independente da banda) ---------- */
 var MUS_INST=['Guitarra','Violão','Baixo','Bateria','Voz','Teclado','Piano','Saxofone','Violino','Percussão','DJ'];
 var MUS_STYLE=['Rock','Pop','Blues','Jazz','Metal','Samba','MPB','Funk','Reggae','Sertanejo','Country','Folk','Eletrônica','Gospel','Clássica'];
-var mus={tab:'discover',q:'',inst:'',style:'',list:null,more:false,busy:false,me:undefined,meBusy:false,draft:null,saving:false,view:undefined,viewBusy:false,msg:'',compose:false,msgReady:undefined,sending:false,vurl:'',vtitle:'',vtitleAuto:'',vtitleFor:'',tstat:'',add:{},video:null,armDel:'',err:''};
+var mus={tab:'discover',q:'',inst:'',style:'',list:null,more:false,busy:false,me:undefined,meBusy:false,draft:null,saving:false,view:undefined,viewBusy:false,acFor:'',acList:[],msg:'',compose:false,msgReady:undefined,sending:false,vurl:'',vtitle:'',vtitleAuto:'',vtitleFor:'',tstat:'',add:{},video:null,armDel:'',err:''};
 function musOn(){return !!(window.CE_PROFILE&&window.CE_STANDALONE)}
 function musAuthed(){return !!(window.CE_AUTH&&window.CE_AUTH.user)}
 function musRoute(){var h=location.hash.replace(/^#/,'');if(h==='musicos')return {k:'dir'};var m=/^musico-([0-9a-f-]{36})$/.exec(h);return m?{k:'prof',id:m[1]}:null}
@@ -2242,7 +2245,7 @@ function musListEditor(key,label,ph,sugg){
   var d=mus.draft,cur=d[key]||[];
   return '<div class="mus-field"><label>'+label+'</label><div class="mus-chips">'+(cur.length?cur.map(function(x,i){return '<span class="tag mus-chip">'+esc(x)+'<button type="button" data-act="mus-del" data-k="'+key+'" data-i="'+i+'" aria-label="Remover '+esc(x)+'">×</button></span>'}).join(''):'<span class="faint">nada ainda</span>')+'</div>'+
     '<div class="mus-add"><input type="text" data-mus-add="'+key+'" data-draft="mus" data-fk="musadd'+key+'" value="'+esc(mus.add[key]||'')+'" maxlength="60" placeholder="'+ph+'" autocomplete="off"><button type="button" class="btn small primary" data-act="mus-add" data-k="'+key+'">Adicionar</button></div>'+
-    (sugg?'<div class="mus-sugg">'+sugg.filter(function(s){return cur.map(function(c){return c.toLowerCase()}).indexOf(s.toLowerCase())<0}).map(function(s){return '<button type="button" class="chip" data-act="mus-sug" data-k="'+key+'" data-v="'+esc(s)+'">+ '+esc(s)+'</button>'}).join('')+'</div>':'')+'</div>';
+    (key==='refs'?musAcHTML():'')+(sugg?'<div class="mus-sugg">'+sugg.filter(function(s){return cur.map(function(c){return c.toLowerCase()}).indexOf(s.toLowerCase())<0}).map(function(s){return '<button type="button" class="chip" data-act="mus-sug" data-k="'+key+'" data-v="'+esc(s)+'">+ '+esc(s)+'</button>'}).join('')+'</div>':'')+'</div>';
 }
 function musEditor(){
   if(!mus.draft)musDraftFrom(mus.me&&mus.me.profile);
@@ -2334,7 +2337,26 @@ function renderMus(){
 }
 var musPhotoInp=document.createElement('input');musPhotoInp.type='file';musPhotoInp.accept='image/*';musPhotoInp.hidden=true;document.body.appendChild(musPhotoInp);
 musPhotoInp.onchange=function(){var f=musPhotoInp.files&&musPhotoInp.files[0];musPhotoInp.value='';if(!f||!mus.draft)return;resizePhoto(f,192).then(function(u){mus.draft.photo=u;render()}).catch(function(){toast('Não foi possível usar essa foto.')})};
-function musAddItem(key,val){val=String(val||'').trim();mus.add[key]='';if(!val||!mus.draft)return;var a=mus.draft[key]=mus.draft[key]||[];if(a.map(function(x){return x.toLowerCase()}).indexOf(val.toLowerCase())>=0)return;if(a.length>=(key==='gear'?30:key==='owns'?20:12)){toast('Limite de itens atingido.');return}a.push(val.slice(0,60))}
+function musAddItem(key,val){val=String(val||'').trim();mus.add[key]='';if(key==='refs'){mus.acFor='';mus.acList=[]}if(!val||!mus.draft)return;var a=mus.draft[key]=mus.draft[key]||[];if(a.map(function(x){return x.toLowerCase()}).indexOf(val.toLowerCase())>=0)return;if(a.length>=(key==='gear'?30:key==='owns'?20:12)){toast('Limite de itens atingido.');return}a.push(val.slice(0,60))}
+function musAcSoon(v){
+  clearTimeout(mus._ac);var q=String(v||'').trim();
+  if(q.length<2){mus.acFor='';mus.acList=[];var box=document.getElementById('mus-ac');if(box)box.remove();return}
+  mus._ac=setTimeout(function(){
+    if(!window.CE_PROFILE||!CE_PROFILE.artists||q===mus.acFor)return;
+    CE_PROFILE.artists(q).then(function(list){
+      if(String((mus.add||{}).refs||'').trim()!==q)return;
+      mus.acFor=q;mus.acList=(list||[]).slice(0,8);render();
+    }).catch(function(){})
+  },320);
+}
+function musAcHTML(){
+  var cur=String((mus.add||{}).refs||'').trim();
+  if(cur.length<2||!mus.acFor||cur.toLowerCase().indexOf(mus.acFor.toLowerCase())!==0||!mus.acList.length)return '';
+  var have=((mus.draft&&mus.draft.refs)||[]).map(function(x){return x.toLowerCase()});
+  var items=mus.acList.filter(function(n){return have.indexOf(n.toLowerCase())<0});
+  if(!items.length)return '';
+  return '<ul class="mus-ac" id="mus-ac" role="listbox" aria-label="Sugestões">'+items.map(function(n){return '<li><button type="button" role="option" data-act="mus-ac" data-v="'+esc(n)+'">'+esc(n)+'</button></li>'}).join('')+'</ul>';
+}
 function musTitleSoon(){clearTimeout(mus._tt);mus._tt=setTimeout(musFetchTitle,450)}
 function musFetchTitle(){
   var u=String(mus.vurl||'').trim();
@@ -2357,6 +2379,7 @@ function musAct(act,t){
   if(act==='mus-photo'){musPhotoInp.click();return}
   if(act==='mus-photo-del'){if(mus.draft)mus.draft.photo='';render();return}
   if(act==='mus-add'){var inp=document.querySelector('[data-mus-add="'+t.dataset.k+'"]');musAddItem(t.dataset.k,inp&&inp.value);render();var again=document.querySelector('[data-mus-add="'+t.dataset.k+'"]');if(again)again.focus();return}
+  if(act==='mus-ac'){musAddItem('refs',t.dataset.v);mus.acFor='';mus.acList=[];render();var ag=document.querySelector('[data-mus-add="refs"]');if(ag)ag.focus();return}
   if(act==='mus-sug'){musAddItem(t.dataset.k,t.dataset.v);render();return}
   if(act==='mus-del'){var a=mus.draft&&mus.draft[t.dataset.k];if(a)a.splice(+t.dataset.i,1);render();return}
   if(act==='mus-save'){
@@ -4180,7 +4203,7 @@ var TEXTF=['title','artist','link','notes','key','moises','lyrics','chords','tun
 document.addEventListener('input',function(e){
   var t=e.target;
   if(t.dataset&&t.dataset.mus){var mk=t.dataset.mus;if(mk==='q')mus.q=t.value;else if(mk==='vurl'){mus.vurl=t.value;musTitleSoon()}else if(mk==='vtitle')mus.vtitle=t.value;else if(mus.draft)mus.draft[mk]=t.value;return}
-  if(t.dataset&&t.dataset.musAdd){mus.add[t.dataset.musAdd]=t.value;return}
+  if(t.dataset&&t.dataset.musAdd){mus.add[t.dataset.musAdd]=t.value;if(t.dataset.musAdd==='refs')musAcSoon(t.value);return}
   if(t.dataset&&t.dataset.musMsg){mus.msg=t.value;var cn=document.getElementById('mus-msg-count');if(cn)cn.textContent=mus.msg.length+' / 1000';return}
   if(t.dataset&&t.dataset.musC){if(mus.draft){mus.draft.contact=mus.draft.contact||{};mus.draft.contact[t.dataset.musC]=t.value}return}
   if(t.classList&&t.classList.contains('pl-seek')){t.dataset.drag='1';if(recAudio)recAudio.currentTime=+t.value/10;var d=recAudio&&plDur();t.style.setProperty('--p',d?(+t.value/10/d*100)+'%':'0%');var tc=document.querySelector('.pl-cur');if(tc)tc.textContent=plClock(+t.value/10);clearTimeout(t._dt);t._dt=setTimeout(function(){delete t.dataset.drag},400);return}

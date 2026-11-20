@@ -141,6 +141,7 @@ window.CE_PROFILE={
   remove:function(){return arpc('ce_profile_delete')},
   ready:function(){return fetch(CFG.url+'/functions/v1/send-message',{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify({action:'ready'})}).then(function(r){return r.json()}).then(function(j){return !!(j&&j.ready)})},
   message:function(to,text){return sess().then(function(se){if(!se)throw new Error('auth');return fetch(CFG.url+'/functions/v1/send-message',{method:'POST',headers:{apikey:CFG.key,'x-user-token':se.access_token,'Content-Type':'application/json'},body:JSON.stringify({to:to,text:text})}).then(function(r){return r.json()})})},
+  artists:function(q){return fetch(CFG.url+'/functions/v1/artist-suggest',{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify({q:q})}).then(function(r){return r.json()}).then(function(j){return (j&&j.names)||[]})},
   title:function(url){return fetch(CFG.url+'/functions/v1/video-title',{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify({url:url})}).then(function(r){return r.json()})}
 };
 function pickBand(code,mid){
