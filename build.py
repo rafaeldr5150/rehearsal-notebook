@@ -51,3 +51,13 @@ man={"name":cfg.get("appName","Rehearsal Notebook"),"short_name":"Rehearsal","st
 json.dump(man,open(os.path.join(PUB,'manifest.webmanifest'),'w'),ensure_ascii=False)
 for n in ('icon-192.png','icon-512.png'): shutil.copy(os.path.join(ROOT,'src',n),os.path.join(PUB,n))
 print('ok',len(html),ver)
+
+# Security headers served by the host (no inline-script restriction: the app is a single inline page).
+import json as _json
+open(os.path.join(PUB,'vercel.json'),'w').write(_json.dumps({"headers":[{"source":"/(.*)","headers":[
+ {"key":"X-Content-Type-Options","value":"nosniff"},
+ {"key":"Referrer-Policy","value":"no-referrer"},
+ {"key":"X-Frame-Options","value":"DENY"},
+ {"key":"Permissions-Policy","value":"microphone=(self), camera=(self), geolocation=(), payment=()"},
+ {"key":"Strict-Transport-Security","value":"max-age=31536000"},
+ {"key":"Content-Security-Policy","value":"object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' https://accounts.google.com"}]}]},indent=1))

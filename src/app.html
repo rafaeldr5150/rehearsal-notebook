@@ -1299,6 +1299,7 @@ function members(){return band&&band.members?band.members:[]}
 function member(id){return members().find(function(m){return m.id===id})}
 function first(n){return String(n||'').trim().split(/\s+/)[0]}
 function spotifyUrl(s){return s.spotify?'https://open.spotify.com/track/'+encodeURIComponent(s.spotify):'https://open.spotify.com/search/'+encodeURIComponent((s.title||'')+' '+(s.artist||''))}
+function dataImg(u){return /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(u||'')?u:''}
 function safeUrl(u){return /^https?:\/\//.test(u||'')?u:''}
 function softRender(){clearTimeout(renderTimer);renderTimer=setTimeout(function(){var a=document.activeElement;if(a&&a.tagName==='TEXTAREA'&&a.dataset&&(a.dataset.f||a.dataset.draft)){softRender();return}render()},350)}
 function kindOf(inst){var t=String(inst||'').toLowerCase();
@@ -1992,7 +1993,7 @@ function mstats(m){
   return {total:total,done:done,pct:total?Math.round(done/total*100):0,pend:pendingFor(m.id).length};
 }
 function avatarHTML(m,sz){
-  if(m&&m.photo&&/^data:image\//.test(m.photo))return '<img class="av" alt="" src="'+m.photo+'" width="'+sz+'" height="'+sz+'">';
+  if(m&&m.photo&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(m.photo))return '<img class="av" alt="" src="'+m.photo+'" width="'+sz+'" height="'+sz+'">';
   return svgIco(icoFor(m.instrument),sz);
 }
 function resizePhoto(file,size){
@@ -2062,7 +2063,7 @@ function renderHero(){
     show='<a class="hero-show" href="#setlist">'+esc(dt)+(showCfg.name?' · '+esc(showCfg.name):'')+'</a>'+(cnt?'<span class="hero-count">'+cnt+'</span>':'');
   }else show='<a class="hero-show dim" href="#setlist">Definir data e local do show</a>';
   var cred=members().map(function(m){return esc(first(m.name))+' <i>·</i> '+esc(m.instrument)}).join(' <b>★</b> ');
-  el.innerHTML=(b.logo?'<img class="hero-logo" src="'+b.logo+'" alt="Logo da banda">':'')+
+  el.innerHTML=(b.logo?'<img class="hero-logo" src="'+esc(safeUrl(b.logo)||dataImg(b.logo))+'" alt="Logo da banda">':'')+
     '<div class="hero-txt">'+
     (name?'<h2 class="hero-name">'+esc(name)+'</h2>':'<h2 class="hero-name ph">Nome da banda</h2><button type="button" class="btn small primary" data-act="open-band">Dar nome à banda</button>')+
     (tag?'<div class="hero-tag">'+esc(tag)+'</div>':'')+
@@ -2075,7 +2076,7 @@ function renderSide(){
   var h=location.hash.replace(/^#/,''),pid=view();
   var set=setIds();
   $('#side').innerHTML=
-    (bandName()?(band.logo?'<img class="brand-logo" src="'+band.logo+'" alt="">':'')+'<div class="brand">'+esc(bandName())+'</div><div class="brand-sub">Rehearsal Notebook</div>':'<div class="brand">Rehearsal Notebook</div>')+countdownHTML()+
+    (bandName()?(band.logo?'<img class="brand-logo" src="'+esc(safeUrl(band.logo)||dataImg(band.logo))+'" alt="">':'')+'<div class="brand">'+esc(bandName())+'</div><div class="brand-sub">Rehearsal Notebook</div>':'<div class="brand">Rehearsal Notebook</div>')+countdownHTML()+
     '<a href="#geral"'+(!pid&&h!=='setlist'&&h!=='config'?' aria-current="page"':'')+'><span>Geral</span></a>'+
     '<a href="#setlist"'+(h==='setlist'?' aria-current="page"':'')+'><span>Setlist</span>'+(set.length?'<span class="badge">'+set.length+'</span>':'')+'</a>'+
     '<div class="sl">Banda</div>'+
@@ -2395,7 +2396,7 @@ function renderPerson(pid){
   var body=!loaded?'':!mine.length?'<div class="empty-state"><strong>Nenhuma música para você ainda</strong>Defina a função de '+esc(first(m.name))+' em cada música na página Geral.</div>'
     :!vis.length?'<div class="empty-state"><strong>Nada por aqui</strong>Nenhuma música combina com a busca ou o filtro.</div>'
     :flatHTML(vis,function(s){return pcardHTML(s,pid)});
-  el.innerHTML='<div class="phead"><div><div class="faint">Página pessoal</div><h2>'+(m.photo?'<span class="pav"><img alt="" src="'+m.photo+'"></span>':'')+esc(m.name)+' <span class="faint" style="font-weight:400">· '+esc(m.instrument)+'</span></h2><div class="row-actions" style="margin-top:8px">'+(meMember===pid?'<span class="tag" style="background:var(--red);color:#fff;border-color:var(--paper-ink)">Esta é a sua página</span><button type="button" class="btn small" data-act="photo-pick" data-id="'+pid+'">'+(m.photo?'📷 Trocar minha foto':'📷 Minha foto')+'</button>':'<button type="button" class="btn small" data-act="set-me" data-id="'+pid+'">Sou eu</button>')+'<button type="button" class="btn small" data-act="who-nav">Trocar de músico</button></div></div>'+
+  el.innerHTML='<div class="phead"><div><div class="faint">Página pessoal</div><h2>'+(avatarHTML(m,46).indexOf('class="av"')>=0?'<span class="pav">'+avatarHTML(m,46)+'</span>':'')+esc(m.name)+' <span class="faint" style="font-weight:400">· '+esc(m.instrument)+'</span></h2><div class="row-actions" style="margin-top:8px">'+(meMember===pid?'<span class="tag" style="background:var(--red);color:#fff;border-color:var(--paper-ink)">Esta é a sua página</span><button type="button" class="btn small" data-act="photo-pick" data-id="'+pid+'">'+(m.photo?'📷 Trocar minha foto':'📷 Minha foto')+'</button>':'<button type="button" class="btn small" data-act="set-me" data-id="'+pid+'">Sou eu</button>')+'<button type="button" class="btn small" data-act="who-nav">Trocar de músico</button></div></div>'+
     '<div class="pstat"><div class="pl" style="display:flex;justify-content:space-between"><b>'+done+' de '+mine.length+' prontas</b><span class="mono faint">'+pc+'%</span></div>'+starsHTML(pc)+'</div></div>'+
     alertHTML(pid)+'<div class="tools"><input class="grow" type="search" id="pq" data-fk="pq" value="'+esc(pquery)+'" placeholder="Buscar por título ou artista" aria-label="Buscar música"><div class="chips">'+chipsHTML(PFILTERS,'pfilter',pfilter,pcounts)+'</div></div>'+
     '<div id="plist" style="display:flex;flex-direction:column;gap:8px">'+body+'</div>';
