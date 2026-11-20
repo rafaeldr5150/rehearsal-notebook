@@ -3563,7 +3563,7 @@ function renderConfig(){
   function row(act,ico,t,sub){return '<button type="button" class="cfg-row" data-act="'+act+'">'+svgIco(ico,24)+'<span><b>'+t+'</b><small>'+sub+'</small></span><i aria-hidden="true">›</i></button>'}
   var nl=canFetchLyrics()?songs.filter(function(s){return !s.lyrics}).length:0;
   el.innerHTML='<div class="phead"><div><div class="faint">Ajustes</div><h2>Configurações</h2></div></div>'+
-   '<section class="cfg"><h3>Você</h3>'+row('who-open','user','Quem sou eu',me?'Você é '+esc(first(me.name))+' ('+esc(me.instrument)+')':'Escolha o seu nome')+(me?row('photo-pick','user',me.photo?'Trocar a minha foto':'Minha foto','Aparece no seu cartão da banda')+(me.photo?row('photo-del','user','Remover a minha foto','Volta o ícone do instrumento'):''):'')+'</section>'+
+   '<section class="cfg"><h3>Você</h3>'+(window.CE_STANDALONE&&window.CE_AUTH&&!window.CE_AUTH.user&&window.CE_AUTH.signInToBand?row('acct-login','user','Entrar com a minha conta','Sem conta você não aparece na lista de donos da banda. Entre com o Google ou o e-mail.'):'')+row('who-open','user','Quem sou eu',me?'Você é '+esc(first(me.name))+' ('+esc(me.instrument)+')':'Escolha o seu nome')+(me?row('photo-pick','user',me.photo?'Trocar a minha foto':'Minha foto','Aparece no seu cartão da banda')+(me.photo?row('photo-del','user','Remover a minha foto','Volta o ícone do instrumento'):''):'')+'</section>'+
    '<section class="cfg"><h3>Aparência</h3>'+row('skin-open','nota','Layout e idioma',esc(sk?sk[1]:'')+' · '+lg)+
      (skin==='cartaz'?row('bg-cycle','list','Fundo da página',BGN[bgMode]):'')+'</section>'+
    '<section class="cfg"><h3>Banda</h3>'+row('open-band','group','Banda','Nome, logo, integrantes e convite')+
@@ -3674,6 +3674,7 @@ document.addEventListener('click',function(e){
   if(act==='mv-part'){var cur3=partOf(get(id),t.dataset.mid).status,nx=cur3+ +t.dataset.d;if(nx>=0&&nx<=2){setPart(id,t.dataset.mid,{status:nx},true);render()}return}
   if(act==='drawer-close'){ui.cePick=null;openId=null;render();return}
   if(act==='bg-cycle'){bgMode=BG[(BG.indexOf(bgMode)+1)%BG.length];try{localStorage.setItem('ce-bg2',bgMode)}catch(err){}applyBg();toast('Fundo: '+BGN[bgMode]);render();return}
+  if(act==='acct-login'){window.CE_AUTH.signInToBand();return}
   if(act==='import-open'){toggle('#panel-import','#import-pl');return}
   if(act==='add-open'){toggle('#panel-add','#new-title');return}
   if(act==='cfg-import'){location.hash='#geral';setTimeout(function(){toggle('#panel-import','#import-pl')},60);return}

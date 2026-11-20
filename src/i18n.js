@@ -19,6 +19,11 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Você foi convidado para uma banda. Entre ou crie a sua conta para entrar nela.','You were invited to a band. Sign in or create your account to join it.','Te invitaron a una banda. Entra o crea tu cuenta para unirte.'],
+['Você foi convidado para uma banda. Entre com a sua conta para entrar.','You were invited to a band. Sign in with your account to join.','Te invitaron a una banda. Entra con tu cuenta para unirte.'],
+['Esse convite não é válido ou a banda não existe mais. Peça um novo link.','That invite is not valid or the band no longer exists. Ask for a new link.','Esa invitación no es válida o la banda ya no existe. Pide un enlace nuevo.'],
+['Entrar com a minha conta','Sign in with my account','Entrar con mi cuenta'],
+['Sem conta você não aparece na lista de donos da banda. Entre com o Google ou o e-mail.','Without an account you do not show in the band owners list. Sign in with Google or email.','Sin cuenta no apareces en la lista de dueños de la banda. Entra con Google o correo.'],
 ['Playlist do Spotify','Spotify playlist','Lista de Spotify'],
 ['Cole o link da playlist (open.spotify.com/playlist/…)','Paste the playlist link (open.spotify.com/playlist/…)','Pega el enlace de la lista (open.spotify.com/playlist/…)'],
 ['Importar da playlist','Import from playlist','Importar de la lista'],

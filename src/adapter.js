@@ -9,8 +9,13 @@ if(!CFG||window.claude)return;
 var band='';
 try{
   var qs=new URLSearchParams(location.search);
-  band=qs.get('b')||localStorage.getItem('ce-band')||'';
-  if(qs.get('b')){localStorage.setItem('ce-band',band);history.replaceState(null,'',location.pathname+location.hash)}
+  band=localStorage.getItem('ce-band')||'';
+  var inv0=(qs.get('b')||'').toLowerCase().replace(/[^a-z0-9-]/g,'');
+  if(inv0){
+    /* link de convite: quem ainda não está nessa banda precisa entrar com uma conta antes (assim aparece na lista de donos e integrantes) */
+    if(band!==inv0){localStorage.setItem('ce-invite',inv0);band=''}
+    history.replaceState(null,'',location.pathname+location.hash);
+  }
 }catch(e){}
 window.CE_BAND=band;
 
@@ -110,6 +115,7 @@ function uname(s){var u=s.user||{},m=u.user_metadata||{};return {email:u.email||
 window.CE_AUTH={
   user:null,role:'',
   openEntry:function(){try{sessionStorage.setItem('ce-entry','1')}catch(e){}location.href=location.pathname},
+  signInToBand:function(){try{if(band)localStorage.setItem('ce-invite',band);sessionStorage.setItem('ce-entry','1')}catch(e){}location.href=location.pathname},
   signOut:function(){return authClient().auth.signOut().then(function(){try{sessionStorage.removeItem('ce-entry');localStorage.removeItem('ce-band');localStorage.removeItem('ce-me')}catch(e){}location.href=location.pathname})},
   accounts:function(){return arpc('ce_band_accounts',{p_code:band})},
   setRole:function(u,r){return arpc('ce_band_set_role',{p_code:band,p_user:u,p_role:r})},
@@ -140,23 +146,33 @@ function errTxt(e){
   if(/network|fetch/i.test(m))return 'Sem internet agora.';
   return 'Não foi possível agora. Tente de novo.';
 }
+function pendingInvite(){try{return localStorage.getItem('ce-invite')||''}catch(e){return ''}}
+function clearInvite(){try{localStorage.removeItem('ce-invite')}catch(e){}}
 function showEntry(msg){
   mountScreen('<h1>Rehearsal Notebook</h1><p>Carregando…</p>');
   if(!window.supabase||!navigator.onLine){showJoin(navigator.onLine?'':'Sem internet agora.');return}
-  sess().then(function(s){if(s)showBands();else showLogin(msg)}).catch(function(){showJoin()});
+  sess().then(function(s){
+    var inv=pendingInvite();
+    if(s&&inv){
+      arpc('ce_band_join',{p_code:inv}).then(function(){clearInvite();return arpc('ce_my_bands')}).then(function(l){var hit=l.filter(function(y){return y.code===inv})[0];pickBand(inv,hit&&hit.mid)})
+        .catch(function(err){clearInvite();if(/unknown/i.test(String(err&&err.message)))showBands('Esse convite não é válido ou a banda não existe mais. Peça um novo link.');else showBands()});
+      return;
+    }
+    if(s)showBands(msg);else showLogin(msg||(inv?'Você foi convidado para uma banda. Entre com a sua conta para entrar.':''));
+  }).catch(function(){showJoin()});
 }
 function showLogin(msg){
-  var mode='in';
-  var box=mountScreen('<h1>Rehearsal Notebook</h1><p>Entre para ver as suas bandas em qualquer aparelho.</p>'+
+  var mode='in',inv=pendingInvite();
+  var box=mountScreen('<h1>Rehearsal Notebook</h1><p>'+(inv?'Você foi convidado para uma banda. Entre ou crie a sua conta para entrar nela.':'Entre para ver as suas bandas em qualquer aparelho.')+'</p>'+
     '<button type="button" id="a-google" class="gbtn">Continuar com o Google</button>'+
     '<div class="jor"><span>ou</span></div>'+
     '<form id="a-form" autocomplete="on"><input id="a-mail" type="email" inputmode="email" placeholder="E-mail" autocomplete="email" aria-label="E-mail" style="margin-bottom:10px"><input id="a-pass" type="password" placeholder="Senha (mínimo 8 caracteres)" autocomplete="current-password" aria-label="Senha"><button type="submit" id="a-go">Entrar</button></form>'+
     '<p class="jhint"><a href="#" id="a-toggle" style="color:#ffb3d0">Não tem conta? Criar conta</a> · <a href="#" id="a-forgot" style="color:#ffb3d0">Esqueci a senha</a></p>'+
     '<div id="join-msg" role="status" aria-live="polite"></div>'+
-    '<div class="jor"><span>ou</span></div><button type="button" id="a-code">Só tenho um código de convite</button>');
+    (inv?'':'<div class="jor"><span>ou</span></div><button type="button" id="a-code">Só tenho um código de convite</button>'));
   var msgEl=box.querySelector('#join-msg'),go=box.querySelector('#a-go');
   function say(t){msgEl.textContent=t||''}if(msg)say(msg);
-  box.querySelector('#a-code').addEventListener('click',function(){showJoin()});
+  var ac=box.querySelector('#a-code');if(ac)ac.addEventListener('click',function(){showJoin()});
   box.querySelector('#a-google').addEventListener('click',function(){
     say('Abrindo o Google…');
     authClient().auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}}).then(function(r){if(r.error)say(errTxt(r.error))});
@@ -182,7 +198,7 @@ function showLogin(msg){
     (mode==='in'?A.signInWithPassword({email:em,password:pw}):A.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname}})).then(function(r){
       go.disabled=false;
       if(r.error){say(errTxt(r.error));return}
-      if(r.data&&r.data.session){showBands();return}
+      if(r.data&&r.data.session){showEntry();return}
       say('Enviamos um e-mail de confirmação. Abra o link dele e depois volte aqui para entrar.');
     }).catch(function(err){go.disabled=false;say(errTxt(err))});
   });
@@ -196,7 +212,7 @@ function showNewPass(){
     authClient().auth.updateUser({password:pw}).then(function(r){if(r.error)msgEl.textContent=errTxt(r.error);else showBands()});
   });
 }
-function showBands(){
+function showBands(note){
   var box=mountScreen('<h1>Rehearsal Notebook</h1><p id="b-hello">Carregando…</p><div id="b-list"></div>');
   sess().then(function(s){
     if(!s){showLogin();return}
@@ -211,7 +227,7 @@ function showBands(){
         '<button type="button" id="b-new" style="margin-top:12px">Criar uma banda nova</button>'+
         '<div id="join-msg" role="status" aria-live="polite"></div>'+
         '<p class="jhint">'+(band?'<a href="#" id="b-back" style="color:#ffb3d0">Voltar para a banda atual</a> · ':'')+'<a href="#" id="b-out" style="color:#ffb3d0">Sair da conta</a></p>');
-      var msgEl=b.querySelector('#join-msg');function say(t){msgEl.textContent=t||''}
+      var msgEl=b.querySelector('#join-msg');function say(t){msgEl.textContent=t||''}if(note)say(note);
       b.querySelector('#b-list').addEventListener('click',function(e){var x=e.target.closest('.bandbtn');if(x)pickBand(x.dataset.c,x.dataset.m)});
       b.querySelector('#b-out').addEventListener('click',function(e){e.preventDefault();window.CE_AUTH.signOut()});
       var bk=b.querySelector('#b-back');if(bk)bk.addEventListener('click',function(e){e.preventDefault();try{sessionStorage.removeItem('ce-entry')}catch(x){}location.href=location.pathname});
