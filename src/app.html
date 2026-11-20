@@ -44,6 +44,9 @@
 .idea-actions{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .idea-actions .btn:only-child{grid-column:1 / -1}
 .idea-form{display:flex;flex-direction:column;gap:12px}
+/* ===== o nome da banda fica só no cabeçalho da tela Geral e do Setlist, não no topo de tudo ===== */
+header>div:first-child{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#setview .hero-line{display:none}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -2085,8 +2088,8 @@ function renderTabbar(){
 
 /* ---------- cartaz da banda ---------- */
 function bandName(){return (band&&band.name)||''}
-function renderHero(){
-  var el=$('#hero');if(!el)return;
+function renderHero(){var el=$('#hero');if(el)el.innerHTML=heroHTML()}
+function heroHTML(){
   var b=band||{},name=b.name||'',tag=b.tagline||'',info=showInfo();
   var show='';
   if(info){
@@ -2095,7 +2098,7 @@ function renderHero(){
     show='<a class="hero-show" href="#setlist">'+esc(dt)+(showCfg.name?' · '+esc(showCfg.name):'')+'</a>'+(cnt?'<span class="hero-count">'+cnt+'</span>':'');
   }else show='<a class="hero-show dim" href="#setlist">Definir data e local do show</a>';
   var cred=members().map(function(m){return esc(first(m.name))+' <i>·</i> '+esc(m.instrument)}).join(' <b>★</b> ');
-  el.innerHTML=(b.logo?'<img class="hero-logo" src="'+esc(safeUrl(b.logo)||dataImg(b.logo))+'" alt="Logo da banda">':'')+
+  return (b.logo?'<img class="hero-logo" src="'+esc(safeUrl(b.logo)||dataImg(b.logo))+'" alt="Logo da banda">':'')+
     '<div class="hero-txt">'+
     (name?'<h2 class="hero-name">'+esc(name)+'</h2>':'<h2 class="hero-name ph">Nome da banda</h2><button type="button" class="btn small primary" data-act="open-band">Dar nome à banda</button>')+
     (tag?'<div class="hero-tag">'+esc(tag)+'</div>':'')+
@@ -2137,7 +2140,7 @@ function renderSetlist(){
       '<div class="row-actions"><button type="button" class="btn small" data-act="set-up" data-id="'+s.id+'" aria-label="Subir"'+(i===0?' disabled':'')+'>↑</button><button type="button" class="btn small" data-act="set-down" data-id="'+s.id+'" aria-label="Descer"'+(i===inSet.length-1?' disabled':'')+'>↓</button><button type="button" class="btn small" data-act="stage" data-id="'+s.id+'" data-kind="lyrics">Modo show</button><button type="button" class="x" data-act="set-rm" data-id="'+s.id+'" aria-label="Tirar do setlist">×</button></div></div></article>';
   }).join('');
   $('#setview').innerHTML=
-    liveSetHTML()+
+    '<div class="hero">'+heroHTML()+'</div>'+liveSetHTML()+
     '<div class="phead"><div><div class="faint">Ordem do show</div><h2>Setlist</h2></div>'+
     '<div class="pstat"><b>'+(inSet.length?fmt(t):'0:00')+' <span class="faint" style="font-weight:400">de música e pausas</span></b><span class="faint">'+inSet.length+' músicas · '+ready+' prontas'+(noDur?' · '+noDur+' sem duração':'')+'</span></div></div>'+
     '<div class="tools"><label class="f" style="flex-direction:row;align-items:center;gap:8px">Pausa entre músicas (s)<input type="text" inputmode="numeric" style="width:80px" value="'+gap+'" data-f="gap" data-fk="gap" aria-label="Pausa entre músicas em segundos"></label>'+showForm()+'</div>'+showLineHTML()+
