@@ -19,6 +19,15 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['📷 Fotos e vídeos','📷 Photos and videos','📷 Fotos y vídeos'],['Fotos e vídeos','Photos and videos','Fotos y vídeos'],
+['O que você registrar vai direto para a pasta da banda no Drive.','Whatever you capture goes straight to the band\'s folder in Drive.','Lo que registres va directo a la carpeta de la banda en el Drive.'],
+['📷 Tirar foto','📷 Take a photo','📷 Hacer una foto'],['🎥 Gravar vídeo','🎥 Record a video','🎥 Grabar un vídeo'],['🖼 Escolher da galeria','🖼 Choose from gallery','🖼 Elegir de la galería'],
+['Ainda não existe uma pasta de fotos e vídeos no Drive da banda.','There is no photos and videos folder in the band\'s Drive yet.','Aún no existe una carpeta de fotos y vídeos en el Drive de la banda.'],
+['Criar a pasta agora','Create the folder now','Crear la carpeta ahora'],['Conecte o Google Drive da banda em Configurações para guardar as fotos e os vídeos.','Connect the band\'s Google Drive in Settings to store photos and videos.','Conecta el Google Drive de la banda en Ajustes para guardar fotos y vídeos.'],
+['Abrir Configurações','Open Settings','Abrir Ajustes'],['🖼 Ver','🖼 View','🖼 Ver'],
+['Pasta de fotos e vídeos criada no seu Drive.','Photos and videos folder created in your Drive.','Carpeta de fotos y vídeos creada en tu Drive.'],
+['A pasta de fotos e vídeos não existe mais. Defina de novo em Configurações.','The photos and videos folder no longer exists. Set it again in Settings.','La carpeta de fotos y vídeos ya no existe. Defínela de nuevo en Ajustes.'],
+['Não foi possível enviar. Confira a internet e tente de novo.','Could not upload. Check your internet and try again.','No se pudo subir. Revisa internet e inténtalo de nuevo.'],
 ['▶ Tocar com o YouTube','▶ Play with YouTube','▶ Tocar con YouTube'],['YouTube','YouTube','YouTube'],['▶ Player com o mapa','▶ Player with the map','▶ Reproductor con el mapa'],
 ['Link do vídeo do YouTube (para tocar junto com o clique)','YouTube video link (to play along with the click)','Enlace del vídeo de YouTube (para tocar con el clic)'],
 ['TOQUE NA BATIDA','TAP ON THE BEAT','TOCA EN EL PULSO'],['Parar e salvar','Stop and save','Parar y guardar'],
@@ -463,6 +472,7 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^Foto muito grande \(máximo 100 MB\): (.+)$/,function(m){return (I===1?'Photo too large (max 100 MB): ':'Foto demasiado grande (máx. 100 MB): ')+m[1]}],
 [/^Gravando o mapa: (\d+) toques?$/,function(m){return (I===1?'Recording the map: ':'Grabando el mapa: ')+m[1]+(I===1?(m[1]==='1'?' tap':' taps'):(m[1]==='1'?' toque':' toques'))}],
 [/^Mapa de batidas: (\d+) batidas · (\d+) passadas?$/,function(m){return I===1?'Beat map: '+m[1]+' beats · '+m[2]+(m[2]==='1'?' pass':' passes'):'Mapa de pulsos: '+m[1]+' pulsos · '+m[2]+(m[2]==='1'?' pasada':' pasadas')}],
 [/^Mapa de batidas salvo: (\d+) batidas\.$/,function(m){return I===1?'Beat map saved: '+m[1]+' beats.':'Mapa de pulsos guardado: '+m[1]+' pulsos.'}],
