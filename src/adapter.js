@@ -341,6 +341,7 @@ function rpc(fn,args){
     },
     disconnect:function(){return call('disconnect')},
     list:function(songId){return call('list',{songId:songId})},
+    presence:function(){return call('presence')},
     listVideos:function(){return call('list',{kind:'video'})},
     createVideos:function(){return call('videos-create')},
     setVideos:function(folderId){return call('set-videos',{folderId:folderId})},

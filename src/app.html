@@ -56,6 +56,14 @@ details.more.prim[open]>summary{margin-bottom:12px}
 .folders .row-actions.media-quick .btn{min-height:64px;font-size:17px}
 .folders .row-actions.pastas{grid-template-columns:repeat(3,minmax(0,1fr))}
 .folders .row-actions.pastas .btn{white-space:normal;font-size:14px;padding:6px;line-height:1.2}
+:root{--rec-on:#33d6a0}
+body.sk-car{--rec-on:#c8452f}
+body.sk-est,body.sk-neo{--rec-on:var(--m-done,#33d6a0)}
+body.sk-cus{--rec-on:var(--cb,#33d6a0)}
+.card .tag.ri{display:inline-flex;align-items:center;justify-content:center;min-width:32px;padding:3px 8px;opacity:.28;filter:grayscale(1)}
+.card .tag.ri.on{opacity:1;filter:none;color:var(--rec-on);border-color:var(--rec-on);background:color-mix(in srgb,var(--rec-on) 16%,transparent)}
+.card .inst{flex-wrap:wrap!important;overflow:visible!important;gap:6px}
+.card .tag.ri{min-width:30px;padding:2px 6px}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -2291,6 +2299,21 @@ function metaTags(s){
   if(nc)t.push('<span class="tag">'+nc+(nc===1?' comentário':' comentários')+'</span>');
   return t.join('');
 }
+function loadPresence(){
+  var D=window.CE_DRIVE;if(!D||!D.presence||ui.presLoad)return;
+  var d=ui.drive;if(!d||!d.connected||d.expired)return;
+  ui.presLoad=true;
+  D.presence().then(function(r){ui.pres=r&&r.ok?{audio:r.audio||{},videos:(r.videos||[]).map(function(n){return String(n).toLowerCase()})}:null}).catch(function(){ui.pres=null}).then(function(){ui.presLoad=false;ui.presTry=Date.now();render()});
+}
+function presDirty(){ui.pres=undefined;ui.presTry=0}
+var ICO_MIC='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+    ICO_VID='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10.5l5-3v9l-5-3z"/></svg>';
+function recInd(s){
+  var d=ui.drive;if(!window.CE_DRIVE||!d||!d.connected||!ui.pres)return '';
+  var na=ui.pres.audio[s.id]||0,t=String(s.title||'').toLowerCase()+' - ',nv=ui.pres.videos.filter(function(n){return n.indexOf(t)===0}).length;
+  return '<span class="tag ri'+(na?' on':'')+'" title="'+(na?(na===1?'1 gravação de áudio':na+' gravações de áudio'):'Sem gravação de áudio')+'" role="img" aria-label="'+(na?'Tem gravação de áudio':'Sem gravação de áudio')+'">'+ICO_MIC+'</span>'+
+    '<span class="tag ri'+(nv?' on':'')+'" title="'+(nv?(nv===1?'1 vídeo':nv+' vídeos'):'Sem vídeo')+'" role="img" aria-label="'+(nv?'Tem vídeo':'Sem vídeo')+'">'+ICO_VID+'</span>';
+}
 function cardHTML(s){
   var p=vpct(s),mid2;
   if(as){
@@ -2300,14 +2323,14 @@ function cardHTML(s){
     mid2='<div class="inst who">'+(partList(s).filter(function(x){return x.status!==3}).map(function(x){
       return '<span class="tag" title="'+esc(x.m.name+' · '+x.m.instrument+(x.role?' · '+x.role:''))+'"><i class="dot c'+x.status+'"></i>'+esc(first(x.m.name))+'</span>'}).join('')||'<span class="faint">sem parte definida</span>')+'</div>';
   }
-  var meta=metaTags(s);
+  var meta=metaTags(s)+recInd(s);
   return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+
     '<div><div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div>'+
     (meta?'<div class="inst">'+meta+'</div>':'')+mid2+
     '<div class="cbar">'+(vstate(s)===3?checkHTML():'')+starsHTML(p)+'<span class="pct">'+p+'%</span>'+(vstate(s)>=0&&STATE_LABEL[vstate(s)]?statPill(vstate(s),STATE_LABEL[vstate(s)]):'')+'</div></div>';
 }
 function pcardHTML(s,pid){
-  var p=partOf(s,pid),meta=metaTags(s);
+  var p=partOf(s,pid),meta=metaTags(s)+recInd(s);
   return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+
     '<div><div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div>'+
     (meta?'<div class="inst">'+meta+'</div>':'')+(p.role?'<div class="mine">'+esc(p.role)+'</div>':'')+(p.tone?'<div class="faint">Timbre: '+esc(p.tone)+'</div>':'')+
@@ -3097,7 +3120,7 @@ function recFinish(){
   nextTake(r.songId).then(function(n){name=recName(r.title,n,ext);
     return window.CE_DRIVE.upload(blob,{songId:r.songId,title:r.title,name:name,mime:base},function(p){ui.up[r.songId].p=p;recTick()})}).then(function(res){
     delete ui.up[r.songId];
-    if(res.sent){(ui.recDone||(ui.recDone={}))[r.songId]=name;if(ui.recList)ui.recList[r.songId]=undefined;toast('Gravação salva no Drive: setlist/'+r.title)}
+    if(res.sent){presDirty();(ui.recDone||(ui.recDone={}))[r.songId]=name;if(ui.recList)ui.recList[r.songId]=undefined;toast('Gravação salva no Drive: setlist/'+r.title)}
     else{ui.recPending=(ui.recPending||0)+1;if(/invalid_grant/.test(String(res.error||''))&&ui.drive)ui.drive.expired=true;toast(/invalid_grant/.test(String(res.error||''))?'A conexão com o Google Drive expirou. A gravação ficou guardada no aparelho. Reconecte em Configurações.':res.error==='not_connected'?'O Drive não está conectado. A gravação ficou guardada no aparelho.':'Sem conexão: a gravação será enviada depois.')}
     render();
   }).catch(function(){delete ui.up[r.songId];toast('Não foi possível guardar a gravação.');render()});
@@ -3201,7 +3224,7 @@ function recBlock(s){
   else if(rec)body='<p class="hint">Você está gravando outra música.</p>';
   else if(d.connected&&d.expired)body='<p class="hint">A conexão com o Google Drive expirou. Reconecte para gravar e enviar.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="drive-reconnect">Reconectar o Drive</button></div>';
   else if(!d.connected)body='<p class="hint">Conecte o Google Drive da banda para guardar as gravações.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="drive-go">Conectar o Drive</button></div>';
-  else body='<div class="row-actions"><button type="button" class="btn primary" data-act="rec-start" data-id="'+id+'">● Gravar</button></div><p class="hint">Salva em setlist/'+esc(s.title||'Sem título')+'/ no Drive da banda.</p>'+(ui.recDone&&ui.recDone[id]?'<p class="hint">Última enviada: '+esc(ui.recDone[id])+'</p>':'');
+  else body='<div class="row-actions"><button type="button" class="btn primary" data-act="rec-start" data-id="'+id+'">● Gravar</button>'+(d.videos&&!d.expired?'<button type="button" class="btn primary" data-act="song-video" data-id="'+id+'">🎥 Gravar vídeo</button>':'')+'</div><p class="hint">Salva em setlist/'+esc(s.title||'Sem título')+'/ no Drive da banda.</p>'+(ui.recDone&&ui.recDone[id]?'<p class="hint">Última enviada: '+esc(ui.recDone[id])+'</p>':'');
   if(d.connected){ensureRecList(id);body+=recListHTML(s,'audio')}
   if(ui.recPending>0&&!(rec&&rec.songId===id))body+='<p class="hint">'+ui.recPending+(ui.recPending===1?' gravação aguardando envio.':' gravações aguardando envio.')+'</p><div class="row-actions"><button type="button" class="btn small" data-act="rec-flush">Enviar agora</button></div>';
   return '<div class="block rec"><h3>Gravar</h3>'+body+'</div>'+filesBlock(s);
@@ -3215,16 +3238,17 @@ function filesBlock(s){
   return '<div class="block rec"><h3>Arquivos</h3>'+body+recListHTML(s,'file')+'</div>';
 }
 var videoInp=document.createElement('input');videoInp.type='file';videoInp.accept='video/*';videoInp.multiple=true;videoInp.hidden=true;document.body.appendChild(videoInp);
-function vidUploadFiles(files){
+function vidUploadFiles(files,songTitle){
   if(!files.length||!window.CE_DRIVE)return;
   var big=files.filter(function(f){var lim=/^image\//.test(f.type||'')?100*1048576:1024*1048576;return f.size>lim});
   if(big.length){toast((/^image\//.test(big[0].type||'')?'Foto muito grande (máximo 100 MB): ':'Vídeo muito grande (máximo 1 GB): ')+big[0].name);files=files.filter(function(f){return big.indexOf(f)<0});if(!files.length)return}
   var ok=0,msg='';
   files.reduce(function(pr,f,i){return pr.then(function(){
     ui.vup={name:f.name,i:i+1,n:files.length,p:0};render();
-    return window.CE_DRIVE.upload(f,{kind:'video',songId:'',title:'',name:f.name,mime:f.type||guessMime(f.name),noQueue:true},function(pg){ui.vup.p=pg;var e=document.querySelector('.vup-prog');if(e)e.textContent=Math.round(pg*100)+'%'}).then(function(){ok++});
+    var nm=f.name;if(songTitle){var ex=(String(f.name).split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp4';nm=String(songTitle).replace(/[\/\\<>:"|?*\u0000-\u001f]/g,' ').replace(/\s+/g,' ').trim().slice(0,100)+' - vídeo '+dateStamp()+(files.length>1?' ('+(i+1)+')':'')+'.'+ex}
+    return window.CE_DRIVE.upload(f,{kind:'video',songId:'',title:'',name:nm,mime:f.type||guessMime(f.name),noQueue:true},function(pg){ui.vup.p=pg;var e=document.querySelector('.vup-prog');if(e)e.textContent=Math.round(pg*100)+'%'}).then(function(){ok++});
   })},Promise.resolve()).catch(function(e){msg=e&&e.code==='videos_missing'?'A pasta de fotos e vídeos não existe mais. Defina de novo em Configurações.':(e&&/invalid_grant/.test(String(e.code||'')))?(ui.drive&&(ui.drive.expired=true),'A conexão com o Google Drive expirou. Reconecte em Configurações.'):'Não foi possível enviar. Confira a internet e tente de novo.'}).then(function(){
-    ui.vup=null;ui.vidFiles=undefined;toast(msg||(ok+(ok===1?' arquivo enviado para o Drive.':' arquivos enviados para o Drive.')));render();
+    ui.vup=null;ui.vidFiles=undefined;presDirty();toast(msg||(ok+(ok===1?' arquivo enviado para o Drive.':' arquivos enviados para o Drive.')));render();
   });
 }
 videoInp.onchange=function(){var f=Array.prototype.slice.call(videoInp.files||[]);videoInp.value='';vidUploadFiles(f)};
@@ -3234,6 +3258,7 @@ function mkMediaInp(accept,capture,multi){
   return i;
 }
 var photoInp=mkMediaInp('image/*',true,false),camVidInp=mkMediaInp('video/*',true,false),galInp=mkMediaInp('image/*,video/*',false,true);
+camVidInp.onchange=function(){var f=Array.prototype.slice.call(camVidInp.files||[]);camVidInp.value='';var t=ui.vidSong?(get(ui.vidSong)||{}).title:'';ui.vidSong='';vidUploadFiles(f,t)};
 function renderMediaPick(){
   var el=document.getElementById('mediapick');
   if(!el){el=document.createElement('div');el.id='mediapick';el.hidden=true;document.body.appendChild(el)}
@@ -3423,6 +3448,7 @@ function render(){
   if(!band)return;
   clearTimeout(renderTimer);
   onLive();renderSide();renderTabbar();renderStage();renderLivebar();renderMetrobar();
+  if(ui.pres===undefined&&!ui.presLoad&&ui.drive&&ui.drive.connected&&!ui.drive.expired&&Date.now()-(ui.presTry||0)>20000)loadPresence();
   var hp=$('#hdr-pl');if(hp){var okp=spotCfg&&spotCfg.playlist;hp.hidden=!okp;if(okp)hp.href='https://open.spotify.com/playlist/'+spotCfg.playlist}
   var bp=$('#btn-pl');if(bp){var hh0=location.hash,onHome=!view()&&hh0!=='#setlist'&&hh0!=='#config';bp.hidden=!(onHome&&spotCfg&&spotCfg.playlist&&window.CE_PLAYLIST);bp.textContent=ui.plBusy?'Buscando…':'↻ Atualizar playlist';bp.disabled=!!ui.plBusy}
   if(!ui.plAuto&&loaded&&band&&spotCfg&&spotCfg.playlist&&col){ui.plAuto=true;if(Date.now()-(spotCfg.last||0)>6*3600000)setTimeout(function(){syncPlaylist(false)},1500)}
@@ -3659,6 +3685,7 @@ document.addEventListener('click',function(e){
   if(/^pl-/.test(act)){plAct(act,t.dataset.v);return}
   if(act==='rec-del'){var fid=t.dataset.fid;if(ui.armDel!==fid){ui.armDel=fid;render();return}
     ui.armDel='';if(ui.playId===fid&&recAudio){recAudio.pause();ui.playId=''}
+    presDirty();
     window.CE_DRIVE.remove(fid).then(function(r){if(r&&r.ok){toast('Gravação apagada. Ela foi para a lixeira do Drive.');ui.recList[id]=undefined}else toast('Não foi possível apagar agora.');render()}).catch(function(){toast('Não foi possível apagar agora.');render()});return}
   if(act==='rec-start'){recStart(id);return}
   if(act==='rec-stop'){recStop(false);return}
@@ -3668,11 +3695,12 @@ document.addEventListener('click',function(e){
   if(act==='photo-pick'){ui.photoFor=id||meMember;if(!ui.photoFor){toast('Escolha quem você é primeiro.');return}selfPhotoInp.click();return}
   if(act==='photo-del'){if(meMember)setMemberPhoto(meMember,null).then(function(){toast('Foto removida.')}).catch(function(){toast('Não foi possível remover agora.')});return}
   if(act==='drive-reconnect'){window.CE_DRIVE.connect();return}
-  if(act==='media-quick'){var dq=ui.drive;if(dq&&dq.connected&&dq.videos&&!dq.expired){if(t.dataset.k==='video')camVidInp.click();else photoInp.click();return}ui.mediaPick=true;renderMediaPick();return}
+  if(act==='song-video'){ui.vidSong=id;camVidInp.click();return}
+  if(act==='media-quick'){var dq=ui.drive;if(dq&&dq.connected&&dq.videos&&!dq.expired){if(t.dataset.k==='video'){ui.vidSong='';camVidInp.click()}else photoInp.click();return}ui.mediaPick=true;renderMediaPick();return}
   if(act==='media-open'){ui.mediaPick=true;renderMediaPick();return}
   if(act==='media-close'){ui.mediaPick=false;renderMediaPick();return}
   if(act==='media-photo'){ui.mediaPick=false;photoInp.click();renderMediaPick();return}
-  if(act==='media-video'){ui.mediaPick=false;camVidInp.click();renderMediaPick();return}
+  if(act==='media-video'){ui.vidSong='';ui.mediaPick=false;camVidInp.click();renderMediaPick();return}
   if(act==='media-gal'){ui.mediaPick=false;galInp.click();renderMediaPick();return}
   if(act==='media-cfg'){ui.mediaPick=false;renderMediaPick();location.hash='#config';return}
   if(act==='media-adopt'){var fid0=linkFolderId();if(!fid0){toast('Não encontrei a pasta no link.');return}toast('Verificando o acesso à pasta…');

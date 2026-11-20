@@ -134,6 +134,32 @@ Deno.serve(async (req) => {
   }
   if (!row) return J({ ok: false, error: "not_connected" }, 409);
 
+  // Which songs have audio recordings, and the names of the files in the videos folder (for the icons on the song cards).
+  if (b.action === "presence") {
+    try {
+      const tok = await accessToken(row);
+      const bySong: Record<string, string> = {};
+      for (const [sid, fid] of Object.entries(row.folders || {})) bySong[fid as string] = sid;
+      const audio: Record<string, number> = {};
+      let page = "";
+      for (let i = 0; i < 5; i++) {
+        const q = encodeURIComponent("mimeType contains 'audio/' and trashed=false");
+        const r = await gj(`https://www.googleapis.com/drive/v3/files?q=${q}&pageSize=1000&fields=nextPageToken,files(parents)${page ? "&pageToken=" + page : ""}`, tok);
+        if (r.status !== 200) break;
+        for (const f of r.data.files || []) for (const p of f.parents || []) if (bySong[p]) audio[bySong[p]] = (audio[bySong[p]] || 0) + 1;
+        page = r.data.nextPageToken || "";
+        if (!page) break;
+      }
+      let videos: string[] = [];
+      if (row.videos_id) {
+        const q = encodeURIComponent(`'${row.videos_id}' in parents and trashed=false`);
+        const r = await gj(`https://www.googleapis.com/drive/v3/files?q=${q}&pageSize=1000&fields=files(name)`, tok);
+        if (r.status === 200) videos = (r.data.files || []).map((x: { name: string }) => x.name);
+      }
+      return J({ ok: true, audio, videos });
+    } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
+  }
+
   // Short-lived token (drive.file only) so the browser can open Google Picker for the connected account.
   if (b.action === "picker-token") {
     try { return J({ ok: true, token: await accessToken(row), appId: CLIENT_ID.split("-")[0] }); } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
