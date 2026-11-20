@@ -2201,7 +2201,7 @@ function musErr(e){var m=String(e&&e.message||e||'');
   if(/closed/.test(m))return 'Essa pessoa não está aceitando mensagens.';
   if(/short/.test(m))return 'Escreva uma mensagem um pouco maior.';
   if(/send/.test(m))return 'Não foi possível enviar agora. Tente de novo mais tarde.';
-  if(/contact/.test(m))return 'Contato inválido. Confira o WhatsApp (com DDD), o Instagram e o e-mail.';
+  if(/contact/.test(m))return 'Contato inválido. Confira o WhatsApp (com DDD) e o Instagram.';
   if(/photo/.test(m))return 'Não foi possível usar essa foto. Tente outra.';
   if(/rate/.test(m))return 'Muitas denúncias hoje. Tente amanhã.';
   if(/auth/.test(m))return 'Entre com a sua conta para continuar.';
@@ -2222,7 +2222,7 @@ function musLoadMe(){
   if(mus.meBusy)return;mus.meBusy=true;
   window.CE_PROFILE.me().then(function(r){mus.me=r;if(!mus.draft)musDraftFrom(r.profile)}).catch(function(e){mus.me=null;mus.err=musErr(e)}).then(function(){mus.meBusy=false;render()});
 }
-function musDraftFrom(p){p=p||{};mus.draft={name:p.name||(window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.name)||'',city:p.city||'',bio:p.bio||'',plays:(p.plays||[]).slice(),owns:(p.owns||[]).slice(),gear:(p.gear||[]).slice(),styles:(p.styles||[]).slice(),photo:p.photo||'',contact:Object.assign({whatsapp:'',instagram:'',email:''},p.contact||{}),accept_msgs:!!p.accept_msgs,visible:!!p.visible}}
+function musDraftFrom(p){p=p||{};mus.draft={name:p.name||(window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.name)||'',city:p.city||'',bio:p.bio||'',plays:(p.plays||[]).slice(),owns:(p.owns||[]).slice(),gear:(p.gear||[]).slice(),styles:(p.styles||[]).slice(),photo:p.photo||'',contact:{whatsapp:(p.contact||{}).whatsapp||'',instagram:(p.contact||{}).instagram||''},accept_msgs:!!p.accept_msgs,visible:!!p.visible}}
 function musSearch(reset){
   if(mus.busy)return;mus.busy=true;if(reset){mus.list=null}
   window.CE_PROFILE.search(mus.q,mus.inst,mus.style,reset?0:(mus.list||[]).length).then(function(rows){mus.list=(reset?[]:(mus.list||[])).concat(rows||[]);mus.more=(rows||[]).length>=20;mus.err=''}).catch(function(e){mus.list=mus.list||[];mus.err=musErr(e)}).then(function(){mus.busy=false;render()});
@@ -2249,10 +2249,9 @@ function musEditor(){
     musListEditor('owns','Instrumentos que eu tenho','Ex.: Fender Stratocaster')+
     musListEditor('gear','Equipamentos','Ex.: Amplificador Marshall, pedal Boss DS-1')+
     musListEditor('styles','Estilos favoritos','Ex.: Rock',MUS_STYLE)+
-    '<div class="mus-field mus-contact"><label>Contato (opcional)</label><p class="hint">Só quem está logado no app e abre o seu perfil visível vê estes dados. Preencha só o que quiser mostrar.</p>'+
+    '<div class="mus-field mus-contact"><label>Contato (opcional)</label><p class="hint">Só quem está logado no app e abre o seu perfil visível vê estes dados. Preencha só o que quiser mostrar. Para e-mail, use “Aceito receber mensagens”: o seu e-mail não aparece.</p>'+
       '<input type="tel" inputmode="tel" data-mus-c="whatsapp" data-draft="mus" data-fk="musc1" maxlength="25" value="'+esc((d.contact||{}).whatsapp||'')+'" placeholder="WhatsApp com DDD, ex.: 11 91234-5678" aria-label="WhatsApp" autocomplete="off">'+
-      '<input type="text" data-mus-c="instagram" data-draft="mus" data-fk="musc2" maxlength="60" autocapitalize="off" value="'+esc((d.contact||{}).instagram||'')+'" placeholder="Instagram, ex.: @meuusuario" aria-label="Instagram" autocomplete="off">'+
-      '<input type="email" inputmode="email" data-mus-c="email" data-draft="mus" data-fk="musc3" maxlength="120" autocapitalize="off" value="'+esc((d.contact||{}).email||'')+'" placeholder="E-mail para contato" aria-label="E-mail de contato" autocomplete="off"></div>'+
+      '<input type="text" data-mus-c="instagram" data-draft="mus" data-fk="musc2" maxlength="60" autocapitalize="off" value="'+esc((d.contact||{}).instagram||'')+'" placeholder="Instagram, ex.: @meuusuario" aria-label="Instagram" autocomplete="off">'+'</div>'+
     '<label class="mus-vis"><input type="checkbox" data-mus-vis="1" data-draft="mus"'+(d.visible?' checked':'')+'><span><b>Visível para outros músicos</b><small>Desligado, só você vê o perfil. Ligado, outros músicos do app podem encontrar você, ver seu nome, cidade, foto, instrumentos e vídeos. O seu e-mail nunca aparece.</small></span></label>'+
     '<label class="mus-vis"><input type="checkbox" data-mus-msgs="1" data-draft="mus"'+(d.accept_msgs?' checked':'')+'><span><b>Aceito receber mensagens por e-mail</b><small>Aparece um botão “Enviar mensagem” no seu perfil. A mensagem chega no e-mail da sua conta, sem mostrar esse e-mail a quem escreve. Só vale se o perfil estiver visível.</small></span></label>'+
     '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="mus-save"'+(mus.saving?' disabled':'')+'>'+(mus.saving?'Salvando…':'Salvar perfil')+'</button>'+
@@ -2285,12 +2284,11 @@ function musCompose(p){
     '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="mus-msg-send" data-u="'+esc(p.user_id)+'"'+(mus.sending||off?' disabled':'')+'>'+(mus.sending?'Enviando…':'Enviar')+'</button><button type="button" class="btn" data-act="mus-msg-cancel">Cancelar</button></div></div>';
 }
 function musContactHTML(c){
-  c=c||{};var wa=/^[0-9]{8,15}$/.test(c.whatsapp||'')?c.whatsapp:'',ig=/^[A-Za-z0-9._]{1,30}$/.test(c.instagram||'')?c.instagram:'',em=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email||'')&&String(c.email).length<=120?c.email:'';
-  if(!wa&&!ig&&!em)return '';
+  c=c||{};var wa=/^[0-9]{8,15}$/.test(c.whatsapp||'')?c.whatsapp:'',ig=/^[A-Za-z0-9._]{1,30}$/.test(c.instagram||'')?c.instagram:'';
+  if(!wa&&!ig)return '';
   return '<div class="panel"><h3>Contato</h3><div class="row-actions no-fill mus-contact-btns">'+
     (wa?'<a class="btn primary" target="_blank" rel="noopener noreferrer" href="https://wa.me/'+wa+'">WhatsApp</a>':'')+
-    (ig?'<a class="btn" target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/'+esc(ig)+'/">Instagram</a>':'')+
-    (em?'<a class="btn" href="mailto:'+esc(em)+'">E-mail</a>':'')+'</div></div>';
+    (ig?'<a class="btn" target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/'+esc(ig)+'/">Instagram</a>':'')+'</div></div>';
 }
 function musProfileView(id){
   musLoadView(id);

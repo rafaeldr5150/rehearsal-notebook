@@ -124,7 +124,7 @@ window.CE_AUTH={
 };
 window.CE_PROFILE={
   me:function(){return arpc('ce_profile_me')},
-  save:function(d){return arpc('ce_profile_save',{p:{name:d.name,city:d.city,bio:d.bio,plays:d.plays,owns:d.owns,gear:d.gear,styles:d.styles,photo:d.photo||'',contact:d.contact||{},accept_msgs:!!d.accept_msgs,visible:!!d.visible}})},
+  save:function(d){return arpc('ce_profile_save',{p:{name:d.name,city:d.city,bio:d.bio,plays:d.plays,owns:d.owns,gear:d.gear,styles:d.styles,photo:d.photo||'',contact:{whatsapp:(d.contact||{}).whatsapp||'',instagram:(d.contact||{}).instagram||''},accept_msgs:!!d.accept_msgs,visible:!!d.visible}})},
   search:function(q,inst,style,off){return arpc('ce_profiles_search',{p_q:q||'',p_inst:inst||'',p_style:style||'',p_limit:20,p_offset:off||0})},
   get:function(id){return arpc('ce_profile_get',{p_user:id})},
   addVideo:function(url,title){return arpc('ce_video_add',{p_url:url,p_title:title||''})},

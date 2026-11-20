@@ -57,15 +57,13 @@ language plpgsql security definer set search_path=public as $$
 declare ph text := coalesce(p->>'photo','');
   v_wa text := regexp_replace(coalesce(p->'contact'->>'whatsapp',''),'[^0-9]','','g');
   v_ig text := regexp_replace(btrim(coalesce(p->'contact'->>'instagram','')),'^@|^https?://(www\.)?instagram\.com/|/.*$','','gi');
-  v_em text := lower(btrim(coalesce(p->'contact'->>'email','')));
   v_contact jsonb;
 begin
   if auth.uid() is null then raise exception 'auth'; end if;
   if ph <> '' and (ph !~ '^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$' or length(ph) > 60000) then raise exception 'photo'; end if;
   if v_wa <> '' and (length(v_wa) < 8 or length(v_wa) > 15) then raise exception 'contact'; end if;
   if v_ig <> '' and v_ig !~ '^[A-Za-z0-9._]{1,30}$' then raise exception 'contact'; end if;
-  if v_em <> '' and (length(v_em) > 120 or v_em !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$') then raise exception 'contact'; end if;
-  v_contact := jsonb_build_object('whatsapp',v_wa,'instagram',v_ig,'email',v_em);
+  v_contact := jsonb_build_object('whatsapp',v_wa,'instagram',v_ig);  -- no public e-mail: people write through "Send message"
   insert into ce_profiles(user_id,name,bio,city,plays,owns,gear,styles,photo,contact,accept_msgs,visible)
   values(auth.uid(), left(btrim(coalesce(p->>'name','')),60), left(btrim(coalesce(p->>'bio','')),600), left(btrim(coalesce(p->>'city','')),60),
     ce_clean_list(p->'plays',12,40), ce_clean_list(p->'owns',20,40), ce_clean_list(p->'gear',30,60), ce_clean_list(p->'styles',12,40), ph, v_contact,
@@ -173,3 +171,6 @@ begin
 end $$;
 revoke all on function public.ce_msg_gate(uuid,uuid) from public, anon, authenticated;
 grant execute on function public.ce_msg_gate(uuid,uuid) to service_role;
+
+-- contact e-mails were removed from public profiles: messages go through send-message
+update public.ce_profiles set contact = contact - 'email' where contact ? 'email';
