@@ -968,6 +968,16 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 #micfollow .mic-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff3d8b,#2ee6a6);transition:width .4s}
 #micfollow .hint{color:#a9abb8;margin:0;font-size:12.5px}
 .pausemark{display:block;margin:10px 0;padding:6px 10px;border:2px dashed currentColor;border-radius:10px;text-align:center;font-weight:700;opacity:.85;font-family:var(--f-body,sans-serif);font-size:.8em;white-space:normal}
+
+.ln{display:block;min-height:1.1em;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;border-radius:6px}
+.ln.hot,.cwrap .hot,[data-i].hot{background:rgba(255,255,255,.16)}
+.stage-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;background:#2a2410;color:#ffe08a;font-size:14px;border-bottom:1px solid #4a3f14}
+#pausemenu{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);padding:16px;overflow:auto}
+.pmbox{width:min(420px,100%);text-align:center}
+.pmbox h2{font-size:24px}
+.pm-line{font-style:italic;word-break:break-word}
+.pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.pm-grid .btn:last-child{grid-column:1 / -1}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -1651,8 +1661,8 @@ function chordWrapHTML(text){
   var lines=String(text).replace(/\r/g,'').split('\n'),out=[];
   for(var i=0;i<lines.length;i++){
     var l=lines[i];
-    if(!l.trim()){out.push('<div class="cl gap"></div>');continue}
-    if(!isChordLine(l)){out.push('<div class="tx">'+esc(l)+'</div>');continue}
+    if(!l.trim()){out.push('<div class="cl gap" data-i="'+i+'"></div>');continue}
+    if(!isChordLine(l)){out.push('<div class="tx" data-i="'+i+'">'+esc(l)+'</div>');continue}
     var cols=[],re=/\S+/g,m;
     while((m=re.exec(l)))cols.push({at:m.index,t:m[0]});
     var nxt=lines[i+1];
@@ -1684,14 +1694,14 @@ function chordWrapHTML(text){
         var ly=last?s[1].replace(/\s+$/,''):s[1].replace(/\s+$/,' ');
         return '<span class="sg"><b class="ch">'+(s[0]?esc(s[0]):'&nbsp;')+'</b><span class="ly">'+(esc(ly)||'&nbsp;')+'</span></span>';
       }
-      out.push('<div class="cl">'+groups.map(function(g,gi){
+      out.push('<div class="cl" data-i="'+i+'">'+groups.map(function(g,gi){
         var lastG=gi===groups.length-1;
         var inner=g.map(function(s,si){return sgHTML(s,lastG&&si===g.length-1)}).join('');
         return g.length>1?'<span class="wd">'+inner+'</span>':inner;
       }).join('')+'</div>');
       i++;continue;
     }
-    out.push('<div class="cl">'+cols.map(function(c){return '<span class="sg"><b class="ch">'+esc(c.t)+'</b></span>'}).join('')+'</div>');
+    out.push('<div class="cl" data-i="'+i+'">'+cols.map(function(c){return '<span class="sg"><b class="ch">'+esc(c.t)+'</b></span>'}).join('')+'</div>');
   }
   return out.join('');
 }
@@ -1699,11 +1709,12 @@ function chordWrapHTML(text){
 var PAUSE_RE=/^\s*\[\s*(?:pausa|pause)\s*(\d{1,3})?\s*s?\s*\]\s*$/i;
 function markPauses(text){return String(text).split('\n').map(function(l){var m=PAUSE_RE.exec(l);return m?'@@PAUSE:'+(m[1]||'')+'@@':l}).join('\n')}
 function pauseHTML(h){return h.replace(/@@PAUSE:(\d*)@@/g,function(_,s){return '<span class="pausemark" data-s="'+(s||0)+'">⏸ Pausa'+(s?' · '+s+' s':' · até você tocar em Rolar')+'</span>'})}
+function lnHTML(text,fn){return String(text).replace(/\r/g,'').split('\n').map(function(l,i){return '<span class="ln" data-i="'+i+'">'+fn(l)+'</span>'}).join('')}
 function stageText(text,isL){
   text=markPauses(text);
-  if(isL)return pauseHTML('<pre style="font-size:'+fss+'px">'+esc(text)+'</pre>');
+  if(isL)return pauseHTML('<pre style="font-size:'+fss+'px">'+lnHTML(text,esc)+'</pre>');
   if(cwrapOn())return pauseHTML('<div class="cwrap" style="font-size:'+fss+'px">'+chordWrapHTML(text)+'</div>');
-  return pauseHTML('<pre class="mono" style="font-size:'+(ui.cfs||14)+'px">'+chordHTML(text)+'</pre>');
+  return pauseHTML('<pre class="mono" style="font-size:'+(ui.cfs||14)+'px">'+lnHTML(text,function(l){var e=esc(l);return isChordLine(l)?'<span class="ch">'+e+'</span>':e})+'</pre>');
 }
 function chordHTML(text){return String(text).split('\n').map(function(l){var e=esc(l);return isChordLine(l)?'<span class="ch">'+e+'</span>':e}).join('\n')}
 function transposeKey(key,k){var t=String(key||'').trim();return t&&isChordTok(t)?transposeTok(t,k,/b/.test(t.slice(1))):key}
@@ -1900,6 +1911,7 @@ function renderStage(){
     '<div class="stage-top"><div class="stage-title"><b>'+esc(s.title)+'</b><span class="stage-meta">'+esc(meta.filter(Boolean).join(' · '))+'</span></div>'+
       '<div class="seg2"><button type="button" class="chip" data-act="stage-kind" data-v="lyrics" aria-pressed="'+isL+'">Letra</button><button type="button" class="chip" data-act="stage-kind" data-v="chords" aria-pressed="'+!isL+'">Cifra</button></div>'+
       '<button type="button" class="btn small primary" data-act="stage-close">Sair</button></div>'+
+    (ui.pausePick?'<div class="stage-banner"><span>Toque na linha onde a pausa deve acontecer</span><button type="button" class="btn small" data-act="pause-cancel">Cancelar</button></div>':'')+
     '<div class="stage-body">'+(text?stageText(text,isL):'<p class="faint" style="font-size:16px">Não há '+(isL?'letra':'cifra')+' salva para esta música. Cole o texto na página pessoal.</p>')+'</div>'+
     (sheet?'<div class="stage-sheet">'+
       '<div class="row"><span class="lbl">Fonte</span><input type="range" min="'+(lk?14:8)+'" max="'+(lk?96:48)+'" step="1" value="'+(lk?fss:(ui.cfs||14))+'" data-f="sfs" aria-label="Tamanho da fonte"></div>'+
@@ -1910,6 +1922,7 @@ function renderStage(){
       (s.bpm?'<div class="row multi"><span class="lbl">Clique</span>'+nb(-5)+nb(-1)+'<b class="mono bpmv'+(eff>=300?' cesar':'')+'">'+bpmTxt(eff)+(d?' <small>('+(d>0?'+':'−')+Math.abs(d)+')</small>':'')+'</b>'+nb(1)+nb(5)+'<button type="button" class="btn small '+(on?'danger':'primary')+'" data-act="'+(on?'met-stop':'met-start')+'" data-id="'+s.id+'">'+(on?'Parar':'Iniciar')+'</button></div>':'')+
       (isL?'':'<div class="row"><span class="lbl">Tom</span><button type="button" class="btn small" data-act="tr" data-id="'+s.id+'" data-d="-1" aria-label="Descer um semitom">−1</button><span class="mono">'+(tr>0?'+':'')+tr+'</span><button type="button" class="btn small" data-act="tr" data-id="'+s.id+'" data-d="1" aria-label="Subir um semitom">+1</button></div>')+
       '<div class="row"><span class="lbl">Escutar</span><button type="button" class="btn small primary" data-act="mic-open" data-id="'+s.id+'">🎧 Escutar e sincronizar</button></div>'+
+      '<div class="row multi"><span class="lbl">Pausa</span><button type="button" class="btn small primary" data-act="pause-pick">⏸ Adicionar pausa</button><span class="faint" style="font-size:12.5px">Ou segure o dedo numa linha do texto.</span></div>'+
       (s.spotify&&s.bpm?'<div class="row"><span class="lbl">Spotify</span><button type="button" class="btn small primary" data-act="sp-open" data-id="'+s.id+'">♫ Clique com o player</button></div>':'')+
       (canSync()&&s.bpm?'<div class="row"><span class="lbl">Banda</span>'+(smOn()?'<button type="button" class="btn small danger" data-act="sm-stop">Parar clique da banda</button>':'<button type="button" class="btn small primary" data-act="sm-start" data-id="'+s.id+'">Clique para todos ('+bpmTxt(eff)+')</button>')+'</div>':'')+
       '<div class="row"><a class="btn small" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">Ouvir no Spotify ↗</a></div>'+
@@ -2056,7 +2069,7 @@ function textBlock(s,kind){
     (editing
       ?'<textarea class="'+(isL?'':'mono')+'" style="font-size:'+fs+'px" placeholder="'+(isL?'Abra a busca, copie a letra e cole aqui. Ela fica salva para toda a banda.':'Abra a busca, copie a cifra e cole aqui. Ela fica salva para toda a banda.')+'" data-f="'+kind+'" data-id="'+id+'" data-fk="'+k+'" aria-label="'+(isL?'Letra':'Cifra')+'">'+esc(val)+'</textarea>'
       :pauseHTML((!isL&&cwrapOn())?'<div class="cwrap read" style="font-size:'+fs+'px">'+chordWrapHTML(markPauses(shown))+'</div>':'<pre class="read'+(isL?'':' mono')+'" style="font-size:'+fs+'px">'+(isL?esc(markPauses(shown)):chordHTML(markPauses(shown)))+'</pre>'))+
-    (editing?'<div class="row-actions"><button type="button" class="btn small" data-act="pause-ins" data-k="'+k+'">⏸ Inserir pausa na rolagem</button></div><p class="hint">Para a rolagem parar num solo, escreva uma linha só com <span class="mono">[pausa 20]</span> (20 = segundos). Sem número, ela para até você tocar em Rolar.</p>':'')+'</div>';
+    (editing?'<div class="row-actions"><button type="button" class="btn small" data-act="pause-ins" data-k="'+k+'">⏸ Inserir pausa na rolagem</button></div><p class="hint">Mais fácil: no modo show, segure o dedo numa linha para adicionar uma pausa. (Também dá para escrever uma linha <span class="mono">[pausa 20]</span> aqui.)</p>':'')+'</div>';
 }
 function metroBlock(s){
   var on=met.running&&met.songId===s.id,bt=s.beats||4,dots='',d=met.delta,eff=effBpm(s);
@@ -2114,6 +2127,45 @@ function renderPerson(pid){
     alertHTML(pid)+'<div class="tools"><input class="grow" type="search" id="pq" data-fk="pq" value="'+esc(pquery)+'" placeholder="Buscar por título ou artista" aria-label="Buscar música"><div class="chips">'+chipsHTML(PFILTERS,'pfilter',pfilter,pcounts)+'</div></div>'+
     '<div id="plist" style="display:flex;flex-direction:column;gap:8px">'+body+'</div>';
 }
+
+/* ---------- adicionar / remover pausa com o dedo ---------- */
+function pauseSrc(){var s=stage&&get(stage.id);return {s:s,kind:(stage&&stage.kind==='lyrics')?'lyrics':'chords'}}
+function pauseLines(){var r=pauseSrc();return String((r.s&&r.s[r.kind])||'').replace(/\r/g,'').split('\n')}
+function openPauseMenu(i){if(!stage)return;ui.pm={i:i};ui.pausePick=false;renderPauseMenu();render()}
+function renderPauseMenu(){
+  var el=document.getElementById('pausemenu');
+  if(!el){el=document.createElement('div');el.id='pausemenu';el.hidden=true;document.body.appendChild(el)}
+  if(!ui.pm||!stage){el.hidden=true;el.innerHTML='';return}
+  var L=pauseLines(),line=L[ui.pm.i]||'',m=PAUSE_RE.exec(line),isMark=!!m;
+  var quote=isMark?'Pausa atual: '+(m[1]?m[1]+' s':'até você tocar em Rolar'):'“'+esc(line.trim().slice(0,70)||'(linha em branco)')+'”';
+  el.hidden=false;
+  el.innerHTML='<div class="who-box tourbox pmbox" role="dialog" aria-label="Pausa na rolagem"><h2>Pausa na rolagem</h2><p class="hint pm-line">'+(isMark?esc(quote):quote)+'</p>'+
+    '<p class="hint">'+(isMark?'Escolha o novo tempo ou remova a pausa.':'A rolagem automática vai parar quando chegar nesta linha.')+'</p>'+
+    '<div class="pm-grid">'+[10,20,30,60].map(function(s){return '<button type="button" class="btn" data-act="pm-set" data-s="'+s+'">'+s+' s</button>'}).join('')+
+    '<button type="button" class="btn" data-act="pm-set" data-s="0">Até eu tocar em Rolar</button></div>'+
+    '<div class="row-actions" style="justify-content:center;margin-top:10px"><label class="f" style="flex-direction:row;align-items:center;gap:8px">Outro tempo<input type="number" inputmode="numeric" min="1" max="600" id="pm-custom" placeholder="segundos" style="width:100px"></label><button type="button" class="btn small primary" data-act="pm-custom">Usar</button></div>'+
+    '<div class="row-actions" style="justify-content:center;margin-top:12px">'+(isMark?'<button type="button" class="btn small danger" data-act="pm-del">Remover a pausa</button>':'')+'<button type="button" class="btn small" data-act="pm-close">Cancelar</button></div></div>';
+}
+function pmWrite(lines){var r=pauseSrc();if(!r.s)return;var o={};o[r.kind]=lines.join('\n');patch(r.s.id,o,true)}
+function pmApply(sec){
+  var L=pauseLines(),i=ui.pm.i,mk='[pausa'+(sec>0?' '+sec:'')+']';
+  if(PAUSE_RE.test(L[i]||''))L[i]=mk;else L.splice(i,0,mk);
+  pmWrite(L);ui.pm=null;renderPauseMenu();render();toast(sec>0?'Pausa de '+sec+' s adicionada.':'Pausa adicionada: ela espera você tocar em Rolar.');
+}
+var lp={t:null,x:0,y:0,el:null};
+function lpCancel(){clearTimeout(lp.t);lp.t=null;if(lp.el){lp.el.classList.remove('hot');lp.el=null}}
+document.addEventListener('pointerdown',function(e){
+  var ln=stage&&e.target.closest&&e.target.closest('#stage .stage-body [data-i]');
+  if(!ln||(e.pointerType==='mouse'&&e.button!==0))return;
+  lpCancel();lp.x=e.clientX;lp.y=e.clientY;lp.el=ln;
+  lp.t=setTimeout(function(){var el=lp.el;lp.t=null;if(el){el.classList.add('hot');var i=+el.dataset.i;lp.el=null;try{if(navigator.vibrate)navigator.vibrate(15)}catch(x){}setTimeout(function(){el.classList.remove('hot')},400);openPauseMenu(i)}},550);
+},{passive:true});
+document.addEventListener('pointermove',function(e){if(lp.t&&(Math.abs(e.clientX-lp.x)>10||Math.abs(e.clientY-lp.y)>10))lpCancel()},{passive:true});
+['pointerup','pointercancel'].forEach(function(n){document.addEventListener(n,function(){if(lp.t)lpCancel()},{passive:true})});
+document.addEventListener('contextmenu',function(e){
+  var ln=stage&&e.target.closest&&e.target.closest('#stage .stage-body [data-i]');
+  if(ln){e.preventDefault();lpCancel();openPauseMenu(+ln.dataset.i)}
+});
 
 /* ---------- rolagem automática ---------- */
 function autoLoop(ts){
@@ -2964,7 +3016,7 @@ function render(){
   $('#home').hidden=!!pid||isSet||isCfg;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;
   $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=true;
   if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
-  renderDrawer();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.spOpen)spPanel();
+  renderDrawer();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
   if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
   if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
     try{var qs=new URLSearchParams(location.search),dv=qs.get('drive');if(dv){var M={ok:'Google Drive conectado!',denied:'Conexão cancelada.',err:'Não foi possível conectar o Drive. Tente de novo.',nosecret:'O Drive ainda não está configurado no servidor.'};toast(M[dv]||'');qs.delete('drive');history.replaceState(null,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}}catch(e){}}
@@ -2990,6 +3042,7 @@ document.addEventListener('input',function(e){
 document.addEventListener('click',function(e){
   /* modo show: tocar fora do menu "Mais" recolhe o menu */
   if(ui.sheet&&e.target.closest&&e.target.closest('#stage')&&!e.target.closest('.stage-sheet,.stage-dock')){ui.sheet=false;render()}
+  if(ui.pausePick&&stage){var pl=e.target.closest&&e.target.closest('#stage .stage-body [data-i]');if(pl&&!e.target.closest('[data-act]')){openPauseMenu(+pl.dataset.i);return}}
   var t=e.target.closest('[data-act]');if(!t)return;
   var act=t.dataset.act,id=t.dataset.id,sid=t.dataset.sid;
   if(act==='filter'){filter=t.dataset.v;renderFilters();render();return}
@@ -3015,6 +3068,12 @@ document.addEventListener('click',function(e){
   if(act==='bg-cycle'){bgMode=BG[(BG.indexOf(bgMode)+1)%BG.length];try{localStorage.setItem('ce-bg2',bgMode)}catch(err){}applyBg();toast('Fundo: '+BGN[bgMode]);render();return}
   if(act==='cfg-import'){location.hash='#geral';setTimeout(function(){toggle('#panel-import','#import-text')},60);return}
   if(act==='open-band'){openBand();window.scrollTo(0,0);return}
+  if(act==='pause-pick'){ui.pausePick=true;ui.sheet=false;if(auto.on)setAuto(false);render();return}
+  if(act==='pause-cancel'){ui.pausePick=false;render();return}
+  if(act==='pm-set'){pmApply(+t.dataset.s);return}
+  if(act==='pm-custom'){var cv=parseInt((document.getElementById('pm-custom')||{}).value,10);if(!(cv>0&&cv<=600)){toast('Digite os segundos (de 1 a 600).');return}pmApply(cv);return}
+  if(act==='pm-del'){var DL=pauseLines();if(PAUSE_RE.test(DL[ui.pm.i]||'')){DL.splice(ui.pm.i,1);pmWrite(DL)}ui.pm=null;renderPauseMenu();render();toast('Pausa removida.');return}
+  if(act==='pm-close'){ui.pm=null;renderPauseMenu();return}
   if(act==='pause-ins'){var ta=t.closest('.block').querySelector('textarea');if(ta){var a0=ta.selectionStart||0,v=ta.value,ins=(a0>0&&v[a0-1]!=='\n'?'\n':'')+'[pausa 20]\n';ta.value=v.slice(0,a0)+ins+v.slice(a0);ta.focus();var cp=a0+ins.length;ta.setSelectionRange(cp,cp);ta.dispatchEvent(new Event('input',{bubbles:true}));toast('Linha de pausa inserida. Troque o 20 pelos segundos que quiser.')}return}
   if(act==='mic-open'){micStart(id);return}
   if(act==='mic-stop'){micStop();return}

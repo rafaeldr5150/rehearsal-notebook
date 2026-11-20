@@ -19,6 +19,14 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Toque na linha onde a pausa deve acontecer','Tap the line where the pause should happen','Toca la línea donde debe ocurrir la pausa'],
+['⏸ Adicionar pausa','⏸ Add a pause','⏸ Añadir pausa'],['Pausa','Pause','Pausa'],['Ou segure o dedo numa linha do texto.','Or press and hold a line of the text.','O mantén pulsada una línea del texto.'],
+['Pausa na rolagem','Scroll pause','Pausa en el desplazamiento'],['Escolha o novo tempo ou remova a pausa.','Choose a new time or remove the pause.','Elige el nuevo tiempo o quita la pausa.'],
+['A rolagem automática vai parar quando chegar nesta linha.','Auto-scroll will stop when it reaches this line.','El desplazamiento automático se detendrá al llegar a esta línea.'],
+['Até eu tocar em Rolar','Until I tap Scroll','Hasta que toque Rolar'],['Outro tempo','Another time','Otro tiempo'],['segundos','seconds','segundos'],['Usar','Use','Usar'],['Remover a pausa','Remove the pause','Quitar la pausa'],
+['Digite os segundos (de 1 a 600).','Enter the seconds (1 to 600).','Escribe los segundos (de 1 a 600).'],['Pausa removida.','Pause removed.','Pausa quitada.'],
+['Pausa adicionada: ela espera você tocar em Rolar.','Pause added: it waits until you tap Scroll.','Pausa añadida: espera hasta que toques Rolar.'],
+['Mais fácil: no modo show, segure o dedo numa linha para adicionar uma pausa. (Também dá para escrever uma linha [pausa 20] aqui.)','Easier: in show mode, press and hold a line to add a pause. (You can also write a [pausa 20] line here.)','Más fácil: en modo show, mantén pulsada una línea para añadir una pausa. (También puedes escribir una línea [pausa 20] aquí.)'],
 ['⏸ Inserir pausa na rolagem','⏸ Insert a scroll pause','⏸ Insertar pausa en el desplazamiento'],
 ['Para a rolagem parar num solo, escreva uma linha só com [pausa 20] (20 = segundos). Sem número, ela para até você tocar em Rolar.','To make scrolling stop at a solo, write a line with just [pausa 20] (20 = seconds). Without a number it stops until you tap Scroll.','Para que el desplazamiento se detenga en un solo, escribe una línea solo con [pausa 20] (20 = segundos). Sin número, se detiene hasta que toques Rolar.'],
 ['Pausa na rolagem. Toque em Rolar para continuar.','Scroll paused. Tap Scroll to continue.','Desplazamiento en pausa. Toca Rolar para continuar.'],
@@ -441,6 +449,8 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^Pausa de (\d+) s adicionada\.$/,function(m){return I===1?m[1]+' s pause added.':'Pausa de '+m[1]+' s añadida.'}],
+[/^Pausa atual: (\d+ s|até você tocar em Rolar)$/,function(m){return (I===1?'Current pause: ':'Pausa actual: ')+(/^\d/.test(m[1])?m[1]:(I===1?'until you tap Scroll':'hasta que toques Rolar'))}],
 [/^⏸ Pausa(?: · (\d+) s| · até você tocar em Rolar)$/,function(m){return m[1]?(I===1?'⏸ Pause · '+m[1]+' s':'⏸ Pausa · '+m[1]+' s'):(I===1?'⏸ Pause · until you tap Scroll':'⏸ Pausa · hasta que toques Rolar')}],
 [/^Pausa (\d+)s$/,function(m){return (I===1?'Pause ':'Pausa ')+m[1]+'s'}],
 [/^Ajuste do clique: ([+-]?\d+) ms$/,function(m){return (I===1?'Click adjustment: ':'Ajuste del clic: ')+m[1]+' ms'}],
