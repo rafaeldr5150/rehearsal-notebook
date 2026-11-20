@@ -90,6 +90,49 @@ function track(st,est,t0,now,o){
   }
   return n;
 }
-var api={estimate:estimate,track:track,normalize:normalize};
+/* ---------- mapa de batidas a partir de toques na tela (tocando junto com a música) ---------- */
+function median(a){var s=a.slice().sort(function(x,y){return x-y});return s.length?s[Math.floor(s.length/2)]:0}
+/* taps: tempos (ms) dos toques. Remove toques duplicados, completa batidas esquecidas e suaviza o tremor da mão. */
+function tapsToMap(taps){
+  var t=taps.slice().sort(function(a,b){return a-b});
+  if(t.length<8)return null;
+  var iv=[];for(var i=1;i<t.length;i++)iv.push(t[i]-t[i-1]);
+  var med=median(iv);if(!(med>150))return null;
+  /* 1) tira duplicados (dois toques quase juntos) */
+  var c=[t[0]];for(i=1;i<t.length;i++){var loc=localMed(c,med);if(t[i]-c[c.length-1]>=0.55*loc)c.push(t[i])}
+  function localMed(arr,fallback){var n=arr.length;if(n<4)return fallback;var d=[];for(var k=Math.max(1,n-6);k<n;k++)d.push(arr[k]-arr[k-1]);return median(d)}
+  /* 2) completa batidas que ficaram sem toque (intervalo de 2, 3 ou 4 batidas) */
+  var f=[c[0]];
+  for(i=1;i<c.length;i++){
+    var gap=c[i]-c[i-1],lm=localMed(f,med),k2=Math.round(gap/lm);
+    if(k2>=2&&k2<=4&&Math.abs(gap/k2-lm)<0.25*lm){for(var j=1;j<k2;j++)f.push(c[i-1]+gap*j/k2)}
+    f.push(c[i]);
+  }
+  /* 3) suaviza com uma reta local (acompanha mudanças suaves de andamento e tira o tremor) */
+  var n=f.length,out=[];
+  for(i=0;i<n;i++){
+    var lo=Math.max(0,i-3),hi=Math.min(n-1,i+3),sx=0,sy=0,sxx=0,sxy=0,m=hi-lo+1;
+    for(var q=lo;q<=hi;q++){sx+=q;sy+=f[q];sxx+=q*q;sxy+=q*f[q]}
+    var den=m*sxx-sx*sx,sl=den?(m*sxy-sx*sy)/den:0,ic=(sy-sl*sx)/m;
+    out.push(Math.round(ic+sl*i));
+  }
+  return out;
+}
+/* junta uma passada nova a um mapa que já existe (média ponderada pelo número de passadas) */
+function mergeMaps(old,nw,passes){
+  if(!old||!old.length)return nw;
+  var iv=[];for(var i=1;i<old.length;i++)iv.push(old[i]-old[i-1]);
+  var T=median(iv)||500,out=old.slice(),used=0;
+  nw.forEach(function(b){
+    var bi=-1,bd=1e9;
+    for(var k=0;k<old.length;k++){var d=Math.abs(old[k]-b);if(d<bd){bd=d;bi=k}}
+    if(bi>=0&&bd<0.5*T){out[bi]=Math.round((out[bi]*passes+b)/(passes+1));used++}
+  });
+  var last=old[old.length-1],first=old[0];
+  nw.forEach(function(b){if(b>last+0.5*T)out.push(b);else if(b<first-0.5*T)out.unshift(b)});
+  out.sort(function(a,c){return a-c});
+  return out;
+}
+var api={estimate:estimate,track:track,normalize:normalize,tapsToMap:tapsToMap,mergeMaps:mergeMaps};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.CE_BEAT=api;
 })(typeof window!=='undefined'?window:this);

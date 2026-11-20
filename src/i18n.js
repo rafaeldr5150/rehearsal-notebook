@@ -19,6 +19,20 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['▶ Tocar com o YouTube','▶ Play with YouTube','▶ Tocar con YouTube'],['YouTube','YouTube','YouTube'],['▶ Player com o mapa','▶ Player with the map','▶ Reproductor con el mapa'],
+['Link do vídeo do YouTube (para tocar junto com o clique)','YouTube video link (to play along with the click)','Enlace del vídeo de YouTube (para tocar con el clic)'],
+['TOQUE NA BATIDA','TAP ON THE BEAT','TOCA EN EL PULSO'],['Parar e salvar','Stop and save','Parar y guardar'],
+['Toque a cada batida (no tempo da música). Se esquecer algumas, não tem problema.','Tap on every beat (in time with the music). If you miss some, that is fine.','Toca en cada pulso (al ritmo de la música). Si olvidas alguno, no pasa nada.'],
+['● Gravar o mapa tocando junto','● Record the map by tapping along','● Grabar el mapa tocando junto'],['● Refinar o mapa (tocar de novo)','● Refine the map (play again)','● Refinar el mapa (tocar de nuevo)'],
+['Apagar o mapa','Delete the map','Borrar el mapa'],['Confirmar: apagar o mapa','Confirm: delete the map','Confirmar: borrar el mapa'],['Mapa apagado.','Map deleted.','Mapa borrado.'],
+['Ainda sem mapa de batidas para este player.','No beat map yet for this player.','Aún sin mapa de pulsos para este reproductor.'],
+['Esta música ainda não tem um vídeo do YouTube. Cole o link:','This song has no YouTube video yet. Paste the link:','Esta canción aún no tiene un vídeo de YouTube. Pega el enlace:'],
+['Usar este vídeo','Use this video','Usar este vídeo'],['Cole o link de um vídeo do YouTube.','Paste a YouTube video link.','Pega el enlace de un vídeo de YouTube.'],
+['Dê play no vídeo. O clique acompanha o mapa de batidas gravado.','Press play on the video. The click follows the recorded beat map.','Dale play al vídeo. El clic sigue el mapa de pulsos grabado.'],
+['Foram poucos toques. Toque a cada batida por pelo menos uns 30 segundos.','Too few taps. Tap on every beat for at least about 30 seconds.','Muy pocos toques. Toca en cada pulso durante al menos unos 30 segundos.'],
+['Dê play na música primeiro e depois toque aqui.','Press play on the song first, then tap here.','Dale play a la canción primero y luego toca aquí.'],
+['Não foi possível carregar o player do YouTube.','Could not load the YouTube player.','No se pudo cargar el reproductor de YouTube.'],
+['Clique seguindo o mapa de batidas ✓','Click following the beat map ✓','Clic siguiendo el mapa de pulsos ✓'],['Falta alinhar (ou grave o mapa de batidas).','Needs aligning (or record the beat map).','Falta alinear (o graba el mapa de pulsos).'],
 ['Toque na linha onde a pausa deve acontecer','Tap the line where the pause should happen','Toca la línea donde debe ocurrir la pausa'],
 ['⏸ Adicionar pausa','⏸ Add a pause','⏸ Añadir pausa'],['Pausa','Pause','Pausa'],['Ou segure o dedo numa linha do texto.','Or press and hold a line of the text.','O mantén pulsada una línea del texto.'],
 ['Pausa na rolagem','Scroll pause','Pausa en el desplazamiento'],['Escolha o novo tempo ou remova a pausa.','Choose a new time or remove the pause.','Elige el nuevo tiempo o quita la pausa.'],
@@ -449,6 +463,10 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^Gravando o mapa: (\d+) toques?$/,function(m){return (I===1?'Recording the map: ':'Grabando el mapa: ')+m[1]+(I===1?(m[1]==='1'?' tap':' taps'):(m[1]==='1'?' toque':' toques'))}],
+[/^Mapa de batidas: (\d+) batidas · (\d+) passadas?$/,function(m){return I===1?'Beat map: '+m[1]+' beats · '+m[2]+(m[2]==='1'?' pass':' passes'):'Mapa de pulsos: '+m[1]+' pulsos · '+m[2]+(m[2]==='1'?' pasada':' pasadas')}],
+[/^Mapa de batidas salvo: (\d+) batidas\.$/,function(m){return I===1?'Beat map saved: '+m[1]+' beats.':'Mapa de pulsos guardado: '+m[1]+' pulsos.'}],
+[/^Ajuste do mapa: ([+-]?\d+) ms$/,function(m){return (I===1?'Map adjustment: ':'Ajuste del mapa: ')+m[1]+' ms'}],
 [/^Pausa de (\d+) s adicionada\.$/,function(m){return I===1?m[1]+' s pause added.':'Pausa de '+m[1]+' s añadida.'}],
 [/^Pausa atual: (\d+ s|até você tocar em Rolar)$/,function(m){return (I===1?'Current pause: ':'Pausa actual: ')+(/^\d/.test(m[1])?m[1]:(I===1?'until you tap Scroll':'hasta que toques Rolar'))}],
 [/^⏸ Pausa(?: · (\d+) s| · até você tocar em Rolar)$/,function(m){return m[1]?(I===1?'⏸ Pause · '+m[1]+' s':'⏸ Pausa · '+m[1]+' s'):(I===1?'⏸ Pause · until you tap Scroll':'⏸ Pausa · hasta que toques Rolar')}],
