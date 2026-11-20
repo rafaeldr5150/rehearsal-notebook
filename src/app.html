@@ -2274,6 +2274,11 @@ function musDiscover(){
     (mus.err?'<p class="hint">'+esc(mus.err)+'</p>':'')+
     (mus.list===null?'<p class="hint">Buscando…</p>':rows?'<div class="mus-grid">'+rows+'</div>'+(mus.more?'<div class="row-actions no-fill"><button type="button" class="btn" data-act="mus-more"'+(mus.busy?' disabled':'')+'>Ver mais</button></div>':''):'<div class="empty-state"><strong>Nenhum músico encontrado</strong>Quando outros músicos ligarem “Visível” no perfil, eles aparecem aqui. Que tal ser o primeiro? Abra “Meu perfil”.</div>');
 }
+function musMsgReady(){
+  if(mus.msgReady===true||mus.compose)return mus.msgReady!==false||mus.compose;
+  if(mus.msgReady===undefined&&!mus.readyBusy&&window.CE_PROFILE&&CE_PROFILE.ready){mus.readyBusy=true;CE_PROFILE.ready().then(function(r){mus.msgReady=!!r}).catch(function(){mus.msgReady=false}).then(function(){mus.readyBusy=false;render()})}
+  return false;
+}
 function musCompose(p){
   if(!mus.compose)return '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="mus-msg-open" data-u="'+esc(p.user_id)+'">✉ Enviar mensagem</button></div>';
   var off=mus.msgReady===false;
@@ -2304,7 +2309,7 @@ function musProfileView(id){
     musContactHTML(p.contact)+
     sec('Toca',p.plays)+sec('Tem',p.owns,'alt')+sec('Equipamentos',p.gear,'alt')+sec('Estilos favoritos',p.styles)+
     '<div class="panel"><h3>Vídeos</h3>'+musVideos(v.videos||[],false)+'</div>'+
-    (!mine&&p.accept_msgs?musCompose(p):'')+
+    (!mine&&p.accept_msgs&&musMsgReady()?musCompose(p):'')+
     (mine?'':'<div class="row-actions no-fill"><button type="button" class="btn small'+(mus.armDel==='rep'?' danger armed':'')+'" data-act="mus-report" data-u="'+esc(p.user_id)+'">'+(mus.armDel==='rep'?'Confirmar: denunciar este perfil':'Denunciar')+'</button></div>');
 }
 function renderMus(){
@@ -2361,7 +2366,7 @@ function musAct(act,t){
     if(mus.armDel!==t.dataset.v){mus.armDel=t.dataset.v;render();clearTimeout(mus._t);mus._t=setTimeout(function(){mus.armDel='';render()},5000);return}
     mus.armDel='';P.delVideo(t.dataset.v).then(function(){mus.me=undefined;mus.meBusy=false;mus.view=undefined;render()}).catch(function(e){toast(musErr(e))});return}
   if(act==='mus-play'){var url=t.dataset.url,id=ytId(url);if(!id){window.open(url,'_blank','noopener');return}mus.video=id;renderMusVideo();return}
-  if(act==='mus-msg-open'){mus.compose=true;mus.msgReady=undefined;render();if(P.ready)P.ready().then(function(r){mus.msgReady=r}).catch(function(){mus.msgReady=undefined}).then(function(){render()});return}
+  if(act==='mus-msg-open'){mus.compose=true;render();return}
   if(act==='mus-msg-cancel'){mus.compose=false;render();return}
   if(act==='mus-msg-send'){
     var mt=String(mus.msg||'').trim();if(mt.length<10){toast('Escreva uma mensagem um pouco maior.');return}
