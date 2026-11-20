@@ -12,6 +12,7 @@ create table if not exists public.ce_profiles(
   gear jsonb not null default '[]'::jsonb,       -- equipment (amps, pedals, interface...)
   styles jsonb not null default '[]'::jsonb,     -- favourite styles
   photo text not null default '',                -- small data URL (jpeg)
+  contact jsonb not null default '{}'::jsonb,    -- optional: whatsapp (digits), instagram handle, contact e-mail; only shown on visible profiles
   visible boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now());
@@ -26,6 +27,7 @@ create table if not exists public.ce_reports(
   reporter uuid not null references auth.users(id) on delete cascade,
   target uuid not null, video uuid, reason text not null default '',
   at timestamptz not null default now());
+alter table public.ce_profiles add column if not exists contact jsonb not null default '{}'::jsonb;
 alter table public.ce_profiles enable row level security;
 alter table public.ce_profile_videos enable row level security;
 alter table public.ce_reports enable row level security;
@@ -52,15 +54,23 @@ end $$;
 create or replace function public.ce_profile_save(p jsonb) returns boolean
 language plpgsql security definer set search_path=public as $$
 declare ph text := coalesce(p->>'photo','');
+  v_wa text := regexp_replace(coalesce(p->'contact'->>'whatsapp',''),'[^0-9]','','g');
+  v_ig text := regexp_replace(btrim(coalesce(p->'contact'->>'instagram','')),'^@|^https?://(www\.)?instagram\.com/|/.*$','','gi');
+  v_em text := lower(btrim(coalesce(p->'contact'->>'email','')));
+  v_contact jsonb;
 begin
   if auth.uid() is null then raise exception 'auth'; end if;
   if ph <> '' and (ph !~ '^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$' or length(ph) > 60000) then raise exception 'photo'; end if;
-  insert into ce_profiles(user_id,name,bio,city,plays,owns,gear,styles,photo,visible)
+  if v_wa <> '' and (length(v_wa) < 8 or length(v_wa) > 15) then raise exception 'contact'; end if;
+  if v_ig <> '' and v_ig !~ '^[A-Za-z0-9._]{1,30}$' then raise exception 'contact'; end if;
+  if v_em <> '' and (length(v_em) > 120 or v_em !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$') then raise exception 'contact'; end if;
+  v_contact := jsonb_build_object('whatsapp',v_wa,'instagram',v_ig,'email',v_em);
+  insert into ce_profiles(user_id,name,bio,city,plays,owns,gear,styles,photo,contact,visible)
   values(auth.uid(), left(btrim(coalesce(p->>'name','')),60), left(btrim(coalesce(p->>'bio','')),600), left(btrim(coalesce(p->>'city','')),60),
-    ce_clean_list(p->'plays',12,40), ce_clean_list(p->'owns',20,40), ce_clean_list(p->'gear',30,60), ce_clean_list(p->'styles',12,40), ph,
+    ce_clean_list(p->'plays',12,40), ce_clean_list(p->'owns',20,40), ce_clean_list(p->'gear',30,60), ce_clean_list(p->'styles',12,40), ph, v_contact,
     coalesce((p->>'visible')::boolean,false))
   on conflict(user_id) do update set name=excluded.name, bio=excluded.bio, city=excluded.city, plays=excluded.plays, owns=excluded.owns,
-    gear=excluded.gear, styles=excluded.styles, photo=excluded.photo, visible=excluded.visible, updated_at=now();
+    gear=excluded.gear, styles=excluded.styles, photo=excluded.photo, contact=excluded.contact, visible=excluded.visible, updated_at=now();
   return true;
 end $$;
 

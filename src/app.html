@@ -107,6 +107,7 @@ body.sk-cus{--rec-on:var(--cb,#33d6a0)}
 .mus-embed{position:relative;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}.mus-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 #musvideo{position:fixed;inset:0;z-index:44;display:flex;align-items:center;justify-content:center;background:rgba(8,4,6,.88);padding:14px}
 #musvideo[hidden]{display:none}
+.mus-contact-btns{display:flex;flex-wrap:wrap;gap:10px}.mus-contact-btns .btn{flex:1 1 120px;text-align:center}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -2186,13 +2187,14 @@ function renderSide(){
 /* ---------- rede de músicos (independente da banda) ---------- */
 var MUS_INST=['Guitarra','Violão','Baixo','Bateria','Voz','Teclado','Piano','Saxofone','Violino','Percussão','DJ'];
 var MUS_STYLE=['Rock','Pop','Blues','Jazz','Metal','Samba','MPB','Funk','Reggae','Sertanejo','Country','Folk','Eletrônica','Gospel','Clássica'];
-var mus={tab:'discover',q:'',inst:'',style:'',list:null,more:false,busy:false,me:undefined,meBusy:false,draft:null,saving:false,view:undefined,viewBusy:false,vurl:'',vtitle:'',video:null,armDel:'',err:''};
+var mus={tab:'discover',q:'',inst:'',style:'',list:null,more:false,busy:false,me:undefined,meBusy:false,draft:null,saving:false,view:undefined,viewBusy:false,vurl:'',vtitle:'',vtitleAuto:'',vtitleFor:'',tstat:'',add:{},video:null,armDel:'',err:''};
 function musOn(){return !!(window.CE_PROFILE&&window.CE_STANDALONE)}
 function musAuthed(){return !!(window.CE_AUTH&&window.CE_AUTH.user)}
 function musRoute(){var h=location.hash.replace(/^#/,'');if(h==='musicos')return {k:'dir'};var m=/^musico-([0-9a-f-]{36})$/.exec(h);return m?{k:'prof',id:m[1]}:null}
 function musErr(e){var m=String(e&&e.message||e||'');
   if(/url/.test(m))return 'Link não aceito. Use YouTube, Vimeo, Instagram, TikTok, Facebook ou Google Drive, começando com https://.';
   if(/limit/.test(m))return 'Você chegou ao limite de 30 vídeos. Apague algum para adicionar outro.';
+  if(/contact/.test(m))return 'Contato inválido. Confira o WhatsApp (com DDD), o Instagram e o e-mail.';
   if(/photo/.test(m))return 'Não foi possível usar essa foto. Tente outra.';
   if(/rate/.test(m))return 'Muitas denúncias hoje. Tente amanhã.';
   if(/auth/.test(m))return 'Entre com a sua conta para continuar.';
@@ -2213,7 +2215,7 @@ function musLoadMe(){
   if(mus.meBusy)return;mus.meBusy=true;
   window.CE_PROFILE.me().then(function(r){mus.me=r;if(!mus.draft)musDraftFrom(r.profile)}).catch(function(e){mus.me=null;mus.err=musErr(e)}).then(function(){mus.meBusy=false;render()});
 }
-function musDraftFrom(p){p=p||{};mus.draft={name:p.name||(window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.name)||'',city:p.city||'',bio:p.bio||'',plays:(p.plays||[]).slice(),owns:(p.owns||[]).slice(),gear:(p.gear||[]).slice(),styles:(p.styles||[]).slice(),photo:p.photo||'',visible:!!p.visible}}
+function musDraftFrom(p){p=p||{};mus.draft={name:p.name||(window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.name)||'',city:p.city||'',bio:p.bio||'',plays:(p.plays||[]).slice(),owns:(p.owns||[]).slice(),gear:(p.gear||[]).slice(),styles:(p.styles||[]).slice(),photo:p.photo||'',contact:Object.assign({whatsapp:'',instagram:'',email:''},p.contact||{}),visible:!!p.visible}}
 function musSearch(reset){
   if(mus.busy)return;mus.busy=true;if(reset){mus.list=null}
   window.CE_PROFILE.search(mus.q,mus.inst,mus.style,reset?0:(mus.list||[]).length).then(function(rows){mus.list=(reset?[]:(mus.list||[])).concat(rows||[]);mus.more=(rows||[]).length>=20;mus.err=''}).catch(function(e){mus.list=mus.list||[];mus.err=musErr(e)}).then(function(){mus.busy=false;render()});
@@ -2225,7 +2227,7 @@ function musLoadView(id){
 function musListEditor(key,label,ph,sugg){
   var d=mus.draft,cur=d[key]||[];
   return '<div class="mus-field"><label>'+label+'</label><div class="mus-chips">'+(cur.length?cur.map(function(x,i){return '<span class="tag mus-chip">'+esc(x)+'<button type="button" data-act="mus-del" data-k="'+key+'" data-i="'+i+'" aria-label="Remover '+esc(x)+'">×</button></span>'}).join(''):'<span class="faint">nada ainda</span>')+'</div>'+
-    '<div class="mus-add"><input type="text" data-mus-add="'+key+'" data-draft="mus" maxlength="60" placeholder="'+ph+'" autocomplete="off"><button type="button" class="btn small primary" data-act="mus-add" data-k="'+key+'">Adicionar</button></div>'+
+    '<div class="mus-add"><input type="text" data-mus-add="'+key+'" data-draft="mus" data-fk="musadd'+key+'" value="'+esc(mus.add[key]||'')+'" maxlength="60" placeholder="'+ph+'" autocomplete="off"><button type="button" class="btn small primary" data-act="mus-add" data-k="'+key+'">Adicionar</button></div>'+
     (sugg?'<div class="mus-sugg">'+sugg.filter(function(s){return cur.map(function(c){return c.toLowerCase()}).indexOf(s.toLowerCase())<0}).map(function(s){return '<button type="button" class="chip" data-act="mus-sug" data-k="'+key+'" data-v="'+esc(s)+'">+ '+esc(s)+'</button>'}).join('')+'</div>':'')+'</div>';
 }
 function musEditor(){
@@ -2233,19 +2235,23 @@ function musEditor(){
   var d=mus.draft,vids=(mus.me&&mus.me.videos)||[];
   return '<div class="panel mus-form"><h3>Meu perfil</h3>'+
     '<div class="mus-photo">'+musAvatar(d,96)+'<div class="row-actions no-fill"><button type="button" class="btn small" data-act="mus-photo">'+(d.photo?'Trocar foto':'Escolher foto')+'</button>'+(d.photo?'<button type="button" class="btn small" data-act="mus-photo-del">Remover</button>':'')+'</div></div>'+
-    '<div class="mus-field"><label for="mus-name">Nome artístico</label><input id="mus-name" type="text" maxlength="60" data-mus="name" data-draft="mus" value="'+esc(d.name)+'" placeholder="Como você quer ser chamado"></div>'+
-    '<div class="mus-field"><label for="mus-city">Cidade</label><input id="mus-city" type="text" maxlength="60" data-mus="city" data-draft="mus" value="'+esc(d.city)+'" placeholder="Ex.: São Paulo"></div>'+
-    '<div class="mus-field"><label for="mus-bio">Sobre mim</label><textarea id="mus-bio" rows="4" maxlength="600" data-mus="bio" data-draft="mus" placeholder="Conte um pouco da sua história musical…">'+esc(d.bio)+'</textarea></div>'+
+    '<div class="mus-field"><label for="mus-name">Nome artístico</label><input id="mus-name" type="text" maxlength="60" data-mus="name" data-draft="mus" data-fk="musname" value="'+esc(d.name)+'" placeholder="Como você quer ser chamado"></div>'+
+    '<div class="mus-field"><label for="mus-city">Cidade</label><input id="mus-city" type="text" maxlength="60" data-mus="city" data-draft="mus" data-fk="muscity" value="'+esc(d.city)+'" placeholder="Ex.: São Paulo"></div>'+
+    '<div class="mus-field"><label for="mus-bio">Sobre mim</label><textarea id="mus-bio" rows="4" maxlength="600" data-mus="bio" data-draft="mus" data-fk="musbio" placeholder="Conte um pouco da sua história musical…">'+esc(d.bio)+'</textarea></div>'+
     musListEditor('plays','Instrumentos que eu toco','Ex.: Guitarra',MUS_INST)+
     musListEditor('owns','Instrumentos que eu tenho','Ex.: Fender Stratocaster')+
     musListEditor('gear','Equipamentos','Ex.: Amplificador Marshall, pedal Boss DS-1')+
     musListEditor('styles','Estilos favoritos','Ex.: Rock',MUS_STYLE)+
+    '<div class="mus-field mus-contact"><label>Contato (opcional)</label><p class="hint">Só quem está logado no app e abre o seu perfil visível vê estes dados. Preencha só o que quiser mostrar.</p>'+
+      '<input type="tel" inputmode="tel" data-mus-c="whatsapp" data-draft="mus" data-fk="musc1" maxlength="25" value="'+esc((d.contact||{}).whatsapp||'')+'" placeholder="WhatsApp com DDD, ex.: 11 91234-5678" aria-label="WhatsApp" autocomplete="off">'+
+      '<input type="text" data-mus-c="instagram" data-draft="mus" data-fk="musc2" maxlength="60" autocapitalize="off" value="'+esc((d.contact||{}).instagram||'')+'" placeholder="Instagram, ex.: @meuusuario" aria-label="Instagram" autocomplete="off">'+
+      '<input type="email" inputmode="email" data-mus-c="email" data-draft="mus" data-fk="musc3" maxlength="120" autocapitalize="off" value="'+esc((d.contact||{}).email||'')+'" placeholder="E-mail para contato" aria-label="E-mail de contato" autocomplete="off"></div>'+
     '<label class="mus-vis"><input type="checkbox" data-mus-vis="1" data-draft="mus"'+(d.visible?' checked':'')+'><span><b>Visível para outros músicos</b><small>Desligado, só você vê o perfil. Ligado, outros músicos do app podem encontrar você, ver seu nome, cidade, foto, instrumentos e vídeos. O seu e-mail nunca aparece.</small></span></label>'+
     '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="mus-save"'+(mus.saving?' disabled':'')+'>'+(mus.saving?'Salvando…':'Salvar perfil')+'</button>'+
     (mus.me&&mus.me.profile?'<a class="btn" href="#musico-'+esc(mus.me.profile.user_id)+'">Ver como os outros veem</a>':'')+'</div></div>'+
     '<div class="panel mus-form"><h3>Meus vídeos</h3>'+musVideos(vids,true)+
-    '<div class="mus-field"><label for="mus-vurl">Adicionar vídeo (link)</label><input id="mus-vurl" type="url" inputmode="url" autocapitalize="off" data-mus="vurl" data-draft="mus" value="'+esc(mus.vurl)+'" placeholder="https://youtube.com/watch?v=…"></div>'+
-    '<div class="mus-field"><input type="text" maxlength="100" data-mus="vtitle" data-draft="mus" value="'+esc(mus.vtitle)+'" placeholder="Título (opcional)" aria-label="Título do vídeo"></div>'+
+    '<div class="mus-field"><label for="mus-vurl">Adicionar vídeo (link)</label><input id="mus-vurl" type="url" inputmode="url" autocapitalize="off" data-mus="vurl" data-draft="mus" data-fk="musvurl" value="'+esc(mus.vurl)+'" placeholder="https://youtube.com/watch?v=…"></div>'+
+    '<div class="mus-field"><input type="text" maxlength="100" data-mus="vtitle" data-draft="mus" data-fk="musvtitle" value="'+esc(mus.vtitle)+'" placeholder="Título (opcional)" aria-label="Título do vídeo"><small class="hint" id="mus-tstat">'+esc(mus.tstat)+'</small></div>'+
     '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="mus-vadd">Adicionar vídeo</button></div>'+
     '<p class="hint">Os vídeos ficam no site de origem (YouTube, Vimeo…). Aqui só guardamos o link.</p></div>'+
     '<div class="panel mus-form"><h3>Privacidade</h3><p class="hint">Você pode apagar o seu perfil e os seus vídeos a qualquer momento. Isso não apaga a sua conta nem as suas bandas.</p>'+
@@ -2256,10 +2262,18 @@ function musDiscover(){
   var opt=function(arr,cur,all){return '<option value="">'+all+'</option>'+arr.map(function(x){return '<option'+(cur===x?' selected':'')+'>'+esc(x)+'</option>'}).join('')};
   var rows=(mus.list||[]).map(function(p){
     return '<a class="mus-card" href="#musico-'+esc(p.user_id)+'">'+musAvatar(p,64)+'<span class="mus-info"><b>'+esc(p.name)+'</b><small>'+esc(p.city||'')+'</small><span class="mus-tags">'+musChips((p.plays||[]).slice(0,4))+musChips((p.styles||[]).slice(0,3),'alt')+'</span></span></a>'}).join('');
-  return '<div class="mus-search"><input type="search" data-mus="q" data-draft="mus" value="'+esc(mus.q)+'" placeholder="Buscar por nome ou cidade" aria-label="Buscar músicos"><select data-mus-sel="inst" aria-label="Instrumento">'+opt(MUS_INST,mus.inst,'Qualquer instrumento')+'</select><select data-mus-sel="style" aria-label="Estilo">'+opt(MUS_STYLE,mus.style,'Qualquer estilo')+'</select>'+
+  return '<div class="mus-search"><input type="search" data-mus="q" data-draft="mus" data-fk="musq" value="'+esc(mus.q)+'" placeholder="Buscar por nome ou cidade" aria-label="Buscar músicos"><select data-mus-sel="inst" aria-label="Instrumento">'+opt(MUS_INST,mus.inst,'Qualquer instrumento')+'</select><select data-mus-sel="style" aria-label="Estilo">'+opt(MUS_STYLE,mus.style,'Qualquer estilo')+'</select>'+
     '<button type="button" class="btn primary" data-act="mus-find">Buscar</button></div>'+
     (mus.err?'<p class="hint">'+esc(mus.err)+'</p>':'')+
     (mus.list===null?'<p class="hint">Buscando…</p>':rows?'<div class="mus-grid">'+rows+'</div>'+(mus.more?'<div class="row-actions no-fill"><button type="button" class="btn" data-act="mus-more"'+(mus.busy?' disabled':'')+'>Ver mais</button></div>':''):'<div class="empty-state"><strong>Nenhum músico encontrado</strong>Quando outros músicos ligarem “Visível” no perfil, eles aparecem aqui. Que tal ser o primeiro? Abra “Meu perfil”.</div>');
+}
+function musContactHTML(c){
+  c=c||{};var wa=/^[0-9]{8,15}$/.test(c.whatsapp||'')?c.whatsapp:'',ig=/^[A-Za-z0-9._]{1,30}$/.test(c.instagram||'')?c.instagram:'',em=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email||'')&&String(c.email).length<=120?c.email:'';
+  if(!wa&&!ig&&!em)return '';
+  return '<div class="panel"><h3>Contato</h3><div class="row-actions no-fill mus-contact-btns">'+
+    (wa?'<a class="btn primary" target="_blank" rel="noopener noreferrer" href="https://wa.me/'+wa+'">WhatsApp</a>':'')+
+    (ig?'<a class="btn" target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/'+esc(ig)+'/">Instagram</a>':'')+
+    (em?'<a class="btn" href="mailto:'+esc(em)+'">E-mail</a>':'')+'</div></div>';
 }
 function musProfileView(id){
   musLoadView(id);
@@ -2272,6 +2286,7 @@ function musProfileView(id){
   return '<div class="row-actions no-fill">'+back+'</div>'+
     '<div class="mus-hero">'+musAvatar(p,112)+'<div><h2>'+esc(p.name)+'</h2><div class="faint">'+esc(p.city||'')+'</div>'+(p.visible?'':'<div class="tag">Só você vê este perfil</div>')+'</div></div>'+
     (p.bio?'<div class="panel"><h3>Sobre</h3><p class="mus-bio">'+esc(p.bio)+'</p></div>':'')+
+    musContactHTML(p.contact)+
     sec('Toca',p.plays)+sec('Tem',p.owns,'alt')+sec('Equipamentos',p.gear,'alt')+sec('Estilos favoritos',p.styles)+
     '<div class="panel"><h3>Vídeos</h3>'+musVideos(v.videos||[],false)+'</div>'+
     (mine?'':'<div class="row-actions no-fill"><button type="button" class="btn small'+(mus.armDel==='rep'?' danger armed':'')+'" data-act="mus-report" data-u="'+esc(p.user_id)+'">'+(mus.armDel==='rep'?'Confirmar: denunciar este perfil':'Denunciar')+'</button></div>');
@@ -2293,7 +2308,20 @@ function renderMus(){
 }
 var musPhotoInp=document.createElement('input');musPhotoInp.type='file';musPhotoInp.accept='image/*';musPhotoInp.hidden=true;document.body.appendChild(musPhotoInp);
 musPhotoInp.onchange=function(){var f=musPhotoInp.files&&musPhotoInp.files[0];musPhotoInp.value='';if(!f||!mus.draft)return;resizePhoto(f,192).then(function(u){mus.draft.photo=u;render()}).catch(function(){toast('Não foi possível usar essa foto.')})};
-function musAddItem(key,val){val=String(val||'').trim();if(!val||!mus.draft)return;var a=mus.draft[key]=mus.draft[key]||[];if(a.map(function(x){return x.toLowerCase()}).indexOf(val.toLowerCase())>=0)return;if(a.length>=(key==='gear'?30:key==='owns'?20:12)){toast('Limite de itens atingido.');return}a.push(val.slice(0,60))}
+function musAddItem(key,val){val=String(val||'').trim();mus.add[key]='';if(!val||!mus.draft)return;var a=mus.draft[key]=mus.draft[key]||[];if(a.map(function(x){return x.toLowerCase()}).indexOf(val.toLowerCase())>=0)return;if(a.length>=(key==='gear'?30:key==='owns'?20:12)){toast('Limite de itens atingido.');return}a.push(val.slice(0,60))}
+function musTitleSoon(){clearTimeout(mus._tt);mus._tt=setTimeout(musFetchTitle,450)}
+function musFetchTitle(){
+  var u=String(mus.vurl||'').trim();
+  if(!/^https:\/\/(www\.|m\.)?(youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com|tiktok\.com)\//i.test(u)||u===mus.vtitleFor||!window.CE_PROFILE||!CE_PROFILE.title)return;
+  mus.vtitleFor=u;mus.tstat='Buscando o título…';var st=document.getElementById('mus-tstat');if(st)st.textContent=mus.tstat;
+  CE_PROFILE.title(u).then(function(r){
+    if(String(mus.vurl||'').trim()!==u)return;
+    if(r&&r.ok&&r.title){
+      if(!mus.vtitle||mus.vtitle===mus.vtitleAuto){mus.vtitle=r.title;mus.vtitleAuto=r.title;var ti=document.querySelector('[data-mus="vtitle"]');if(ti)ti.value=r.title}
+      mus.tstat='Título encontrado. Você pode editar se quiser.'
+    }else mus.tstat='Não consegui achar o título. Digite um, se quiser.';
+  }).catch(function(){mus.tstat='Não consegui achar o título. Digite um, se quiser.'}).then(function(){var st2=document.getElementById('mus-tstat');if(st2)st2.textContent=mus.tstat});
+}
 function musAct(act,t){
   var P=window.CE_PROFILE;if(!P)return;
   if(act==='mus-tab'){mus.tab=t.dataset.v;mus.armDel='';render();return}
@@ -2312,7 +2340,7 @@ function musAct(act,t){
     P.save(mus.draft).then(function(){mus.me=undefined;mus.meBusy=false;mus.draft=null;mus.view=undefined;mus.list=null;toast(mus.draftWasVisible===false?'Perfil salvo.':'Perfil salvo.')}).catch(function(e){toast(musErr(e))}).then(function(){mus.saving=false;render()});return}
   if(act==='mus-vadd'){
     var u=String(mus.vurl||'').trim();if(!/^https:\/\//i.test(u)){toast('Cole um link que comece com https://');return}
-    P.addVideo(u,mus.vtitle).then(function(){mus.vurl='';mus.vtitle='';mus.me=undefined;mus.meBusy=false;toast('Vídeo adicionado.');render()}).catch(function(e){toast(musErr(e))});return}
+    P.addVideo(u,mus.vtitle).then(function(){mus.vurl='';mus.vtitle='';mus.vtitleAuto='';mus.vtitleFor='';mus.tstat='';mus.me=undefined;mus.meBusy=false;toast('Vídeo adicionado.');render()}).catch(function(e){toast(musErr(e))});return}
   if(act==='mus-vdel'){
     if(mus.armDel!==t.dataset.v){mus.armDel=t.dataset.v;render();clearTimeout(mus._t);mus._t=setTimeout(function(){mus.armDel='';render()},5000);return}
     mus.armDel='';P.delVideo(t.dataset.v).then(function(){mus.me=undefined;mus.meBusy=false;mus.view=undefined;render()}).catch(function(e){toast(musErr(e))});return}
@@ -3792,7 +3820,7 @@ function route(){
   window.scrollTo(0,0);ui.pushAsked=false;render();
 }
 window.addEventListener('hashchange',route);
-window.addEventListener('ce-auth',function(){mus.me=undefined;mus.list=null;render()});
+window.addEventListener('ce-auth',function(){var u=window.CE_AUTH&&window.CE_AUTH.user,k=u?(u.email||u.name||'x'):'';if(mus.uid!==k){mus.uid=k;mus.me=undefined;mus.list=null;mus.draft=null}render()});
 window.addEventListener('ce-installed',function(){ui.install=false;toast('App instalado!');render()});
 window.addEventListener('ce-auth',function(){try{renderBandPanel()}catch(e){}var A=window.CE_AUTH;if(A&&A.mid&&!meMember&&member(A.mid)){meMember=A.mid;try{localStorage.setItem('ce-me',A.mid)}catch(e){}}render()});
 document.addEventListener('pointerdown',function(){if(smOn()&&!audioReady())ensureAudio()},{passive:true});
@@ -4100,7 +4128,9 @@ document.addEventListener('keydown',function(e){
 var TEXTF=['title','artist','link','notes','key','moises','lyrics','chords','tuning','capo','yt'];
 document.addEventListener('input',function(e){
   var t=e.target;
-  if(t.dataset&&t.dataset.mus){var mk=t.dataset.mus;if(mk==='q')mus.q=t.value;else if(mk==='vurl')mus.vurl=t.value;else if(mk==='vtitle')mus.vtitle=t.value;else if(mus.draft)mus.draft[mk]=t.value;return}
+  if(t.dataset&&t.dataset.mus){var mk=t.dataset.mus;if(mk==='q')mus.q=t.value;else if(mk==='vurl'){mus.vurl=t.value;musTitleSoon()}else if(mk==='vtitle')mus.vtitle=t.value;else if(mus.draft)mus.draft[mk]=t.value;return}
+  if(t.dataset&&t.dataset.musAdd){mus.add[t.dataset.musAdd]=t.value;return}
+  if(t.dataset&&t.dataset.musC){if(mus.draft){mus.draft.contact=mus.draft.contact||{};mus.draft.contact[t.dataset.musC]=t.value}return}
   if(t.classList&&t.classList.contains('pl-seek')){t.dataset.drag='1';if(recAudio)recAudio.currentTime=+t.value/10;var d=recAudio&&plDur();t.style.setProperty('--p',d?(+t.value/10/d*100)+'%':'0%');var tc=document.querySelector('.pl-cur');if(tc)tc.textContent=plClock(+t.value/10);clearTimeout(t._dt);t._dt=setTimeout(function(){delete t.dataset.drag},400);return}
   if(t.dataset.f==='asp'){auto.speed=+t.value;var av2=$('#asp-val');if(av2)av2.textContent=auto.speed;try{localStorage.setItem('ce-asp',auto.speed)}catch(err){}return}
   if(t.dataset.f==='sfs'){var pre=document.querySelector('.stage-body pre,.stage-body .cwrap');if(stage&&stage.kind==='chords'&&!cwrapOn()){ui.fit=false;ui.cfs=+t.value;try{localStorage.setItem('ce-cfs',ui.cfs)}catch(err){}if(pre)pre.style.fontSize=ui.cfs+'px';var fb=document.querySelector('[data-act="fit-toggle"]');if(fb){fb.textContent='Ajustar à largura: não';fb.classList.remove('primary')}return}fss=+t.value;try{localStorage.setItem('ce-fss',fss)}catch(err){}if(pre)pre.style.fontSize=fss+'px';return}

@@ -19,6 +19,16 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Contato (opcional)','Contact (optional)','Contacto (opcional)'],
+['Só quem está logado no app e abre o seu perfil visível vê estes dados. Preencha só o que quiser mostrar.','Only people signed in to the app who open your visible profile see this. Fill in only what you want to show.','Solo quien está en la app con sesión iniciada y abre tu perfil visible ve estos datos. Rellena solo lo que quieras mostrar.'],
+['WhatsApp com DDD, ex.: 11 91234-5678','WhatsApp with area code, e.g.: 11 91234-5678','WhatsApp con prefijo, ej.: 11 91234-5678'],
+['Instagram, ex.: @meuusuario','Instagram, e.g.: @myuser','Instagram, ej.: @miusuario'],
+['E-mail para contato','Contact email','Correo de contacto'],
+['Contato inválido. Confira o WhatsApp (com DDD), o Instagram e o e-mail.','Invalid contact. Check the WhatsApp (with area code), Instagram and email.','Contacto no válido. Revisa el WhatsApp (con prefijo), Instagram y correo.'],
+['Contato','Contact','Contacto'],
+['Buscando o título…','Looking up the title…','Buscando el título…'],
+['Título encontrado. Você pode editar se quiser.','Title found. You can edit it if you want.','Título encontrado. Puedes editarlo si quieres.'],
+['Não consegui achar o título. Digite um, se quiser.','I could not find the title. Type one if you want.','No pude encontrar el título. Escribe uno si quieres.'],
 ['Rede de músicos · fora das bandas','Musician network · outside the bands','Red de músicos · fuera de las bandas'],
 ['Músicos','Musicians','Músicos'],
 ['Entre com a sua conta','Sign in with your account','Entra con tu cuenta'],
