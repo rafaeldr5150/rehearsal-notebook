@@ -616,6 +616,16 @@ body.bg-flat{background-color:#1e1f22;background-image:none}
   .card .t-artist{font-size:13px}
   .card .tag{font-size:12px;padding:0 5px}
   .card .check{top:6px;width:30px;height:30px}
+  body.sk-neo .cw .card,body.sk-est .cw .card{padding:16px 16px 14px;gap:6px 12px}
+  body.sk-neo .card .t-title,body.sk-est .card .t-title{font-size:21px}
+  body.sk-neo .card .t-artist,body.sk-est .card .t-artist{font-size:15px}
+  body.sk-neo .card .tag,body.sk-est .card .tag{font-size:13px;padding:2px 8px}
+  body.sk-neo .card .inst,body.sk-est .card .inst{gap:6px;margin-top:2px;flex-wrap:wrap;overflow:visible}
+  body.sk-neo .card .cbar,body.sk-est .card .cbar{gap:5px;min-width:96px}
+  body.sk-neo .card .cbar .stars,body.sk-est .card .cbar .stars{font-size:16px}
+  body.sk-neo .card .cbar .pct,body.sk-est .card .cbar .pct{font-size:14px}
+  body.sk-neo .card .cbar .check,body.sk-est .card .cbar .check{position:static;width:26px;height:26px;order:-1;align-self:flex-end;margin:0 0 2px}
+  body.sk-neo .card .cbar .pill,body.sk-est .card .cbar .pill{font-size:14px;padding:6px 14px}
 }
 /* ===== editor de acordes ===== */
 .ce{background:#ebe7de;border-radius:10px;padding:10px 10px 4px}
@@ -2218,17 +2228,17 @@ function cardHTML(s){
       return '<span class="tag" title="'+esc(x.m.name+' · '+x.m.instrument+(x.role?' · '+x.role:''))+'"><i class="dot c'+x.status+'"></i>'+esc(first(x.m.name))+'</span>'}).join('')||'<span class="faint">sem parte definida</span>')+'</div>';
   }
   var meta=metaTags(s);
-  return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+(vstate(s)===3?checkHTML():'')+
+  return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+
     '<div><div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div>'+
     (meta?'<div class="inst">'+meta+'</div>':'')+mid2+
-    '<div class="cbar">'+starsHTML(p)+'<span class="pct">'+p+'%</span>'+(vstate(s)>=0&&STATE_LABEL[vstate(s)]?statPill(vstate(s),STATE_LABEL[vstate(s)]):'')+'</div></div>';
+    '<div class="cbar">'+(vstate(s)===3?checkHTML():'')+starsHTML(p)+'<span class="pct">'+p+'%</span>'+(vstate(s)>=0&&STATE_LABEL[vstate(s)]?statPill(vstate(s),STATE_LABEL[vstate(s)]):'')+'</div></div>';
 }
 function pcardHTML(s,pid){
   var p=partOf(s,pid),meta=metaTags(s);
-  return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+(p.status===2?checkHTML():'')+
+  return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+
     '<div><div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div>'+
     (meta?'<div class="inst">'+meta+'</div>':'')+(p.role?'<div class="mine">'+esc(p.role)+'</div>':'')+(p.tone?'<div class="faint">Timbre: '+esc(p.tone)+'</div>':'')+
-    '<div class="cbar cst"><button type="button" class="pill s'+(p.status===2?3:p.status)+' stpill" data-act="pill-status" data-id="'+s.id+'" data-mid="'+pid+'" aria-label="Mudar o status">'+STATE_LABEL[p.status===2?3:p.status]+' ▾</button></div></div>';
+    '<div class="cbar cst">'+(p.status===2?checkHTML():'')+'<button type="button" class="pill s'+(p.status===2?3:p.status)+' stpill" data-act="pill-status" data-id="'+s.id+'" data-mid="'+pid+'" aria-label="Mudar o status">'+STATE_LABEL[p.status===2?3:p.status]+' ▾</button></div></div>';
 }
 function boardHTML(list,cols,keyFn,cardFn){
   var cur=bcol;
