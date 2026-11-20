@@ -93,7 +93,7 @@ function emailHtml(fromName: string, toName: string, text: string, profileUrl: s
   </td></tr>
   <tr><td style="padding:20px 8px 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#8b8ba0;">
     Quem responde passa a mostrar o próprio e-mail para a outra pessoa.<br>
-    Você recebeu esta mensagem porque ligou “Aceito receber mensagens” no seu perfil. Para parar de receber, desligue essa opção em <b>Músicos &gt; Meu perfil</b>.<br>
+    Você recebeu esta mensagem porque ligou “Aceito receber mensagens” no seu perfil. Para parar de receber, desligue essa opção em <b>Sonora &gt; Meu perfil</b>.<br>
     Se for abuso ou spam, denuncie o perfil de ${name} no app.
     <div style="margin-top:14px;color:#6c6c80;">Rehearsal Notebook · <a href="${SITE}" target="_blank" style="color:#8b8ba0;">${SITE.replace("https://", "")}</a></div>
   </td></tr>
@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
     `Para responder, basta responder este e-mail. A resposta vai direto para ${fromName}.\n` +
     `Ver o perfil de ${fromName}: ${profileUrl}\n\n` +
     `Quem responde passa a mostrar o próprio e-mail para a outra pessoa.\n` +
-    `Você recebeu isto porque ligou "Aceito receber mensagens" no seu perfil. Para parar de receber, desligue essa opção em Músicos > Meu perfil.\n` +
+    `Você recebeu isto porque ligou "Aceito receber mensagens" no seu perfil. Para parar de receber, desligue essa opção em Sonora > Meu perfil.\n` +
     `Se for abuso ou spam, denuncie o perfil de ${fromName} no app.`;
   const html = emailHtml(fromName, toName, text, profileUrl);
   // The subject is plain ASCII and short on purpose: accents or "·" make the mail library fold an encoded subject badly,

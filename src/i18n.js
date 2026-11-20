@@ -19,6 +19,18 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['A rede de músicos · fora das bandas','The musician network · outside the bands','La red de músicos · fuera de las bandas'],
+['Encontre quem toca com você.','Find who plays with you.','Encuentra a quien toca contigo.'],
+['O que é a Sonora?','What is Sonora?','¿Qué es Sonora?'],
+['A <b>Sonora</b>','A <b>Sonora</b>','A <b>Sonora</b>'],
+['Entre para participar','Sign in to take part','Entra para participar'],
+['A Sonora só funciona com conta, para que cada perfil tenha um dono de verdade.','Sonora only works with an account, so every profile has a real owner.','Sonora solo funciona con cuenta, para que cada perfil tenga un dueño real.'],
+['Criar o meu perfil','Create my profile','Crear mi perfil'],
+['Ainda não há músicos por aqui','No musicians here yet','Aún no hay músicos por aquí'],
+['A Sonora está começando. Quando alguém ligar “Visível” no perfil, aparece aqui. Que tal ser o primeiro? Abra “Meu perfil” e comece.','Sonora is just starting. When someone turns on “Visible” in their profile, they show up here. How about being the first? Open “My profile” and start.','Sonora está empezando. Cuando alguien active “Visible” en su perfil, aparecerá aquí. ¿Y si eres el primero? Abre “Mi perfil” y empieza.'],
+['Tudo preenchido. Boa!','All filled in. Nice!','Todo completo. ¡Bien!'],
+['Perfis completos são mais fáceis de encontrar.','Complete profiles are easier to find.','Los perfiles completos son más fáciles de encontrar.'],
+['Sonora','Sonora','Sonora'],
 ['Bandas e artistas de referência','Reference bands and artists','Bandas y artistas de referencia'],
 ['Ex.: Pink Floyd, Legião Urbana','E.g.: Pink Floyd, Legião Urbana','Ej.: Pink Floyd, Legião Urbana'],
 ['Referências musicais','Musical references','Referencias musicales'],

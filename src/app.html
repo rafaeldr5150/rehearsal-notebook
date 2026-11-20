@@ -116,6 +116,19 @@ body.sk-cus{--rec-on:var(--cb,#33d6a0)}
 .mus-ac{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:12px;background:var(--surface2,#1f2029)}
 .mus-ac button{width:100%;min-height:46px;text-align:left;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);font-size:16px}
 .mus-ac button:hover,.mus-ac button:focus-visible{background:rgba(255,255,255,.08)}
+.sonora-title{font-size:34px;line-height:1;background:linear-gradient(90deg,#ff3d8b,#ff9a3c);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;letter-spacing:-.01em}
+.sonora-tag{margin-top:6px;color:var(--muted);font-size:15px}
+.sonora-intro{display:flex;flex-direction:column;gap:12px;background-image:radial-gradient(420px 160px at 100% 0%,rgba(255,77,141,.18),transparent 70%)}
+.sonora-intro p{margin:0;line-height:1.5}
+.sonora-badge{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#ff3d8b,#ff9a3c)}
+.sonora-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px;line-height:1.45}
+.sonora-steps li::marker{font-weight:700;color:#ff6aa5}
+.sonora-cta{display:flex;gap:10px}.sonora-cta .btn{flex:1 1 0}
+.sonora-what{justify-content:flex-start}
+.sonora-progress{display:flex;flex-direction:column;gap:10px}
+.sp-bar{height:10px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
+.sp-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#ff3d8b,#ff9a3c)}
+.sonora-progress .hint{margin:0}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -2156,7 +2169,7 @@ function renderTabbar(){
   }
   el.className=musOn()?'five':'';el.innerHTML=tab('#geral','Geral','home',!pid&&hh!=='setlist'&&hh!=='config'&&!musRoute())+tab('#setlist','Setlist','list',hh==='setlist')+
     (me?tab('#pessoa-'+me.id,first(me.name),me.photo?avatarHTML(me,24):icoFor(me.instrument),pid===me.id):tab(null,'Quem sou eu?','user',false,'who-open'))+
-    (musOn()?tab('#musicos','Músicos','group',!!musRoute()):'')+tab('#config','Configurações','gear',hh==='config');
+    (musOn()?tab('#musicos','Sonora','group',!!musRoute()):'')+tab('#config','Configurações','gear',hh==='config');
 }
 
 /* ---------- cartaz da banda ---------- */
@@ -2191,7 +2204,7 @@ function renderSide(){
     members().map(function(m){
       var n=pendingFor(m.id).length;
       return '<a href="#pessoa-'+m.id+'"'+(pid===m.id?' aria-current="page"':'')+'><span class="nv">'+avatarHTML(m,22)+'<span><b>'+esc(first(m.name))+(meMember===m.id?' <em>(você)</em>':'')+'</b><small>'+esc(m.instrument)+'</small></span></span>'+(n?'<span class="badge" title="'+n+' pendentes para o próximo ensaio ou setlist">'+n+'</span>':'')+'</a>';
-    }).join('')+(musOn()?'<div class="sl">Rede</div><a href="#musicos"'+(musRoute()?' aria-current="page"':'')+'><span class="nv">'+svgIco('group',22)+'<span><b>Músicos</b></span></span></a>':'')+'<div class="foot"></div><a href="#config"'+(h==='config'?' aria-current="page"':'')+'><span class="nv">'+svgIco('gear',22)+'<span><b>Configurações</b></span></span></a>';
+    }).join('')+(musOn()?'<div class="sl">Rede de músicos</div><a href="#musicos"'+(musRoute()?' aria-current="page"':'')+'><span class="nv">'+svgIco('group',22)+'<span><b>Sonora</b></span></span></a>':'')+'<div class="foot"></div><a href="#config"'+(h==='config'?' aria-current="page"':'')+'><span class="nv">'+svgIco('gear',22)+'<span><b>Configurações</b></span></span></a>';
 }
 /* ---------- rede de músicos (independente da banda) ---------- */
 var MUS_INST=['Guitarra','Violão','Baixo','Bateria','Voz','Teclado','Piano','Saxofone','Violino','Percussão','DJ'];
@@ -2250,7 +2263,9 @@ function musListEditor(key,label,ph,sugg){
 function musEditor(){
   if(!mus.draft)musDraftFrom(mus.me&&mus.me.profile);
   var d=mus.draft,vids=(mus.me&&mus.me.videos)||[];
-  return '<div class="panel mus-form"><h3>Meu perfil</h3>'+
+  var cp=musComplete();
+  return (cp?'<div class="panel sonora-progress"><div class="sp-top"><b>Seu perfil está '+cp.pct+'% completo</b></div><div class="sp-bar" aria-hidden="true"><i style="width:'+cp.pct+'%"></i></div>'+(cp.miss.length?'<p class="hint">Falta: '+esc(cp.miss.slice(0,4).join(', '))+(cp.miss.length>4?'…':'')+'. Perfis completos são mais fáceis de encontrar.</p>':'<p class="hint">Tudo preenchido. Boa!</p>')+'</div>':'')+
+    '<div class="panel mus-form"><h3>Meu perfil</h3>'+
     '<div class="mus-photo">'+musAvatar(d,96)+'<div class="row-actions no-fill"><button type="button" class="btn small" data-act="mus-photo">'+(d.photo?'Trocar foto':'Escolher foto')+'</button>'+(d.photo?'<button type="button" class="btn small" data-act="mus-photo-del">Remover</button>':'')+'</div></div>'+
     '<div class="mus-field"><label for="mus-name">Nome artístico</label><input id="mus-name" type="text" maxlength="60" data-mus="name" data-draft="mus" data-fk="musname" value="'+esc(d.name)+'" placeholder="Como você quer ser chamado"></div>'+
     '<div class="mus-field"><label for="mus-city">Cidade</label><input id="mus-city" type="text" maxlength="60" data-mus="city" data-draft="mus" data-fk="muscity" value="'+esc(d.city)+'" placeholder="Ex.: São Paulo"></div>'+
@@ -2282,7 +2297,7 @@ function musDiscover(){
   return '<div class="mus-search"><input type="search" data-mus="q" data-draft="mus" data-fk="musq" value="'+esc(mus.q)+'" placeholder="Buscar por nome ou cidade" aria-label="Buscar músicos"><select data-mus-sel="inst" aria-label="Instrumento">'+opt(MUS_INST,mus.inst,'Qualquer instrumento')+'</select><select data-mus-sel="style" aria-label="Estilo">'+opt(MUS_STYLE,mus.style,'Qualquer estilo')+'</select>'+
     '<button type="button" class="btn primary" data-act="mus-find">Buscar</button></div>'+
     (mus.err?'<p class="hint">'+esc(mus.err)+'</p>':'')+
-    (mus.list===null?'<p class="hint">Buscando…</p>':rows?'<div class="mus-grid">'+rows+'</div>'+(mus.more?'<div class="row-actions no-fill"><button type="button" class="btn" data-act="mus-more"'+(mus.busy?' disabled':'')+'>Ver mais</button></div>':''):'<div class="empty-state"><strong>Nenhum músico encontrado</strong>Quando outros músicos ligarem “Visível” no perfil, eles aparecem aqui. Que tal ser o primeiro? Abra “Meu perfil”.</div>');
+    (mus.list===null?'<p class="hint">Buscando…</p>':rows?'<div class="mus-grid">'+rows+'</div>'+(mus.more?'<div class="row-actions no-fill"><button type="button" class="btn" data-act="mus-more"'+(mus.busy?' disabled':'')+'>Ver mais</button></div>':''):'<div class="empty-state"><strong>Ainda não há músicos por aqui</strong>A Sonora está começando. Quando alguém ligar “Visível” no perfil, aparece aqui. Que tal ser o primeiro? Abra “Meu perfil” e comece.</div>');
 }
 function musMsgReady(){
   if(mus.msgReady===true||mus.compose)return mus.msgReady!==false||mus.compose;
@@ -2306,7 +2321,7 @@ function musContactHTML(c){
 function musProfileView(id){
   musLoadView(id);
   var v=mus.view&&mus.view.id===id?mus.view:null;
-  var back='<a class="btn small" href="#musicos">← Músicos</a>';
+  var back='<a class="btn small" href="#musicos">← Sonora</a>';
   if(!v)return '<div class="phead"><div><div class="faint">Músico</div><h2>Carregando…</h2></div></div>';
   if(v.missing)return '<div class="phead"><div><div class="faint">Músico</div><h2>Perfil não encontrado</h2></div></div><p class="hint">Esse perfil não existe ou não está visível.</p><div class="row-actions no-fill">'+back+'</div>';
   var p=v.profile,myId=window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.id,mine=!!((myId&&myId===p.user_id)||(mus.me&&mus.me.profile&&mus.me.profile.user_id===p.user_id));
@@ -2320,20 +2335,38 @@ function musProfileView(id){
     (!mine&&p.accept_msgs&&musMsgReady()?musCompose(p):'')+
     (mine?'':'<div class="row-actions no-fill"><button type="button" class="btn small'+(mus.armDel==='rep'?' danger armed':'')+'" data-act="mus-report" data-u="'+esc(p.user_id)+'">'+(mus.armDel==='rep'?'Confirmar: denunciar este perfil':'Denunciar')+'</button></div>');
 }
+function musIntroSeen(){try{return localStorage.getItem('ce-sonora-intro')==='1'}catch(e){return false}}
+function musIntroHTML(force){
+  if(!force&&musIntroSeen()&&!mus.introOpen)return '<div class="row-actions no-fill sonora-what"><button type="button" class="btn small" data-act="mus-intro-show">O que é a Sonora?</button></div>';
+  var ico='<svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M8 24v0M16 16v16M24 8v32M32 14v20M40 22v4"/></svg>';
+  return '<section class="panel sonora-intro"><div class="sonora-badge">'+ico+'</div><h3>O que é a Sonora?</h3>'+
+    '<p>A <b>Sonora</b> é a rede de músicos do Rehearsal Notebook. É um espaço seu, <b>separado das bandas</b>, para mostrar quem você é como músico e encontrar gente para tocar junto.</p>'+
+    '<ol class="sonora-steps"><li><b>Monte o seu perfil.</b> Conte quais instrumentos você toca e tem, os seus equipamentos, os estilos que curte, as bandas que te inspiram e poste vídeos.</li>'+
+    '<li><b>Encontre músicos.</b> Busque por nome, cidade, instrumento ou estilo, e veja quem toca perto de você.</li>'+
+    '<li><b>Combine de tocar.</b> Mande uma mensagem por e-mail pelo próprio app. O seu e-mail não aparece para ninguém.</li></ol>'+
+    '<p class="hint">O seu perfil começa <b>privado</b>. Ele só aparece para os outros se você ligar “Visível para outros músicos”. Você pode apagar tudo quando quiser.</p>'+
+    '<div class="row-actions no-fill sonora-cta">'+(force?'':'<button type="button" class="btn primary" data-act="mus-intro-go">Criar o meu perfil</button><button type="button" class="btn" data-act="mus-intro-hide">Entendi</button>')+'</div></section>';
+}
+function musComplete(){
+  var d=mus.draft,vids=(mus.me&&mus.me.videos)||[];if(!d)return null;
+  var steps=[['foto',!!d.photo],['nome',!!String(d.name||'').trim()],['cidade',!!String(d.city||'').trim()],['bio',!!String(d.bio||'').trim()],['instrumentos',(d.plays||[]).length>0],['estilos',(d.styles||[]).length>0],['referências',(d.refs||[]).length>0],['vídeo',vids.length>0],['visível',!!d.visible]];
+  var done=steps.filter(function(x){return x[1]}).length,miss=steps.filter(function(x){return !x[1]}).map(function(x){return x[0]});
+  return {pct:Math.round(done/steps.length*100),miss:miss};
+}
 function renderMus(){
   var el=$('#musview');if(!el)return;
   var r=musRoute();if(!r){el.innerHTML='';return}
-  if(!musOn()){el.innerHTML='<div class="empty-state"><strong>Rede de músicos</strong>Disponível no app da banda.</div>';return}
-  var head='<div class="phead mus-head"><div><div class="faint">Rede de músicos · fora das bandas</div><h2>Músicos</h2></div></div>';
+  if(!musOn()){el.innerHTML='<div class="empty-state"><strong>Sonora</strong>Disponível no app da banda.</div>';return}
+  var head='<div class="phead mus-head"><div><div class="faint">A rede de músicos · fora das bandas</div><h2 class="sonora-title">Sonora</h2><div class="sonora-tag">Encontre quem toca com você.</div></div></div>';
   if(!musAuthed()){
-    el.innerHTML=head+'<div class="panel"><h3>Entre com a sua conta</h3><p class="hint">Aqui você cria o seu perfil de músico, mostra seus instrumentos, equipamentos e vídeos, e encontra outros músicos. É separado das suas bandas e só funciona com conta.</p><div class="row-actions no-fill"><button type="button" class="btn primary" data-act="acct-login">Entrar com a minha conta</button></div></div>';return}
+    el.innerHTML=head+musIntroHTML(true)+'<div class="panel"><h3>Entre para participar</h3><p class="hint">A Sonora só funciona com conta, para que cada perfil tenha um dono de verdade.</p><div class="row-actions no-fill"><button type="button" class="btn primary" data-act="acct-login">Entrar com a minha conta</button></div></div>';return}
   if(r.k==='prof'){el.innerHTML=musProfileView(r.id);return}
   var tabs='<div class="chips mus-tabs" role="tablist"><button type="button" class="chip" role="tab" aria-pressed="'+(mus.tab==='discover')+'" data-act="mus-tab" data-v="discover">Descobrir</button><button type="button" class="chip" role="tab" aria-pressed="'+(mus.tab==='me')+'" data-act="mus-tab" data-v="me">Meu perfil</button></div>';
   var body;
   if(mus.tab==='me'){
     if(mus.me===undefined){musLoadMe();body='<p class="hint">Carregando…</p>'}else if(mus.me===null)body='<p class="hint">'+esc(mus.err||'Não foi possível carregar.')+'</p><div class="row-actions no-fill"><button type="button" class="btn" data-act="mus-retry">Tentar de novo</button></div>';else body=musEditor();
   }else body=musDiscover();
-  el.innerHTML=head+tabs+body;
+  el.innerHTML=head+musIntroHTML(false)+tabs+body;
 }
 var musPhotoInp=document.createElement('input');musPhotoInp.type='file';musPhotoInp.accept='image/*';musPhotoInp.hidden=true;document.body.appendChild(musPhotoInp);
 musPhotoInp.onchange=function(){var f=musPhotoInp.files&&musPhotoInp.files[0];musPhotoInp.value='';if(!f||!mus.draft)return;resizePhoto(f,192).then(function(u){mus.draft.photo=u;render()}).catch(function(){toast('Não foi possível usar essa foto.')})};
@@ -2373,6 +2406,9 @@ function musFetchTitle(){
 function musAct(act,t){
   var P=window.CE_PROFILE;if(!P)return;
   if(act==='mus-tab'){mus.tab=t.dataset.v;mus.armDel='';render();return}
+  if(act==='mus-intro-show'){mus.introOpen=true;render();return}
+  if(act==='mus-intro-hide'){mus.introOpen=false;try{localStorage.setItem('ce-sonora-intro','1')}catch(e){}render();return}
+  if(act==='mus-intro-go'){mus.introOpen=false;try{localStorage.setItem('ce-sonora-intro','1')}catch(e){}mus.tab='me';render();window.scrollTo(0,0);return}
   if(act==='mus-find'){musSearch(true);return}
   if(act==='mus-more'){musSearch(false);return}
   if(act==='mus-retry'){mus.me=undefined;mus.err='';render();return}
@@ -3252,7 +3288,7 @@ var TOUR=[
  {v:1,r:'me',open:1,sel:function(){return h3Block($('#drawer'),'comentários')},skip:1,t:'Comentários',x:'Deixe recados para a banda sobre a música, como "refrão rápido demais".'},
  {v:1,r:'setlist',sel:'#setview .phead',t:'Setlist',x:'Monte a ordem do show, ajuste a pausa entre as músicas e marque a data e o local do show.'},
  {v:1,r:'setlist',sel:'[data-act="live-start"]',skip:1,t:'Ensaio ao vivo',x:'Começar ensaio ao vivo: a banda toda acompanha a mesma música, com rolagem automática e metrônomo sincronizado entre os celulares.'},
- {v:3,r:'musicos',sel:'#musview .mus-head',skip:1,t:'Rede de músicos',x:'Uma aba à parte, fora das bandas: crie o seu perfil com instrumentos, equipamentos, estilos favoritos e vídeos, e encontre outros músicos. O perfil só aparece para os outros se você ligar “Visível”.'},
+ {v:3,r:'musicos',sel:'#musview .mus-head',skip:1,t:'Sonora',x:'A Sonora é a rede de músicos do app, separada das bandas. Monte o seu perfil com instrumentos, equipamentos, estilos e vídeos, encontre outros músicos e combine de tocar. O perfil só aparece para os outros se você ligar “Visível”.'},
  {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'você')},t:'Você',x:'Escolha quem você é e coloque a sua foto, que aparece no cartão da banda.'},
  {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'aparência')},skip:1,t:'Aparência',x:'Troque o layout (Neon, Cartaz, Estúdio ou Personalizado) e o idioma.'},
  {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'banda')},skip:1,t:'Banda e convite',x:'Nome, logo e integrantes. Copie o link de convite para chamar a banda; o dono pode gerar um convite novo se o antigo vazar.'},
