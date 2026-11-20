@@ -1003,6 +1003,17 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 .watch-img{max-width:100%;max-height:75vh;border-radius:12px;object-fit:contain;background:#000;align-self:center}
 .drive-warn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,176,32,.14);border:1px solid rgba(255,176,32,.55);font-size:14px}
 .cfg-row.warn{border-color:rgba(255,176,32,.7)}
+
+/* grupos de botões: cada linha preenche a largura toda, sem sobras (celular) */
+@media (max-width:900px){
+  .chips,.row-actions:not(header .row-actions):not(.no-fill){display:flex;flex-wrap:wrap;gap:8px}
+  .chips>*,.row-actions:not(header .row-actions):not(.no-fill)>.btn,.row-actions:not(header .row-actions):not(.no-fill)>button,.row-actions:not(header .row-actions):not(.no-fill)>a{flex:1 1 0;min-width:max-content;display:inline-flex;align-items:center;justify-content:center;text-align:center;box-sizing:border-box}
+  .row-actions:not(header .row-actions):not(.no-fill)>input,.row-actions:not(header .row-actions):not(.no-fill)>select,.row-actions:not(header .row-actions):not(.no-fill)>label{flex:2 1 150px;min-width:0}
+  .tools .chips .chip{padding:9px 10px;font-size:13px}
+  body.sk-car .tools .chips .chip,body.sk-car .chips .chip{font-size:11.5px;letter-spacing:0;padding:9px 6px}
+  .tools>.btn,.tools>button{flex:1 1 100%;display:inline-flex;align-items:center;justify-content:center}
+  .stage-top .chips,.stage-tools .row-actions,#stage .row-actions{flex-wrap:wrap}
+}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
