@@ -4,7 +4,10 @@
 // Mail provider (set one as an Edge Function secret):
 //   Resend: RESEND_API_KEY + MAIL_FROM   (MAIL_FROM like  "Rehearsal Notebook <no-reply@your-domain>", on a verified domain)
 //   Brevo : BREVO_API_KEY  + MAIL_FROM   (MAIL_FROM is a verified sender address)
+//   SMTP  : SMTP_USER + SMTP_PASS (+ optional SMTP_HOST, default smtp.gmail.com, port 465 over TLS). For Gmail, SMTP_PASS is an "app password".
+//           MAIL_FROM is optional here (defaults to SMTP_USER).
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "apikey, content-type, authorization, x-client-info, x-user-token", "Access-Control-Allow-Methods": "POST, OPTIONS" };
@@ -15,8 +18,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const resendKey = Deno.env.get("RESEND_API_KEY") || "";
 const brevoKey = Deno.env.get("BREVO_API_KEY") || "";
-const mailFrom = Deno.env.get("MAIL_FROM") || "";
-const configured = !!((resendKey || brevoKey) && mailFrom);
+const smtpUser = Deno.env.get("SMTP_USER") || "";
+const smtpPass = Deno.env.get("SMTP_PASS") || "";
+const smtpHost = Deno.env.get("SMTP_HOST") || "smtp.gmail.com";
+const mailFrom = Deno.env.get("MAIL_FROM") || smtpUser;
+const configured = !!(((resendKey || brevoKey) && mailFrom) || (smtpUser && smtpPass));
 
 async function sendMail(m: { to: string; toName: string; replyTo: string; replyName: string; subject: string; text: string }): Promise<boolean> {
   if (resendKey) {
@@ -33,6 +39,14 @@ async function sendMail(m: { to: string; toName: string; replyTo: string; replyN
       body: JSON.stringify({ sender: { email: addr, name: "Rehearsal Notebook" }, to: [{ email: m.to, name: m.toName || undefined }], replyTo: { email: m.replyTo, name: m.replyName || undefined }, subject: m.subject, textContent: m.text }),
     });
     return r.ok;
+  }
+  if (smtpUser && smtpPass) {
+    const addr = /<([^>]+)>/.exec(mailFrom)?.[1] || mailFrom;
+    const client = new SMTPClient({ connection: { hostname: smtpHost, port: 465, tls: true, auth: { username: smtpUser, password: smtpPass } } });
+    try {
+      await client.send({ from: `Rehearsal Notebook <${addr}>`, to: m.to, replyTo: m.replyTo, subject: m.subject, content: m.text });
+      return true;
+    } catch (_) { return false; } finally { try { await client.close(); } catch (_) { /* ignore */ } }
   }
   return false;
 }
