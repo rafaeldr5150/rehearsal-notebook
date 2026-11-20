@@ -19,6 +19,10 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['⏸ Inserir pausa na rolagem','⏸ Insert a scroll pause','⏸ Insertar pausa en el desplazamiento'],
+['Para a rolagem parar num solo, escreva uma linha só com [pausa 20] (20 = segundos). Sem número, ela para até você tocar em Rolar.','To make scrolling stop at a solo, write a line with just [pausa 20] (20 = seconds). Without a number it stops until you tap Scroll.','Para que el desplazamiento se detenga en un solo, escribe una línea solo con [pausa 20] (20 = segundos). Sin número, se detiene hasta que toques Rolar.'],
+['Pausa na rolagem. Toque em Rolar para continuar.','Scroll paused. Tap Scroll to continue.','Desplazamiento en pausa. Toca Rolar para continuar.'],
+['Linha de pausa inserida. Troque o 20 pelos segundos que quiser.','Pause line inserted. Change the 20 to the seconds you want.','Línea de pausa insertada. Cambia el 20 por los segundos que quieras.'],
 ['Não estou ouvindo som. Aumente o volume ou chegue mais perto.','I can\'t hear any sound. Turn the volume up or get closer.','No oigo sonido. Sube el volumen o acércate.'],
 ['×2','×2','×2'],['÷2','÷2','÷2'],['Andamento dobrado.','Tempo doubled.','Tempo duplicado.'],['Andamento pela metade.','Tempo halved.','Tempo a la mitad.'],
 ['🎧 Escutar e sincronizar','🎧 Listen and sync','🎧 Escuchar y sincronizar'],['Escutar','Listen','Escuchar'],
@@ -437,6 +441,8 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^⏸ Pausa(?: · (\d+) s| · até você tocar em Rolar)$/,function(m){return m[1]?(I===1?'⏸ Pause · '+m[1]+' s':'⏸ Pausa · '+m[1]+' s'):(I===1?'⏸ Pause · until you tap Scroll':'⏸ Pausa · hasta que toques Rolar')}],
+[/^Pausa (\d+)s$/,function(m){return (I===1?'Pause ':'Pausa ')+m[1]+'s'}],
 [/^Ajuste do clique: ([+-]?\d+) ms$/,function(m){return (I===1?'Click adjustment: ':'Ajuste del clic: ')+m[1]+' ms'}],
 [/^BPM salvo: (.+)\.$/,function(m){return (I===1?'BPM saved: ':'BPM guardado: ')+m[1]+'.'}],
 [/^Clique: (ligado|desligado)$/,function(m){return (I===1?'Click: ':'Clic: ')+(m[1]==='ligado'?(I===1?'on':'activado'):(I===1?'off':'desactivado'))}],

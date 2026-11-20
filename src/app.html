@@ -967,6 +967,7 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 #micfollow .mic-bar{height:6px;border-radius:6px;background:#2a2c34;overflow:hidden}
 #micfollow .mic-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff3d8b,#2ee6a6);transition:width .4s}
 #micfollow .hint{color:#a9abb8;margin:0;font-size:12.5px}
+.pausemark{display:block;margin:10px 0;padding:6px 10px;border:2px dashed currentColor;border-radius:10px;text-align:center;font-weight:700;opacity:.85;font-family:var(--f-body,sans-serif);font-size:.8em;white-space:normal}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -1120,7 +1121,7 @@ var met={ctx:null,running:false,beat:0,next:0,timer:null,songId:null,delta:0};
 var ui={edit:{},more:{},tr:{},arm:{},ced:{}}, fs=15, fss=26;
 var setlist=null, setDoc=null, stage=null, setChain=Promise.resolve();
 var live=null, liveDoc=null, following=false, lastLiveSong='', lyBusy=false;
-var linksCfg=null, linksDoc=null, spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0};
+var linksCfg=null, linksDoc=null, spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0,hold:null,done:{}};
 var pend={}, drafts={}, renderTimer=null;
 var BG=['flat','top','soft'], BGN={soft:'parede suave',top:'parede só no topo',flat:'liso'}, bgMode='flat';
 try{bgMode=localStorage.getItem('ce-bg2')||'flat'}catch(e){}
@@ -1694,10 +1695,15 @@ function chordWrapHTML(text){
   }
   return out.join('');
 }
+/* linhas como [pausa 20] (segundos) ou [pausa] viram um aviso e param a rolagem automática naquele ponto (solos, intros) */
+var PAUSE_RE=/^\s*\[\s*(?:pausa|pause)\s*(\d{1,3})?\s*s?\s*\]\s*$/i;
+function markPauses(text){return String(text).split('\n').map(function(l){var m=PAUSE_RE.exec(l);return m?'@@PAUSE:'+(m[1]||'')+'@@':l}).join('\n')}
+function pauseHTML(h){return h.replace(/@@PAUSE:(\d*)@@/g,function(_,s){return '<span class="pausemark" data-s="'+(s||0)+'">⏸ Pausa'+(s?' · '+s+' s':' · até você tocar em Rolar')+'</span>'})}
 function stageText(text,isL){
-  if(isL)return '<pre style="font-size:'+fss+'px">'+esc(text)+'</pre>';
-  if(cwrapOn())return '<div class="cwrap" style="font-size:'+fss+'px">'+chordWrapHTML(text)+'</div>';
-  return '<pre class="mono" style="font-size:'+(ui.cfs||14)+'px">'+chordHTML(text)+'</pre>';
+  text=markPauses(text);
+  if(isL)return pauseHTML('<pre style="font-size:'+fss+'px">'+esc(text)+'</pre>');
+  if(cwrapOn())return pauseHTML('<div class="cwrap" style="font-size:'+fss+'px">'+chordWrapHTML(text)+'</div>');
+  return pauseHTML('<pre class="mono" style="font-size:'+(ui.cfs||14)+'px">'+chordHTML(text)+'</pre>');
 }
 function chordHTML(text){return String(text).split('\n').map(function(l){var e=esc(l);return isChordLine(l)?'<span class="ch">'+e+'</span>':e}).join('\n')}
 function transposeKey(key,k){var t=String(key||'').trim();return t&&isChordTok(t)?transposeTok(t,k,/b/.test(t.slice(1))):key}
@@ -2049,7 +2055,8 @@ function textBlock(s,kind){
     links+'</span></h3>'+trUI+
     (editing
       ?'<textarea class="'+(isL?'':'mono')+'" style="font-size:'+fs+'px" placeholder="'+(isL?'Abra a busca, copie a letra e cole aqui. Ela fica salva para toda a banda.':'Abra a busca, copie a cifra e cole aqui. Ela fica salva para toda a banda.')+'" data-f="'+kind+'" data-id="'+id+'" data-fk="'+k+'" aria-label="'+(isL?'Letra':'Cifra')+'">'+esc(val)+'</textarea>'
-      :((!isL&&cwrapOn())?'<div class="cwrap read" style="font-size:'+fs+'px">'+chordWrapHTML(shown)+'</div>':'<pre class="read'+(isL?'':' mono')+'" style="font-size:'+fs+'px">'+(isL?esc(shown):chordHTML(shown))+'</pre>'))+'</div>';
+      :pauseHTML((!isL&&cwrapOn())?'<div class="cwrap read" style="font-size:'+fs+'px">'+chordWrapHTML(markPauses(shown))+'</div>':'<pre class="read'+(isL?'':' mono')+'" style="font-size:'+fs+'px">'+(isL?esc(markPauses(shown)):chordHTML(markPauses(shown)))+'</pre>'))+
+    (editing?'<div class="row-actions"><button type="button" class="btn small" data-act="pause-ins" data-k="'+k+'">⏸ Inserir pausa na rolagem</button></div><p class="hint">Para a rolagem parar num solo, escreva uma linha só com <span class="mono">[pausa 20]</span> (20 = segundos). Sem número, ela para até você tocar em Rolar.</p>':'')+'</div>';
 }
 function metroBlock(s){
   var on=met.running&&met.songId===s.id,bt=s.beats||4,dots='',d=met.delta,eff=effBpm(s);
@@ -2117,7 +2124,22 @@ function autoLoop(ts){
     if(left>0){if(wb)wb.textContent='Espera '+left+'s';auto.last=0;auto.raf=requestAnimationFrame(autoLoop);return}
     auto.waitUntil=0;if(wb)wb.textContent='Pausar';
   }
+  if(b&&stage&&auto.hold){
+    var hl=Math.ceil((auto.hold.until-Date.now())/1000),hb=document.querySelector('.stage-dock [data-act="auto-toggle"]');
+    if(hl>0){if(hb)hb.textContent='Pausa '+hl+'s';auto.last=0;auto.raf=requestAnimationFrame(autoLoop);return}
+    auto.hold=null;if(hb)hb.textContent='Pausar';
+  }
   if(b&&stage){
+    var line=b.getBoundingClientRect().top+b.clientHeight*0.33,pm=b.querySelectorAll('.pausemark');
+    for(var q=0;q<pm.length;q++){
+      var key=stage.id+stage.kind+':'+q,r=pm[q].getBoundingClientRect();
+      if(r.top>line+24){delete auto.done[key];continue}
+      if(r.top<=line&&!auto.done[key]){
+        auto.done[key]=1;var sec=+pm[q].dataset.s;
+        if(sec>0){auto.hold={until:Date.now()+sec*1000};auto.last=0;auto.raf=requestAnimationFrame(autoLoop);return}
+        auto.on=false;auto.raf=0;toast('Pausa na rolagem. Toque em Rolar para continuar.');render();return;
+      }
+    }
     if(auto.last){
       var dt=Math.min(0.1,(ts-auto.last)/1000);
       if(Math.abs(b.scrollTop-auto.pos)>3)auto.pos=b.scrollTop;
@@ -2132,7 +2154,11 @@ function autoLoop(ts){
 }
 function setAuto(on){
   auto.on=on;auto.last=0;cancelAnimationFrame(auto.raf);auto.raf=0;
-  var b=document.querySelector('.stage-body');auto.pos=b?b.scrollTop:0;
+  var b=document.querySelector('.stage-body');auto.pos=b?b.scrollTop:0;auto.hold=null;
+  if(on&&b&&stage){ /* pausas que já ficaram para trás não disparam */
+    var ln=b.getBoundingClientRect().top+b.clientHeight*0.33,pms=b.querySelectorAll('.pausemark');
+    for(var z=0;z<pms.length;z++){var kk=stage.id+stage.kind+':'+z;if(pms[z].getBoundingClientRect().top<=ln)auto.done[kk]=1;else delete auto.done[kk]}
+  }
   var ws=stage&&get(stage.id);
   auto.waitUntil=(on&&ws&&ws.wait>0&&auto.pos<8)?Date.now()+ws.wait*1000:0;
   if(on&&stage)auto.raf=requestAnimationFrame(autoLoop);
@@ -2989,6 +3015,7 @@ document.addEventListener('click',function(e){
   if(act==='bg-cycle'){bgMode=BG[(BG.indexOf(bgMode)+1)%BG.length];try{localStorage.setItem('ce-bg2',bgMode)}catch(err){}applyBg();toast('Fundo: '+BGN[bgMode]);render();return}
   if(act==='cfg-import'){location.hash='#geral';setTimeout(function(){toggle('#panel-import','#import-text')},60);return}
   if(act==='open-band'){openBand();window.scrollTo(0,0);return}
+  if(act==='pause-ins'){var ta=t.closest('.block').querySelector('textarea');if(ta){var a0=ta.selectionStart||0,v=ta.value,ins=(a0>0&&v[a0-1]!=='\n'?'\n':'')+'[pausa 20]\n';ta.value=v.slice(0,a0)+ins+v.slice(a0);ta.focus();var cp=a0+ins.length;ta.setSelectionRange(cp,cp);ta.dispatchEvent(new Event('input',{bubbles:true}));toast('Linha de pausa inserida. Troque o 20 pelos segundos que quiser.')}return}
   if(act==='mic-open'){micStart(id);return}
   if(act==='mic-stop'){micStop();return}
   if(act==='mic-shift'){mic.shift=(mic.shift+1)%((get(mic.songId)||{}).beats||4);toast('Tempo 1 mudou de lugar.');return}
