@@ -155,6 +155,11 @@ create index if not exists ce_messages_recipient_at on public.ce_messages(recipi
 alter table public.ce_messages enable row level security;
 revoke all on public.ce_messages from anon, authenticated;
 
+-- message limits can be overridden without a deploy: insert into ce_limits values ('pair',1000) to relax, delete from ce_limits to restore the defaults (sender 5/day, pair 2/day, recipient 20/day)
+create table if not exists public.ce_limits(key text primary key, val int not null);
+alter table public.ce_limits enable row level security;
+revoke all on public.ce_limits from anon, authenticated;
+
 create or replace function public.ce_msg_gate(p_from uuid, p_to uuid) returns jsonb
 language plpgsql security definer set search_path=public as $$
 declare v_to record; v_from record; v_id bigint;
@@ -162,9 +167,9 @@ begin
   if p_from is null or p_to is null or p_from = p_to then raise exception 'self'; end if;
   select p.name, u.email into v_to from ce_profiles p join auth.users u on u.id=p.user_id where p.user_id=p_to and p.visible and p.accept_msgs and u.email is not null;
   if v_to is null then raise exception 'closed'; end if;
-  if (select count(*) from ce_messages where sender=p_from and at > now() - interval '1 day') >= 5 then raise exception 'rate_sender'; end if;
-  if (select count(*) from ce_messages where sender=p_from and recipient=p_to and at > now() - interval '1 day') >= 2 then raise exception 'rate_pair'; end if;
-  if (select count(*) from ce_messages where recipient=p_to and at > now() - interval '1 day') >= 20 then raise exception 'rate_recipient'; end if;
+  if (select count(*) from ce_messages where sender=p_from and at > now() - interval '1 day') >= coalesce((select val from ce_limits where key='sender'),5) then raise exception 'rate_sender'; end if;
+  if (select count(*) from ce_messages where sender=p_from and recipient=p_to and at > now() - interval '1 day') >= coalesce((select val from ce_limits where key='pair'),2) then raise exception 'rate_pair'; end if;
+  if (select count(*) from ce_messages where recipient=p_to and at > now() - interval '1 day') >= coalesce((select val from ce_limits where key='recipient'),20) then raise exception 'rate_recipient'; end if;
   select coalesce(nullif(p.name,''), nullif(u.raw_user_meta_data->>'full_name',''), nullif(u.raw_user_meta_data->>'name',''), 'Um músico') as name, u.email into v_from from auth.users u left join ce_profiles p on p.user_id=u.id where u.id=p_from;
   insert into ce_messages(sender,recipient) values(p_from,p_to) returning id into v_id;
   return jsonb_build_object('id',v_id,'to_email',v_to.email,'to_name',v_to.name,'from_email',v_from.email,'from_name',v_from.name,'from_id',p_from);
