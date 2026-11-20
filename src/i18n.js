@@ -19,6 +19,12 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Bandas e artistas de referência','Reference bands and artists','Bandas y artistas de referencia'],
+['Ex.: Pink Floyd, Legião Urbana','E.g.: Pink Floyd, Legião Urbana','Ej.: Pink Floyd, Legião Urbana'],
+['Referências musicais','Musical references','Referencias musicales'],
+['Instagram (opcional)','Instagram (optional)','Instagram (opcional)'],
+['Só quem está logado no app e abre o seu perfil visível vê. Para e-mail, use “Aceito receber mensagens”: o seu e-mail não aparece.','Only people signed in to the app who open your visible profile see it. For email, use “I accept messages”: your email is not shown.','Solo quien está en la app con sesión iniciada y abre tu perfil visible lo ve. Para el correo, usa “Acepto recibir mensajes”: tu correo no se muestra.'],
+['Instagram','Instagram','Instagram'],
 ['Excluir banda','Delete band','Eliminar banda'],
 ['Apaga a banda e tudo dentro dela. Só o dono pode, e não dá para desfazer.','Deletes the band and everything in it. Only the owner can, and it cannot be undone.','Elimina la banda y todo lo que hay en ella. Solo el dueño puede y no se puede deshacer.'],
 ['Entendo que a banda será apagada para sempre','I understand the band will be deleted forever','Entiendo que la banda se borrará para siempre'],
@@ -46,7 +52,7 @@ var D=[
 ['WhatsApp com DDD, ex.: 11 91234-5678','WhatsApp with area code, e.g.: 11 91234-5678','WhatsApp con prefijo, ej.: 11 91234-5678'],
 ['Instagram, ex.: @meuusuario','Instagram, e.g.: @myuser','Instagram, ej.: @miusuario'],
 ['E-mail para contato','Contact email','Correo de contacto'],
-['Contato inválido. Confira o WhatsApp (com DDD) e o Instagram.','Invalid contact. Check the WhatsApp (with area code) and Instagram.','Contacto no válido. Revisa el WhatsApp (con prefijo) e Instagram.'],
+['Instagram inválido. Use só o nome de usuário, como @meuusuario.','Invalid Instagram. Use just the username, like @myuser.','Instagram no válido. Usa solo el nombre de usuario, como @miusuario.'],
 ['Contato','Contact','Contacto'],
 ['Buscando o título…','Looking up the title…','Buscando el título…'],
 ['Título encontrado. Você pode editar se quiser.','Title found. You can edit it if you want.','Título encontrado. Puedes editarlo si quieres.'],

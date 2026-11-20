@@ -11,6 +11,7 @@ create table if not exists public.ce_profiles(
   owns jsonb not null default '[]'::jsonb,       -- instruments the person owns
   gear jsonb not null default '[]'::jsonb,       -- equipment (amps, pedals, interface...)
   styles jsonb not null default '[]'::jsonb,     -- favourite styles
+  refs jsonb not null default '[]'::jsonb,       -- reference bands / artists that inspire the musician
   photo text not null default '',                -- small data URL (jpeg)
   contact jsonb not null default '{}'::jsonb,    -- optional: whatsapp (digits), instagram handle, contact e-mail; only shown on visible profiles
   visible boolean not null default false,
@@ -29,6 +30,7 @@ create table if not exists public.ce_reports(
   at timestamptz not null default now());
 alter table public.ce_profiles add column if not exists contact jsonb not null default '{}'::jsonb;
 alter table public.ce_profiles add column if not exists accept_msgs boolean not null default false;
+alter table public.ce_profiles add column if not exists refs jsonb not null default '[]'::jsonb;
 alter table public.ce_profiles enable row level security;
 alter table public.ce_profile_videos enable row level security;
 alter table public.ce_reports enable row level security;
@@ -37,10 +39,13 @@ revoke all on public.ce_profiles, public.ce_profile_videos, public.ce_reports fr
 -- cleans a jsonb array of short strings: at most p_max items, each trimmed and cut to p_len characters
 create or replace function public.ce_clean_list(p jsonb, p_max int, p_len int) returns jsonb
 language sql immutable set search_path=public as $$
-  select coalesce(jsonb_agg(v), '[]'::jsonb) from (
-    select distinct on (lower(t)) left(btrim(t), p_len) as v
-    from jsonb_array_elements_text(case when jsonb_typeof(p)='array' then p else '[]'::jsonb end) as t
-    where btrim(t) <> '' limit p_max) x $$;
+  select coalesce(jsonb_agg(v order by o), '[]'::jsonb) from (
+    select v, o from (
+      select left(btrim(t), p_len) as v, ord as o,
+             row_number() over (partition by lower(left(btrim(t), p_len)) order by ord) as rn
+      from jsonb_array_elements_text(case when jsonb_typeof(p)='array' then p else '[]'::jsonb end) with ordinality as x(t, ord)
+      where btrim(t) <> '') y
+    where rn = 1 order by o limit p_max) z $$;
 
 create or replace function public.ce_profile_me() returns jsonb
 language plpgsql security definer set search_path=public as $$
@@ -55,21 +60,19 @@ end $$;
 create or replace function public.ce_profile_save(p jsonb) returns boolean
 language plpgsql security definer set search_path=public as $$
 declare ph text := coalesce(p->>'photo','');
-  v_wa text := regexp_replace(coalesce(p->'contact'->>'whatsapp',''),'[^0-9]','','g');
   v_ig text := regexp_replace(btrim(coalesce(p->'contact'->>'instagram','')),'^@|^https?://(www\.)?instagram\.com/|/.*$','','gi');
   v_contact jsonb;
 begin
   if auth.uid() is null then raise exception 'auth'; end if;
   if ph <> '' and (ph !~ '^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$' or length(ph) > 60000) then raise exception 'photo'; end if;
-  if v_wa <> '' and (length(v_wa) < 8 or length(v_wa) > 15) then raise exception 'contact'; end if;
   if v_ig <> '' and v_ig !~ '^[A-Za-z0-9._]{1,30}$' then raise exception 'contact'; end if;
-  v_contact := jsonb_build_object('whatsapp',v_wa,'instagram',v_ig);  -- no public e-mail: people write through "Send message"
-  insert into ce_profiles(user_id,name,bio,city,plays,owns,gear,styles,photo,contact,accept_msgs,visible)
+  v_contact := jsonb_build_object('instagram',v_ig);  -- only Instagram is public; people write through "Send message"
+  insert into ce_profiles(user_id,name,bio,city,plays,owns,gear,styles,refs,photo,contact,accept_msgs,visible)
   values(auth.uid(), left(btrim(coalesce(p->>'name','')),60), left(btrim(coalesce(p->>'bio','')),600), left(btrim(coalesce(p->>'city','')),60),
-    ce_clean_list(p->'plays',12,40), ce_clean_list(p->'owns',20,40), ce_clean_list(p->'gear',30,60), ce_clean_list(p->'styles',12,40), ph, v_contact,
+    ce_clean_list(p->'plays',12,40), ce_clean_list(p->'owns',20,40), ce_clean_list(p->'gear',30,60), ce_clean_list(p->'styles',12,40), ce_clean_list(p->'refs',12,60), ph, v_contact,
     coalesce((p->>'accept_msgs')::boolean,false), coalesce((p->>'visible')::boolean,false))
   on conflict(user_id) do update set name=excluded.name, bio=excluded.bio, city=excluded.city, plays=excluded.plays, owns=excluded.owns,
-    gear=excluded.gear, styles=excluded.styles, photo=excluded.photo, contact=excluded.contact, accept_msgs=excluded.accept_msgs, visible=excluded.visible, updated_at=now();
+    gear=excluded.gear, styles=excluded.styles, refs=excluded.refs, photo=excluded.photo, contact=excluded.contact, accept_msgs=excluded.accept_msgs, visible=excluded.visible, updated_at=now();
   return true;
 end $$;
 
@@ -179,3 +182,6 @@ grant execute on function public.ce_msg_gate(uuid,uuid) to service_role;
 
 -- contact e-mails were removed from public profiles: messages go through send-message
 update public.ce_profiles set contact = contact - 'email' where contact ? 'email';
+
+-- WhatsApp was removed from public profiles
+update public.ce_profiles set contact = contact - 'whatsapp' where contact ? 'whatsapp';
