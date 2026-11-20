@@ -72,6 +72,8 @@ body.sk-cus{--rec-on:var(--cb,#33d6a0)}
 .tour-btns{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
 .tour-btns .btn{flex:1 1 0}
 .empty-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.import-pl{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.import-pl label{font-weight:600}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -1221,7 +1223,8 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
 
     <section class="panel" id="panel-import" hidden>
       <h3>Importar lista de músicas</h3>
-      <p class="hint">Cole uma música por linha no formato <span class="mono">Título - Artista</span>. Músicas que já estão no caderno são ignoradas.</p>
+      <div class="f import-pl"><label for="import-pl">Playlist do Spotify</label><input type="text" id="import-pl" inputmode="url" autocapitalize="off" autocomplete="off" placeholder="Cole o link da playlist (open.spotify.com/playlist/…)"><button class="btn primary" id="import-pl-go" type="button">Importar da playlist</button><p class="hint">A playlist precisa estar pública no Spotify. Entram até 100 músicas. Depois, o botão “Atualizar playlist” traz as novas.</p></div>
+      <p class="hint"><b>Ou</b> cole uma música por linha no formato <span class="mono">Título - Artista</span>. Músicas que já estão no caderno são ignoradas.</p>
       <textarea id="import-text" rows="6" placeholder="Under Pressure - Queen&#10;Seven Nation Army - The White Stripes"></textarea>
       <div class="row-actions"><button class="btn primary" id="import-go" type="button">Importar</button><button class="btn" id="import-cancel" type="button">Cancelar</button></div>
     </section>
@@ -3671,9 +3674,9 @@ document.addEventListener('click',function(e){
   if(act==='mv-part'){var cur3=partOf(get(id),t.dataset.mid).status,nx=cur3+ +t.dataset.d;if(nx>=0&&nx<=2){setPart(id,t.dataset.mid,{status:nx},true);render()}return}
   if(act==='drawer-close'){ui.cePick=null;openId=null;render();return}
   if(act==='bg-cycle'){bgMode=BG[(BG.indexOf(bgMode)+1)%BG.length];try{localStorage.setItem('ce-bg2',bgMode)}catch(err){}applyBg();toast('Fundo: '+BGN[bgMode]);render();return}
-  if(act==='import-open'){toggle('#panel-import','#import-text');return}
+  if(act==='import-open'){toggle('#panel-import','#import-pl');return}
   if(act==='add-open'){toggle('#panel-add','#new-title');return}
-  if(act==='cfg-import'){location.hash='#geral';setTimeout(function(){toggle('#panel-import','#import-text')},60);return}
+  if(act==='cfg-import'){location.hash='#geral';setTimeout(function(){toggle('#panel-import','#import-pl')},60);return}
   if(act==='open-band'){openBand();window.scrollTo(0,0);return}
   if(act==='yt-open'){ytOpen(id);return}
   if(act==='yt-close'){ytClose();return}
@@ -3945,7 +3948,7 @@ document.addEventListener('change',function(e){
 /* painéis */
 function toggle(p,focus){var el=$(p);var show=el.hidden;$('#panel-add').hidden=true;$('#panel-import').hidden=true;el.hidden=!show;if(show){try{el.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}if(focus)$(focus).focus()}}
 $('#btn-add').onclick=function(){toggle('#panel-add','#new-title')};
-$('#btn-import').onclick=function(){toggle('#panel-import','#import-text')};
+$('#btn-import').onclick=function(){toggle('#panel-import','#import-pl')};
 $('#btn-skin').onclick=function(){ui.skinOpen=true;renderSkinPick()};
 $('#btn-bg').onclick=function(){bgMode=BG[(BG.indexOf(bgMode)+1)%BG.length];try{localStorage.setItem('ce-bg2',bgMode)}catch(e){}applyBg();toast('Fundo: '+BGN[bgMode])};
 $('#btn-band').onclick=function(){if(bandOpen){bandOpen=false;renderBandPanel()}else openBand()};
@@ -3965,7 +3968,32 @@ $('#new-save').onclick=function(){
   var doc={title:title,artist:$('#new-artist').value.trim(),duration:parseT($('#new-dur').value)||null,link:'',notes:'',order:Date.now(),parts:{}};
   col.add(doc).then(function(ref){openId=ref.id;$('#new-title').value='';$('#new-artist').value='';$('#new-dur').value='';$('#panel-add').hidden=true;render()}).catch(fail);
 };
+function importPlaylist(raw){
+  var pid=plIdOf(raw);
+  if(!pid){toast('Cole o link de uma playlist do Spotify.');return}
+  if(!col){toast('O banco de dados não está disponível nesta visualização.');return}
+  if(!window.CE_PLAYLIST){toast('Importar de playlist só funciona no app da banda.');return}
+  var go=$('#import-pl-go');if(go){go.disabled=true;go.textContent='Buscando…'}
+  var done=function(){if(go){go.disabled=false;go.textContent='Importar da playlist'}};
+  window.CE_PLAYLIST(pid).then(function(r){
+    if(!r||!r.ok)throw r||{};
+    var byId={},byName={};songs.forEach(function(x){if(x.spotify)byId[x.spotify]=1;byName[plNorm(x.title)+'|'+plNorm(x.artist)]=1});
+    var add=r.tracks.filter(function(t){return !byId[t.id]&&!byName[plNorm(t.title)+'|'+plNorm(t.artist)]});
+    var base=Date.now(),n=0;
+    return add.reduce(function(p,t,i){return p.then(function(){return col.add({title:t.title,artist:t.artist,duration:t.duration||null,spotify:t.id,link:'',notes:'',order:base+i,parts:{}}).then(function(){n++})})},Promise.resolve()).then(function(){
+      if(!spotCfg||!spotCfg.playlist){spotCfg={playlist:pid,seen:r.tracks.map(function(t){return t.id}).slice(-500),last:Date.now(),lastAdded:n,name:r.name||''};if(spotDoc)spotDoc.set(spotCfg).catch(function(){})}
+      done();$('#import-pl').value='';$('#panel-import').hidden=true;
+      toast(n?n+(n===1?' música importada da playlist.':' músicas importadas da playlist.'):'Todas as músicas dessa playlist já estão no caderno.');render();
+    });
+  }).catch(function(e){
+    done();
+    toast(e&&e.error==='private'?'Essa playlist é privada. No Spotify, deixe a playlist pública e tente de novo.':e&&e.error==='missing'?'Não encontrei essa playlist. Confira o link.':e&&e.error==='link'?'Cole o link de uma playlist do Spotify.':'Não consegui ler a playlist agora. Tente de novo em instantes.');
+  });
+}
+$('#import-pl-go').onclick=function(){importPlaylist($('#import-pl').value)};
 $('#import-go').onclick=async function(){
+  var first=$('#import-text').value.trim();
+  if(plIdOf(first)&&/spotify/i.test(first)&&first.split('\n').length<=2){importPlaylist(first);return}
   if(!col){toast('O banco de dados não está disponível nesta visualização.');return}
   var lines=$('#import-text').value.split('\n').map(function(l){return l.trim()}).filter(Boolean);
   var known=songs.map(function(s){return (s.title||'').toLowerCase()+'|'+(s.artist||'').toLowerCase()});

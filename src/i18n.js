@@ -19,6 +19,16 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Playlist do Spotify','Spotify playlist','Lista de Spotify'],
+['Cole o link da playlist (open.spotify.com/playlist/…)','Paste the playlist link (open.spotify.com/playlist/…)','Pega el enlace de la lista (open.spotify.com/playlist/…)'],
+['Importar da playlist','Import from playlist','Importar de la lista'],
+['Buscando…','Fetching…','Buscando…'],
+['A playlist precisa estar pública no Spotify. Entram até 100 músicas. Depois, o botão “Atualizar playlist” traz as novas.','The playlist must be public on Spotify. Up to 100 songs come in. Afterwards, the “Update playlist” button brings the new ones.','La lista debe ser pública en Spotify. Entran hasta 100 canciones. Después, el botón “Actualizar lista” trae las nuevas.'],
+['Essa playlist é privada. No Spotify, deixe a playlist pública e tente de novo.','That playlist is private. In Spotify, make the playlist public and try again.','Esa lista es privada. En Spotify, hazla pública e inténtalo de nuevo.'],
+['Não encontrei essa playlist. Confira o link.','I could not find that playlist. Check the link.','No encontré esa lista. Revisa el enlace.'],
+['Não consegui ler a playlist agora. Tente de novo em instantes.','I could not read the playlist right now. Try again shortly.','No pude leer la lista ahora. Inténtalo de nuevo en un momento.'],
+['Todas as músicas dessa playlist já estão no caderno.','All songs in that playlist are already in the notebook.','Todas las canciones de esa lista ya están en el cuaderno.'],
+['Importar de playlist só funciona no app da banda.','Importing from a playlist only works in the band app.','Importar desde una lista solo funciona en la app de la banda.'],
 ['Vou te mostrar o app tela por tela, nas telas de verdade. Toque em Próximo para avançar. Você pode sair quando quiser.','I will show you the app screen by screen, on the real screens. Tap Next to move on. You can leave whenever you want.','Te mostraré la app pantalla por pantalla, en las pantallas reales. Toca Siguiente para avanzar. Puedes salir cuando quieras.'],
 ['Geral é o resumo da banda. Setlist é a ordem do show. A página com o seu nome tem só as suas músicas. Configurações guarda o resto.','Home is the band summary. Setlist is the show order. The page with your name has only your songs. Settings keeps the rest.','Inicio es el resumen de la banda. Setlist es el orden del show. La página con tu nombre tiene solo tus canciones. Ajustes guarda el resto.'],
 ['Resumo da banda','Band summary','Resumen de la banda'],
