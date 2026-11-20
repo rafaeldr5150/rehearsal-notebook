@@ -3187,6 +3187,24 @@ function stopPlayback(){
   ui.playId='';ui.playLoad='';ui.playSong='';
   try{if('mediaSession' in navigator)navigator.mediaSession.playbackState='none'}catch(e){}
 }
+/* iPhone: o Safari toca .webm/Opus com estalos. Convertemos para WAV (PCM) antes de tocar; se der qualquer erro, tocamos o arquivo original. */
+function isIOS(){return /iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)}
+function bufToWav(buf){
+  var ch=Math.min(2,buf.numberOfChannels),n=buf.length,sr=buf.sampleRate,out=new ArrayBuffer(44+n*ch*2),v=new DataView(out);
+  function w(o,t){for(var i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))}
+  w(0,'RIFF');v.setUint32(4,36+n*ch*2,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,ch,true);v.setUint32(24,sr,true);v.setUint32(28,sr*ch*2,true);v.setUint16(32,ch*2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*ch*2,true);
+  var d=[];for(var c=0;c<ch;c++)d.push(buf.getChannelData(c));
+  var o=44;for(var i=0;i<n;i++)for(var k=0;k<ch;k++){var x=d[k][i];x=x<-1?-1:x>1?1:x;v.setInt16(o,x<0?x*32768:x*32767,true);o+=2}
+  return new Blob([out],{type:'audio/wav'});
+}
+function toPlayable(b){
+  if(!isIOS()||b.size>80*1048576||/wav|mpeg|mp4|aac|m4a/i.test(b.type||''))return Promise.resolve(b);
+  var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return Promise.resolve(b);
+  var dc=new AC();
+  return b.arrayBuffer().then(function(ab){return new Promise(function(res,rej){var p=dc.decodeAudioData(ab,res,rej);if(p&&p.catch)p.catch(rej)})})
+    .then(function(buf){try{dc.close()}catch(e){}return bufToWav(buf)})
+    .catch(function(){try{dc.close()}catch(e){}return b});
+}
 function recPlay(fid,btn){
   if(!recAudio){recAudio=new Audio();recAudio.preload='auto';
     recAudio.onended=function(){ui.playId='';render()};
@@ -3206,7 +3224,7 @@ function recPlay(fid,btn){
     recAudio.ontimeupdate=function(){plSync()}}
   if(ui.playId===fid){if(recAudio.paused)recAudio.play();else recAudio.pause();render();return}
   ui.playLoad=fid;ui.playSong=openId;PL.a=PL.b=null;render();
-  window.CE_DRIVE.blob(fid).then(function(b){
+  window.CE_DRIVE.blob(fid).then(toPlayable).then(function(b){
     try{if(recAudio.src)URL.revokeObjectURL(recAudio.src)}catch(e){}
     PL.dur=0;
     try{var AC=window.AudioContext||window.webkitAudioContext;if(AC&&b.size<60*1048576){var dc=new AC();b.arrayBuffer().then(function(ab){return dc.decodeAudioData(ab)}).then(function(buf){if(!PL.dur)PL.dur=buf.duration;try{dc.close()}catch(e){}plSync()}).catch(function(){try{dc.close()}catch(e){}})}}catch(e){}
