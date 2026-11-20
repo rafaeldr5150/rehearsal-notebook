@@ -29,6 +29,10 @@
 .pl-row .chip{flex:1 1 0}
 .pl-lbl{flex:1 0 100%;font-size:13px;color:var(--muted)}
 .chip.on{background:var(--accent,#ff4d8d);color:var(--accent-ink,#fff);border-color:transparent}
+.rec-meter{height:12px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
+.rec-meter i{display:block;height:100%;width:0;border-radius:99px;background:#38d39f;transition:width .08s linear}
+.rec-meter i.warm{background:#f5b83c}.rec-meter i.hot{background:#ff4d4d}
+.rec-warn{color:#ff8a8a!important}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -2988,12 +2992,41 @@ function dateStamp(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMon
 function recTick(){
   var t=document.querySelector('.rec-time');
   if(t&&rec){var s=Math.floor((Date.now()-rec.start)/1000);t.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+  if(rec&&rec.pcm){var mb=document.querySelector('.rec-meter i'),hot=Date.now()-rec.clipAt<2500;if(mb){rec.hold=Math.max(rec.peak,(rec.hold||0)*0.85);mb.style.width=Math.min(100,Math.round(rec.hold*100))+'%';mb.className=hot?'hot':rec.hold>0.8?'warm':''}
+    var wn=document.querySelector('.rec-warn');if(wn)wn.hidden=!hot}
   var u=ui.up&&ui.up[openId],pg=document.querySelector('.rec-prog');
   if(pg&&u)pg.textContent=Math.round(u.p*100)+'%';
+}
+var REC_WORKLET="class R extends AudioWorkletProcessor{constructor(){super();this.b=[];this.n=0;this.pk=0}process(i){var c=i[0]&&i[0][0];if(!c)return true;for(var k=0;k<c.length;k++){var v=c[k];var a=v<0?-v:v;if(a>this.pk)this.pk=a}this.b.push(new Float32Array(c));this.n+=c.length;if(this.n>=4096){var o=new Float32Array(this.n),p=0;for(var j=0;j<this.b.length;j++){o.set(this.b[j],p);p+=this.b[j].length}this.port.postMessage({d:o,pk:this.pk},[o.buffer]);this.b=[];this.n=0;this.pk=0}return true}}registerProcessor('ce-rec',R)";
+function wavHeader(n,sr){var b=new ArrayBuffer(44),v=new DataView(b);function w(o,s){for(var i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))}
+  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);return b}
+function pcmStart(id,s,AC){
+  navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:false,noiseSuppression:false,autoGainControl:false}}).then(function(stream){
+    var ctx=new AC(),url=URL.createObjectURL(new Blob([REC_WORKLET],{type:'application/javascript'}));
+    return ctx.audioWorklet.addModule(url).then(function(){
+      URL.revokeObjectURL(url);
+      var src=ctx.createMediaStreamSource(stream),node=new AudioWorkletNode(ctx,'ce-rec'),mute=ctx.createGain();mute.gain.value=0;
+      src.connect(node);node.connect(mute);mute.connect(ctx.destination);
+      rec={songId:id,title:s.title||'Sem título',pcm:true,ctx:ctx,node:node,src:src,mute:mute,parts:[],n:0,peak:0,clipAt:0,stream:stream,start:Date.now(),mime:'audio/wav',cancel:false,chunks:[]};
+      node.port.onmessage=function(e){if(!rec||!rec.pcm)return;var f=e.data.d,i16=new Int16Array(f.length);for(var k=0;k<f.length;k++){var x=f[k];x=x<-1?-1:x>1?1:x;i16[k]=x<0?x*32768:x*32767}
+        rec.parts.push(i16);rec.n+=i16.length;rec.peak=e.data.pk;if(e.data.pk>=0.985)rec.clipAt=Date.now()};
+      try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(function(w){wake=w}).catch(function(){})}catch(e){}
+      clearInterval(ui.recTimer);ui.recTimer=setInterval(recTick,200);render();
+    });
+  }).catch(function(){toast('Não foi possível usar o microfone. Libere a permissão do navegador.')});
+}
+function pcmStop(){
+  var r=rec;if(!r)return;
+  try{r.node.port.onmessage=null;r.node.disconnect();r.src.disconnect();r.mute.disconnect()}catch(e){}
+  var sr=r.ctx.sampleRate;try{r.ctx.close()}catch(e){}
+  r.chunks=[wavHeader(r.n,sr)].concat(r.parts);r.parts=[];
+  recFinish();
 }
 function recStart(id){
   var s=get(id);if(!s||rec)return;
   if(!navigator.mediaDevices||!window.MediaRecorder){toast('Este navegador não consegue gravar áudio.');return}
+  var AC=window.AudioContext||window.webkitAudioContext;
+  if(AC&&window.AudioWorkletNode){pcmStart(id,s,AC);return}
   navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}}).then(function(stream){
     var mt=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus','audio/webm'].filter(function(m){return MediaRecorder.isTypeSupported(m)})[0]||'';
     var mr=new MediaRecorder(stream,mt?{mimeType:mt}:{}),chunks=[];
@@ -3004,14 +3037,14 @@ function recStart(id){
     clearInterval(ui.recTimer);ui.recTimer=setInterval(recTick,500);render();
   }).catch(function(){toast('Não foi possível usar o microfone. Libere a permissão do navegador.')});
 }
-function recStop(cancel){if(!rec)return;rec.cancel=!!cancel;try{rec.mr.stop()}catch(e){recFinish()}}
+function recStop(cancel){if(!rec)return;rec.cancel=!!cancel;if(rec.pcm){pcmStop();return}try{rec.mr.stop()}catch(e){recFinish()}}
 function recFinish(){
   var r=rec;if(!r)return;rec=null;
   clearInterval(ui.recTimer);try{r.stream.getTracks().forEach(function(t){t.stop()})}catch(e){}
   try{if(wake)wake.release();wake=null}catch(e){}
   if(r.cancel){render();return}
   if(Date.now()-r.start<1500||!r.chunks.length){toast('Gravação muito curta, descartada.');render();return}
-  var base=String(r.mime).split(';')[0],ext=base.indexOf('mp4')>=0?'m4a':base.indexOf('ogg')>=0?'ogg':'webm';
+  var base=String(r.mime).split(';')[0],ext=base.indexOf('wav')>=0?'wav':base.indexOf('mp4')>=0?'m4a':base.indexOf('ogg')>=0?'ogg':'webm';
   var blob=new Blob(r.chunks,{type:base}),name='';
   (ui.up||(ui.up={}))[r.songId]={p:0};render();
   nextTake(r.songId).then(function(n){name=recName(r.title,n,ext);
@@ -3116,7 +3149,7 @@ function recBlock(s){
   if(!window.CE_DRIVE)return '';
   var d=ui.drive,id=s.id,body='';
   if(!d)return '';
-  if(rec&&rec.songId===id)body='<div class="rec-live"><span class="rec-dot"></span><b>Gravando</b> <span class="rec-time mono">0:00</span></div><div class="row-actions"><button type="button" class="btn danger" data-act="rec-stop">Parar e salvar</button><button type="button" class="btn small" data-act="rec-cancel">Descartar</button></div>';
+  if(rec&&rec.songId===id)body='<div class="rec-live"><span class="rec-dot"></span><b>Gravando</b> <span class="rec-time mono">0:00</span></div>'+(rec.pcm?'<div class="rec-meter" aria-hidden="true"><i></i></div><p class="rec-warn hint" hidden>⚠ Som muito alto: o microfone está distorcendo. Afaste o celular dos instrumentos.</p>':'')+'<div class="row-actions"><button type="button" class="btn danger" data-act="rec-stop">Parar e salvar</button><button type="button" class="btn small" data-act="rec-cancel">Descartar</button></div>';
   else if(ui.up&&ui.up[id])body='<p class="hint">Enviando para o Drive… <span class="rec-prog mono">'+Math.round(ui.up[id].p*100)+'%</span></p>';
   else if(rec)body='<p class="hint">Você está gravando outra música.</p>';
   else if(d.connected&&d.expired)body='<p class="hint">A conexão com o Google Drive expirou. Reconecte para gravar e enviar.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="drive-reconnect">Reconectar o Drive</button></div>';
