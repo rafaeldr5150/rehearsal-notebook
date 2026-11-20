@@ -3046,7 +3046,8 @@ function plRows(row){
 }
 function refreshDrive(){
   var D=window.CE_DRIVE;if(!D)return;
-  D.status().then(function(s){ui.drive=s||{connected:false,configured:false,offline:true};return D.pending()}).then(function(n){ui.recPending=n;render()}).catch(function(){render()});
+  D.status().then(function(s){ui.drive=s||{connected:false,configured:false,offline:true};ui.driveTry=0;return D.pending()}).then(function(n){ui.recPending=n;render()}).catch(function(){
+    render();ui.driveTry=(ui.driveTry||0)+1;if(ui.driveTry<=4)setTimeout(refreshDrive,3000*ui.driveTry)});
 }
 var rec=null,wake=null;
 function maxTake(files){var m=0;(files||[]).forEach(function(f){var x=/take (\d+)/i.exec(f.name||'');if(x)m=Math.max(m,+x[1])});return m}
@@ -3180,6 +3181,11 @@ function plHTML(f){
     '<div class="pl-row"><span class="pl-lbl">Repetir</span>'+mk('pl-loop',1,'🔁 Tudo',PL.loop)+mk('pl-a',1,'A'+(PL.a!=null?' '+plClock(PL.a):' início'),false)+mk('pl-b',1,'B'+(PL.b!=null?' '+plClock(PL.b):' fim'),abOn&&PL.b!=null)+(abOn?mk('pl-clear',1,'Limpar',false):'')+'</div>'+
     '<p class="hint">Marque A e B para repetir só um trecho e treinar devagar.</p></div>';
 }
+function stopPlayback(){
+  try{if(recAudio){recAudio.pause();try{recAudio.removeAttribute('src');recAudio.load()}catch(e){}}}catch(e){}
+  ui.playId='';ui.playLoad='';ui.playSong='';
+  try{if('mediaSession' in navigator)navigator.mediaSession.playbackState='none'}catch(e){}
+}
 function recPlay(fid,btn){
   if(!recAudio){recAudio=new Audio();recAudio.preload='auto';
     recAudio.onended=function(){ui.playId='';render()};
@@ -3188,7 +3194,7 @@ function recPlay(fid,btn){
     recAudio.onpause=function(){clearInterval(PL.tick)};
     recAudio.ontimeupdate=function(){plSync()}}
   if(ui.playId===fid){if(recAudio.paused)recAudio.play();else recAudio.pause();render();return}
-  ui.playLoad=fid;PL.a=PL.b=null;render();
+  ui.playLoad=fid;ui.playSong=openId;PL.a=PL.b=null;render();
   window.CE_DRIVE.blob(fid).then(function(b){
     try{if(recAudio.src)URL.revokeObjectURL(recAudio.src)}catch(e){}
     recAudio.src=URL.createObjectURL(b);recAudio.loop=PL.loop;recAudio.playbackRate=PL.rate;ui.playId=fid;ui.playLoad='';
@@ -3448,6 +3454,7 @@ function render(){
   if(!band)return;
   clearTimeout(renderTimer);
   onLive();renderSide();renderTabbar();renderStage();renderLivebar();renderMetrobar();
+  if((ui.playId||ui.playLoad)&&ui.playSong!==openId)stopPlayback();
   if(ui.pres===undefined&&!ui.presLoad&&ui.drive&&ui.drive.connected&&!ui.drive.expired&&Date.now()-(ui.presTry||0)>20000)loadPresence();
   var hp=$('#hdr-pl');if(hp){var okp=spotCfg&&spotCfg.playlist;hp.hidden=!okp;if(okp)hp.href='https://open.spotify.com/playlist/'+spotCfg.playlist}
   var bp=$('#btn-pl');if(bp){var hh0=location.hash,onHome=!view()&&hh0!=='#setlist'&&hh0!=='#config';bp.hidden=!(onHome&&spotCfg&&spotCfg.playlist&&window.CE_PLAYLIST);bp.textContent=ui.plBusy?'Buscando…':'↻ Atualizar playlist';bp.disabled=!!ui.plBusy}
