@@ -998,6 +998,8 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 .media-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
 .media-grid .btn{padding:18px 14px;font-size:17px}
 .watch-img{max-width:100%;max-height:75vh;border-radius:12px;object-fit:contain;background:#000;align-self:center}
+.drive-warn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,176,32,.14);border:1px solid rgba(255,176,32,.55);font-size:14px}
+.cfg-row.warn{border-color:rgba(255,176,32,.7)}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -2915,7 +2917,7 @@ function recFinish(){
     return window.CE_DRIVE.upload(blob,{songId:r.songId,title:r.title,name:name,mime:base},function(p){ui.up[r.songId].p=p;recTick()})}).then(function(res){
     delete ui.up[r.songId];
     if(res.sent){(ui.recDone||(ui.recDone={}))[r.songId]=name;if(ui.recList)ui.recList[r.songId]=undefined;toast('Gravação salva no Drive: setlist/'+r.title)}
-    else{ui.recPending=(ui.recPending||0)+1;toast(res.error==='not_connected'?'O Drive não está conectado. A gravação ficou guardada no aparelho.':'Sem conexão: a gravação será enviada depois.')}
+    else{ui.recPending=(ui.recPending||0)+1;if(/invalid_grant/.test(String(res.error||''))&&ui.drive)ui.drive.expired=true;toast(/invalid_grant/.test(String(res.error||''))?'A conexão com o Google Drive expirou. A gravação ficou guardada no aparelho. Reconecte em Configurações.':res.error==='not_connected'?'O Drive não está conectado. A gravação ficou guardada no aparelho.':'Sem conexão: a gravação será enviada depois.')}
     render();
   }).catch(function(){delete ui.up[r.songId];toast('Não foi possível guardar a gravação.');render()});
 }
@@ -2965,6 +2967,7 @@ function recBlock(s){
   if(rec&&rec.songId===id)body='<div class="rec-live"><span class="rec-dot"></span><b>Gravando</b> <span class="rec-time mono">0:00</span></div><div class="row-actions"><button type="button" class="btn danger" data-act="rec-stop">Parar e salvar</button><button type="button" class="btn small" data-act="rec-cancel">Descartar</button></div>';
   else if(ui.up&&ui.up[id])body='<p class="hint">Enviando para o Drive… <span class="rec-prog mono">'+Math.round(ui.up[id].p*100)+'%</span></p>';
   else if(rec)body='<p class="hint">Você está gravando outra música.</p>';
+  else if(d.connected&&d.expired)body='<p class="hint">A conexão com o Google Drive expirou. Reconecte para gravar e enviar.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="drive-reconnect">Reconectar o Drive</button></div>';
   else if(!d.connected)body='<p class="hint">Conecte o Google Drive da banda para guardar as gravações.</p><div class="row-actions"><button type="button" class="btn small primary" data-act="drive-go">Conectar o Drive</button></div>';
   else body='<div class="row-actions"><button type="button" class="btn primary" data-act="rec-start" data-id="'+id+'">● Gravar</button></div><p class="hint">Salva em setlist/'+esc(s.title||'Sem título')+'/ no Drive da banda.</p>'+(ui.recDone&&ui.recDone[id]?'<p class="hint">Última enviada: '+esc(ui.recDone[id])+'</p>':'');
   if(d.connected){ensureRecList(id);body+=recListHTML(s,'audio')}
@@ -2988,7 +2991,7 @@ function vidUploadFiles(files){
   files.reduce(function(pr,f,i){return pr.then(function(){
     ui.vup={name:f.name,i:i+1,n:files.length,p:0};render();
     return window.CE_DRIVE.upload(f,{kind:'video',songId:'',title:'',name:f.name,mime:f.type||guessMime(f.name),noQueue:true},function(pg){ui.vup.p=pg;var e=document.querySelector('.vup-prog');if(e)e.textContent=Math.round(pg*100)+'%'}).then(function(){ok++});
-  })},Promise.resolve()).catch(function(e){msg=e&&e.code==='videos_missing'?'A pasta de fotos e vídeos não existe mais. Defina de novo em Configurações.':'Não foi possível enviar. Confira a internet e tente de novo.'}).then(function(){
+  })},Promise.resolve()).catch(function(e){msg=e&&e.code==='videos_missing'?'A pasta de fotos e vídeos não existe mais. Defina de novo em Configurações.':(e&&/invalid_grant/.test(String(e.code||'')))?(ui.drive&&(ui.drive.expired=true),'A conexão com o Google Drive expirou. Reconecte em Configurações.'):'Não foi possível enviar. Confira a internet e tente de novo.'}).then(function(){
     ui.vup=null;ui.vidFiles=undefined;toast(msg||(ok+(ok===1?' arquivo enviado para o Drive.':' arquivos enviados para o Drive.')));render();
   });
 }
@@ -3003,11 +3006,11 @@ function renderMediaPick(){
   var el=document.getElementById('mediapick');
   if(!el){el=document.createElement('div');el.id='mediapick';el.hidden=true;document.body.appendChild(el)}
   if(!ui.mediaPick){el.hidden=true;el.innerHTML='';return}
-  var d=ui.drive,ready=!!(d&&d.connected&&d.videos);
+  var d=ui.drive,ready=!!(d&&d.connected&&d.videos&&!d.expired);
   el.hidden=false;
   el.innerHTML='<div class="who-box tourbox pmbox" role="dialog" aria-label="Fotos e vídeos"><h2>Fotos e vídeos</h2>'+
     (ready?'<p class="hint">O que você registrar vai direto para a pasta da banda no Drive.</p><div class="media-grid"><button type="button" class="btn primary" data-act="media-photo">📷 Tirar foto</button><button type="button" class="btn primary" data-act="media-video">🎥 Gravar vídeo</button><button type="button" class="btn" data-act="media-gal">🖼 Escolher da galeria</button></div>'
-      :(d&&d.connected?(linkFolderId()?'<p class="hint">A pasta “Vídeos da banda” está guardada só como um link. Para o app enviar as fotos e os vídeos para ela, ele precisa de acesso à pasta.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-adopt">Usar a pasta “Vídeos da banda”</button></div><p class="hint">Se o app não tiver acesso, você pode criar uma pasta nova ou escolher a pasta pelo computador, em Configurações.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn small" data-act="media-create">Criar uma pasta nova</button></div>':'<p class="hint">Ainda não existe uma pasta de fotos e vídeos no Drive da banda.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-create">Criar a pasta agora</button></div>'):'<p class="hint">Conecte o Google Drive da banda em Configurações para guardar as fotos e os vídeos.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-cfg">Abrir Configurações</button></div>'))+
+      :(d&&d.connected&&d.expired?'<p class="hint">A conexão com o Google Drive expirou. Reconecte para guardar as fotos e os vídeos. As suas pastas continuam as mesmas.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="drive-reconnect">Reconectar o Google Drive</button></div>':d&&d.connected?(linkFolderId()?'<p class="hint">A pasta “Vídeos da banda” está guardada só como um link. Para o app enviar as fotos e os vídeos para ela, ele precisa de acesso à pasta.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-adopt">Usar a pasta “Vídeos da banda”</button></div><p class="hint">Se o app não tiver acesso, você pode criar uma pasta nova ou escolher a pasta pelo computador, em Configurações.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn small" data-act="media-create">Criar uma pasta nova</button></div>':'<p class="hint">Ainda não existe uma pasta de fotos e vídeos no Drive da banda.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-create">Criar a pasta agora</button></div>'):'<p class="hint">Conecte o Google Drive da banda em Configurações para guardar as fotos e os vídeos.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-cfg">Abrir Configurações</button></div>'))+
     '<div class="row-actions" style="justify-content:center;margin-top:12px"><button type="button" class="btn small" data-act="media-close">Fechar</button></div></div>';
 }
 var fileInp=document.createElement('input');fileInp.type='file';fileInp.multiple=true;fileInp.hidden=true;document.body.appendChild(fileInp);
@@ -3033,6 +3036,7 @@ function driveRows(row){
   var d=ui.drive,pend=ui.recPending>0?row('rec-flush','nota',ui.recPending+(ui.recPending===1?' gravação aguardando envio':' gravações aguardando envio'),'Toque para enviar agora'):'';
   if(!d)return pend;
   if(d.offline)return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Google Drive</b><small>Sem conexão agora.</small></span></div>'+pend;
+  if(d.connected&&d.expired)return '<div class="cfg-row static warn">'+svgIco('nota',24)+'<span><b>A conexão com o Google Drive expirou</b><small>As gravações, fotos e vídeos não conseguem ser enviados até você reconectar. As pastas e os arquivos continuam no seu Drive.</small></span></div>'+row('drive-reconnect','nota','Reconectar o Google Drive','Entre de novo com a mesma conta. As pastas continuam as mesmas.')+pend;
   if(!d.configured)return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Google Drive</b><small>Indisponível no momento.</small></span></div>';
   if(!d.connected)return row('drive-connect','nota','Conectar Google Drive','Grave as músicas e salve direto no Drive da banda')+pend;
   return '<div class="cfg-row static">'+svgIco('nota',24)+'<span><b>Drive conectado</b><small>'+esc(d.email||'')+'</small></span></div>'+
@@ -3086,6 +3090,7 @@ function renderFolders(){
   var d=ui.drive,s=setlistUrl(),v=vidUrl(),h='',extra='';
   if(s)h+='<a class="btn" target="_blank" rel="noopener" href="'+esc(s)+'">📁 Pasta das gravações ↗</a>';
   if(window.CE_DRIVE&&d&&d.connected)h+='<button type="button" class="btn primary" data-act="media-open">📷 Fotos e vídeos</button>';
+  var warn=(window.CE_DRIVE&&d&&d.connected&&d.expired)?'<div class="drive-warn"><span>A conexão com o Google Drive expirou.</span><button type="button" class="btn small primary" data-act="drive-reconnect">Reconectar</button></div>':'';
   h+=v?'<a class="btn" target="_blank" rel="noopener" href="'+esc(v)+'">🎬 Vídeos da banda ↗</a>':'<a class="btn" href="#config" data-act="vid-define">🎬 Definir a pasta de vídeos</a>';
   el.hidden=!(window.CE_DRIVE||v);
   if(el.hidden){el.innerHTML='';return}
@@ -3099,7 +3104,7 @@ function renderFolders(){
         '<button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="vid-del" data-fid="'+f.id+'">'+(arm?'Confirmar: apagar':'Apagar')+'</button>'+(f.webViewLink?'<a class="btn small" target="_blank" rel="noopener" href="'+esc(f.webViewLink)+'">Drive ↗</a>':'')+'</div></li>'}).join('')+'</ul>'+(l.length>5&&!ui.vidAll?'<div class="row-actions"><button type="button" class="btn small" data-act="vid-all">Ver todos ('+l.length+')</button></div>':'');
     extra+='</div>';
   }
-  el.innerHTML='<h3>Pastas da banda</h3><div class="row-actions">'+h+'</div>'+extra;
+  el.innerHTML='<h3>Pastas da banda</h3>'+warn+'<div class="row-actions">'+h+'</div>'+extra;
 }
 function videoRows(row){
   var d=ui.drive,api='';
@@ -3403,6 +3408,7 @@ document.addEventListener('click',function(e){
   if(act==='rec-cancel'){recStop(true);return}
   if(act==='rec-flush'){toast('Enviando…');window.CE_DRIVE.flush().then(function(n){ui.recPending=n;toast(n?'Ainda há '+n+' aguardando. Tente de novo com internet.':'Tudo enviado.');render()});return}
   if(act==='vid-upload'){videoInp.click();return}
+  if(act==='drive-reconnect'){window.CE_DRIVE.connect();return}
   if(act==='media-open'){ui.mediaPick=true;renderMediaPick();return}
   if(act==='media-close'){ui.mediaPick=false;renderMediaPick();return}
   if(act==='media-photo'){ui.mediaPick=false;photoInp.click();renderMediaPick();return}
@@ -3411,7 +3417,7 @@ document.addEventListener('click',function(e){
   if(act==='media-cfg'){ui.mediaPick=false;renderMediaPick();location.hash='#config';return}
   if(act==='media-adopt'){var fid0=linkFolderId();if(!fid0){toast('Não encontrei a pasta no link.');return}toast('Verificando o acesso à pasta…');
     window.CE_DRIVE.setVideos(fid0).then(function(r){if(r&&r.ok){ui.vidFiles=undefined;toast('Pronto: as fotos e os vídeos vão para “'+(r.name||'Vídeos da banda')+'”.');return window.CE_DRIVE.status()}throw r}).then(function(s){if(s)ui.drive=s;renderMediaPick();render()}).catch(function(){toast('O app não tem acesso a essa pasta. Crie uma pasta nova ou escolha a pasta pelo computador, em Configurações.')});return}
-  if(act==='media-create'){toast('Criando a pasta…');window.CE_DRIVE.createVideos().then(function(r){if(r&&r.ok){ui.vidFiles=undefined;toast('Pasta de fotos e vídeos criada no seu Drive.');return window.CE_DRIVE.status()}throw 0}).then(function(s){if(s)ui.drive=s;renderMediaPick();render()}).catch(function(){toast('Não foi possível criar a pasta agora.')});return}
+  if(act==='media-create'){toast('Criando a pasta…');window.CE_DRIVE.createVideos().then(function(r){if(r&&r.ok){ui.vidFiles=undefined;toast('Pasta de fotos e vídeos criada no seu Drive.');return window.CE_DRIVE.status()}if(r&&/invalid_grant/.test(String(r.error||''))){if(ui.drive)ui.drive.expired=true;toast('A conexão com o Google Drive expirou. Reconecte primeiro.');renderMediaPick();render();return null}throw 0}).then(function(s){if(s)ui.drive=s;renderMediaPick();render()}).catch(function(){toast('Não foi possível criar a pasta agora.')});return}
   if(act==='vid-all'){ui.vidAll=true;render();return}
   if(act==='vid-watch'){var wf=t.dataset.fid,wn=t.dataset.name,wi=!!t.dataset.img;if(ui.watchLoad)return;ui.watchLoad=wf;render();
     window.CE_DRIVE.streamUrl(wf).then(function(u){ui.watch={url:u,name:wn,img:wi};renderWatch()}).catch(function(){toast('Não foi possível abrir o vídeo. Tente pelo Drive.')}).then(function(){ui.watchLoad='';render()});return}

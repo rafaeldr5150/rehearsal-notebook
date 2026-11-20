@@ -81,10 +81,14 @@ Deno.serve(async (req) => {
       const d = await r.json();
       if (!d.refresh_token || !d.access_token) return bounce(st.ret, "drive=err");
       const me = await gj("https://www.googleapis.com/oauth2/v2/userinfo", d.access_token);
-      const folder = await mkFolder(d.access_token, "setlist");
-      const { data: old } = await sb.from("ce_drive").select("refresh_token").eq("band", st.band).maybeSingle();
-      if (old?.refresh_token) await fetch("https://oauth2.googleapis.com/revoke?token=" + encodeURIComponent(old.refresh_token), { method: "POST" }).catch(() => {});
-      await sb.from("ce_drive").upsert({ band: st.band, refresh_token: d.refresh_token, folder_id: folder, email: me.data.email || "", folders: {}, root_name: "", connected_at: new Date().toISOString() });
+      const { data: old } = await sb.from("ce_drive").select("*").eq("band", st.band).maybeSingle();
+      // Reconnecting the same account keeps the existing folders (the app still has access to them).
+      let folder = old?.folder_id || "", keep = false;
+      if (folder && (await alive(d.access_token, folder))) keep = true; else folder = await mkFolder(d.access_token, "setlist");
+      let videos = old?.videos_id || "", videosName = old?.videos_name || "";
+      if (videos && !(await alive(d.access_token, videos))) { videos = ""; videosName = ""; }
+      if (old?.refresh_token && old.refresh_token !== d.refresh_token) await fetch("https://oauth2.googleapis.com/revoke?token=" + encodeURIComponent(old.refresh_token), { method: "POST" }).catch(() => {});
+      await sb.from("ce_drive").upsert({ band: st.band, refresh_token: d.refresh_token, folder_id: folder, email: me.data.email || "", folders: keep ? (old?.folders || {}) : {}, root_name: keep ? (old?.root_name || "") : "", videos_id: videos, videos_name: videosName, connected_at: new Date().toISOString() });
       return bounce(st.ret, "drive=ok");
     } catch (_) { return bounce(st.ret, "drive=err"); }
   }
@@ -95,7 +99,11 @@ Deno.serve(async (req) => {
   if (!(await bandOk(b.band))) return J({ ok: false, error: "band" }, 404);
   const { data: row } = await sb.from("ce_drive").select("*").eq("band", b.band).maybeSingle();
 
-  if (b.action === "status") return J({ ok: true, connected: !!row, email: row?.email || "", folder: row?.folder_id || "", root: row?.root_name || "", videos: row?.videos_id || "", videosName: row?.videos_name || "", configured: !!(CLIENT_ID && CLIENT_SECRET) });
+  if (b.action === "status") {
+    let expired = false;
+    if (row) { try { await accessToken(row); } catch (e) { expired = /invalid_grant/.test(String((e as Error).message)); } }
+    return J({ ok: true, connected: !!row, expired, email: row?.email || "", folder: row?.folder_id || "", root: row?.root_name || "", videos: row?.videos_id || "", videosName: row?.videos_name || "", configured: !!(CLIENT_ID && CLIENT_SECRET) });
+  }
   if (!row) return J({ ok: false, error: "not_connected" }, 409);
 
   // Short-lived token (drive.file only) so the browser can open Google Picker for the connected account.

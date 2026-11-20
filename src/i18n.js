@@ -19,6 +19,15 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['A conexão com o Google Drive expirou','The Google Drive connection expired','La conexión con Google Drive expiró'],
+['As gravações, fotos e vídeos não conseguem ser enviados até você reconectar. As pastas e os arquivos continuam no seu Drive.','Recordings, photos and videos cannot be sent until you reconnect. The folders and files stay in your Drive.','Las grabaciones, fotos y vídeos no se pueden enviar hasta que reconectes. Las carpetas y los archivos siguen en tu Drive.'],
+['Reconectar o Google Drive','Reconnect Google Drive','Reconectar Google Drive'],['Entre de novo com a mesma conta. As pastas continuam as mesmas.','Sign in again with the same account. The folders stay the same.','Entra de nuevo con la misma cuenta. Las carpetas siguen siendo las mismas.'],
+['A conexão com o Google Drive expirou.','The Google Drive connection expired.','La conexión con Google Drive expiró.'],['Reconectar','Reconnect','Reconectar'],['Reconectar o Drive','Reconnect Drive','Reconectar el Drive'],
+['A conexão com o Google Drive expirou. Reconecte para guardar as fotos e os vídeos. As suas pastas continuam as mesmas.','The Google Drive connection expired. Reconnect to store photos and videos. Your folders stay the same.','La conexión con Google Drive expiró. Reconecta para guardar fotos y vídeos. Tus carpetas siguen siendo las mismas.'],
+['A conexão com o Google Drive expirou. Reconecte para gravar e enviar.','The Google Drive connection expired. Reconnect to record and upload.','La conexión con Google Drive expiró. Reconecta para grabar y subir.'],
+['A conexão com o Google Drive expirou. Reconecte em Configurações.','The Google Drive connection expired. Reconnect in Settings.','La conexión con Google Drive expiró. Reconecta en Ajustes.'],
+['A conexão com o Google Drive expirou. A gravação ficou guardada no aparelho. Reconecte em Configurações.','The Google Drive connection expired. The recording was kept on this device. Reconnect in Settings.','La conexión con Google Drive expiró. La grabación quedó guardada en el dispositivo. Reconecta en Ajustes.'],
+['A conexão com o Google Drive expirou. Reconecte primeiro.','The Google Drive connection expired. Reconnect first.','La conexión con Google Drive expiró. Reconecta primero.'],
 ['A pasta “Vídeos da banda” está guardada só como um link. Para o app enviar as fotos e os vídeos para ela, ele precisa de acesso à pasta.','The “Band videos” folder is only saved as a link. For the app to send photos and videos to it, it needs access to the folder.','La carpeta “Vídeos de la banda” solo está guardada como enlace. Para que la app envíe fotos y vídeos, necesita acceso a la carpeta.'],
 ['Usar a pasta “Vídeos da banda”','Use the “Band videos” folder','Usar la carpeta “Vídeos de la banda”'],
 ['Se o app não tiver acesso, você pode criar uma pasta nova ou escolher a pasta pelo computador, em Configurações.','If the app has no access, you can create a new folder or pick the folder from a computer, in Settings.','Si la app no tiene acceso, puedes crear una carpeta nueva o elegirla desde un ordenador, en Ajustes.'],
