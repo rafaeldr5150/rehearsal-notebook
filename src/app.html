@@ -3007,7 +3007,7 @@ function renderMediaPick(){
   el.hidden=false;
   el.innerHTML='<div class="who-box tourbox pmbox" role="dialog" aria-label="Fotos e vídeos"><h2>Fotos e vídeos</h2>'+
     (ready?'<p class="hint">O que você registrar vai direto para a pasta da banda no Drive.</p><div class="media-grid"><button type="button" class="btn primary" data-act="media-photo">📷 Tirar foto</button><button type="button" class="btn primary" data-act="media-video">🎥 Gravar vídeo</button><button type="button" class="btn" data-act="media-gal">🖼 Escolher da galeria</button></div>'
-      :(d&&d.connected?'<p class="hint">Ainda não existe uma pasta de fotos e vídeos no Drive da banda.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-create">Criar a pasta agora</button></div>':'<p class="hint">Conecte o Google Drive da banda em Configurações para guardar as fotos e os vídeos.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-cfg">Abrir Configurações</button></div>'))+
+      :(d&&d.connected?(linkFolderId()?'<p class="hint">A pasta “Vídeos da banda” está guardada só como um link. Para o app enviar as fotos e os vídeos para ela, ele precisa de acesso à pasta.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-adopt">Usar a pasta “Vídeos da banda”</button></div><p class="hint">Se o app não tiver acesso, você pode criar uma pasta nova ou escolher a pasta pelo computador, em Configurações.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn small" data-act="media-create">Criar uma pasta nova</button></div>':'<p class="hint">Ainda não existe uma pasta de fotos e vídeos no Drive da banda.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-create">Criar a pasta agora</button></div>'):'<p class="hint">Conecte o Google Drive da banda em Configurações para guardar as fotos e os vídeos.</p><div class="row-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="media-cfg">Abrir Configurações</button></div>'))+
     '<div class="row-actions" style="justify-content:center;margin-top:12px"><button type="button" class="btn small" data-act="media-close">Fechar</button></div></div>';
 }
 var fileInp=document.createElement('input');fileInp.type='file';fileInp.multiple=true;fileInp.hidden=true;document.body.appendChild(fileInp);
@@ -3067,6 +3067,7 @@ function installEnv(){
   var samsung=/samsungbrowser/i.test(ua);
   return {ios:ios,and:and,mobile:ios||and,standalone:standalone,safari:safari,samsung:samsung,prompt:!!window.__ceInstall};
 }
+function linkFolderId(){var u=(linksCfg&&linksCfg.videos)||'';var m=/\/folders\/([\w-]+)/.exec(u)||/[?&]id=([\w-]+)/.exec(u);return m?m[1]:''}
 function vidUrl(){var d=ui.drive;if(d&&d.connected&&d.videos)return 'https://drive.google.com/drive/folders/'+d.videos;var u=linksCfg&&linksCfg.videos;return /^https:\/\//.test(u||'')?u:''}
 function setlistUrl(){var d=ui.drive;return d&&d.connected&&d.folder?'https://drive.google.com/drive/folders/'+d.folder:''}
 function renderWatch(){
@@ -3408,6 +3409,8 @@ document.addEventListener('click',function(e){
   if(act==='media-video'){ui.mediaPick=false;camVidInp.click();renderMediaPick();return}
   if(act==='media-gal'){ui.mediaPick=false;galInp.click();renderMediaPick();return}
   if(act==='media-cfg'){ui.mediaPick=false;renderMediaPick();location.hash='#config';return}
+  if(act==='media-adopt'){var fid0=linkFolderId();if(!fid0){toast('Não encontrei a pasta no link.');return}toast('Verificando o acesso à pasta…');
+    window.CE_DRIVE.setVideos(fid0).then(function(r){if(r&&r.ok){ui.vidFiles=undefined;toast('Pronto: as fotos e os vídeos vão para “'+(r.name||'Vídeos da banda')+'”.');return window.CE_DRIVE.status()}throw r}).then(function(s){if(s)ui.drive=s;renderMediaPick();render()}).catch(function(){toast('O app não tem acesso a essa pasta. Crie uma pasta nova ou escolha a pasta pelo computador, em Configurações.')});return}
   if(act==='media-create'){toast('Criando a pasta…');window.CE_DRIVE.createVideos().then(function(r){if(r&&r.ok){ui.vidFiles=undefined;toast('Pasta de fotos e vídeos criada no seu Drive.');return window.CE_DRIVE.status()}throw 0}).then(function(s){if(s)ui.drive=s;renderMediaPick();render()}).catch(function(){toast('Não foi possível criar a pasta agora.')});return}
   if(act==='vid-all'){ui.vidAll=true;render();return}
   if(act==='vid-watch'){var wf=t.dataset.fid,wn=t.dataset.name,wi=!!t.dataset.img;if(ui.watchLoad)return;ui.watchLoad=wf;render();

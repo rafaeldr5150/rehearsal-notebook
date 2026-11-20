@@ -333,6 +333,7 @@ function rpc(fn,args){
     list:function(songId){return call('list',{songId:songId})},
     listVideos:function(){return call('list',{kind:'video'})},
     createVideos:function(){return call('videos-create')},
+    setVideos:function(folderId){return call('set-videos',{folderId:folderId})},
     clearVideos:function(){return call('clear-videos')},
     streamUrl:function(id){return call('picker-token').then(function(t){if(!t||!t.ok)throw new Error('token');return 'https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(id)+'?alt=media&access_token='+encodeURIComponent(t.token)})},
     remove:function(fileId){return call('delete',{fileId:fileId})},

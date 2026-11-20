@@ -19,6 +19,12 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['A pasta “Vídeos da banda” está guardada só como um link. Para o app enviar as fotos e os vídeos para ela, ele precisa de acesso à pasta.','The “Band videos” folder is only saved as a link. For the app to send photos and videos to it, it needs access to the folder.','La carpeta “Vídeos de la banda” solo está guardada como enlace. Para que la app envíe fotos y vídeos, necesita acceso a la carpeta.'],
+['Usar a pasta “Vídeos da banda”','Use the “Band videos” folder','Usar la carpeta “Vídeos de la banda”'],
+['Se o app não tiver acesso, você pode criar uma pasta nova ou escolher a pasta pelo computador, em Configurações.','If the app has no access, you can create a new folder or pick the folder from a computer, in Settings.','Si la app no tiene acceso, puedes crear una carpeta nueva o elegirla desde un ordenador, en Ajustes.'],
+['Criar uma pasta nova','Create a new folder','Crear una carpeta nueva'],['Não encontrei a pasta no link.','I could not find the folder in the link.','No encontré la carpeta en el enlace.'],
+['Verificando o acesso à pasta…','Checking access to the folder…','Comprobando el acceso a la carpeta…'],
+['O app não tem acesso a essa pasta. Crie uma pasta nova ou escolha a pasta pelo computador, em Configurações.','The app has no access to that folder. Create a new folder or pick it from a computer, in Settings.','La app no tiene acceso a esa carpeta. Crea una carpeta nueva o elígela desde un ordenador, en Ajustes.'],
 ['📷 Fotos e vídeos','📷 Photos and videos','📷 Fotos y vídeos'],['Fotos e vídeos','Photos and videos','Fotos y vídeos'],
 ['O que você registrar vai direto para a pasta da banda no Drive.','Whatever you capture goes straight to the band\'s folder in Drive.','Lo que registres va directo a la carpeta de la banda en el Drive.'],
 ['📷 Tirar foto','📷 Take a photo','📷 Hacer una foto'],['🎥 Gravar vídeo','🎥 Record a video','🎥 Grabar un vídeo'],['🖼 Escolher da galeria','🖼 Choose from gallery','🖼 Elegir de la galería'],
@@ -472,6 +478,7 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^Pronto: as fotos e os vídeos vão para “(.+)”\.$/,function(m){return I===1?'Done: photos and videos go to “'+m[1]+'”.':'Listo: las fotos y los vídeos van a «'+m[1]+'».'}],
 [/^Foto muito grande \(máximo 100 MB\): (.+)$/,function(m){return (I===1?'Photo too large (max 100 MB): ':'Foto demasiado grande (máx. 100 MB): ')+m[1]}],
 [/^Gravando o mapa: (\d+) toques?$/,function(m){return (I===1?'Recording the map: ':'Grabando el mapa: ')+m[1]+(I===1?(m[1]==='1'?' tap':' taps'):(m[1]==='1'?' toque':' toques'))}],
 [/^Mapa de batidas: (\d+) batidas · (\d+) passadas?$/,function(m){return I===1?'Beat map: '+m[1]+' beats · '+m[2]+(m[2]==='1'?' pass':' passes'):'Mapa de pulsos: '+m[1]+' pulsos · '+m[2]+(m[2]==='1'?' pasada':' pasadas')}],
