@@ -29,7 +29,7 @@ function parseCode(txt){
 function joinCss(){
   if(document.getElementById('join-css'))return;
   var css=document.createElement('style');css.id='join-css';
-  css.textContent='#join{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(900px 520px at 10% -10%,rgba(255,61,139,.28),transparent 60%),radial-gradient(800px 520px at 100% 100%,rgba(255,154,61,.2),transparent 60%),#0b0b10;color:#f4f4f9;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;overflow:auto}'+
+  css.textContent='#a-gis,#a-gis iframe{color-scheme:light;background:transparent!important}#a-gis{min-height:44px}#join{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(900px 520px at 10% -10%,rgba(255,61,139,.28),transparent 60%),radial-gradient(800px 520px at 100% 100%,rgba(255,154,61,.2),transparent 60%),#0b0b10;color:#f4f4f9;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;overflow:auto}'+
    '#join .jbox{width:min(440px,100%);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:22px;padding:28px 24px 22px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,0,0,.5)}'+
    '#join h1{margin:0 0 6px;font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1.05}'+
    '#join p{margin:0 0 18px;color:#b4b4c8;font-size:16px;line-height:1.45}'+
@@ -158,7 +158,7 @@ function showEntry(msg){
         .catch(function(err){clearInvite();if(/unknown/i.test(String(err&&err.message)))showBands('Esse convite não é válido ou a banda não existe mais. Peça um novo link.');else showBands()});
       return;
     }
-    if(s)showBands(msg);else showLogin(msg||(inv?'Você foi convidado para uma banda. Entre com a sua conta para entrar.':''));
+    if(s)showBands(msg);else showLogin(msg);
   }).catch(function(){showJoin()});
 }
 /* Login com o Google pela janela do próprio Google (Google Identity Services): mostra o nome do app em vez do endereço técnico do banco. */
