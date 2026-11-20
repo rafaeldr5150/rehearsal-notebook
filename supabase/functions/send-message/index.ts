@@ -137,9 +137,13 @@ Deno.serve(async (req) => {
     `Você recebeu isto porque ligou "Aceito receber mensagens" no seu perfil. Para parar de receber, desligue essa opção em Músicos > Meu perfil.\n` +
     `Se for abuso ou spam, denuncie o perfil de ${fromName} no app.`;
   const html = emailHtml(fromName, toName, text, profileUrl);
+  // The subject is plain ASCII and short on purpose: accents or "·" make the mail library fold an encoded subject badly,
+  // and some mail clients then show the whole message as raw text.
+  const asciiName = fromName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7e]/g, "").replace(/\s+/g, " ").trim().slice(0, 28);
+  const subject = asciiName ? `${asciiName} - Nova mensagem no Rehearsal Notebook` : "Nova mensagem no Rehearsal Notebook";
   let sent = false;
   lastErr = "";
-  try { sent = await sendMail({ to: g.to_email, toName: oneLine(g.to_name, 60), replyTo: g.from_email, replyName: fromName, subject: `${fromName} enviou uma mensagem para você · Rehearsal Notebook`, text: body, html }); } catch (e) { sent = false; lastErr = "throw:" + String((e as Error).message || e).slice(0, 160); }
+  try { sent = await sendMail({ to: g.to_email, toName: oneLine(g.to_name, 60), replyTo: g.from_email, replyName: fromName, subject, text: body, html }); } catch (e) { sent = false; lastErr = "throw:" + String((e as Error).message || e).slice(0, 160); }
   if (!sent) { console.error("send-message failed:", lastErr); return J({ ok: false, error: "send", detail: lastErr }, 502); }
   await sb.from("ce_messages").update({ ok: true }).eq("id", g.id);
   return J({ ok: true });
