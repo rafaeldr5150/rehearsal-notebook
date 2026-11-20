@@ -33,6 +33,17 @@
 .rec-meter i{display:block;height:100%;width:0;border-radius:99px;background:#38d39f;transition:width .08s linear}
 .rec-meter i.warm{background:#f5b83c}.rec-meter i.hot{background:#ff4d4d}
 .rec-warn{color:#ff8a8a!important}
+/* ===== sugestões de músicas ===== */
+.ideas>h3{font-size:22px;color:var(--ink);margin-bottom:6px}
+.ideas>h3 .faint{font-family:var(--f-body,inherit);text-transform:none;font-size:14px;text-shadow:none}
+.idea-list{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:12px}
+.idea{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;align-items:center;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.idea-info{display:flex;flex-direction:column;gap:3px;min-width:0}
+.idea-info b{font-size:18px;overflow-wrap:anywhere}.idea-info small{font-size:14px;color:var(--muted)}
+.idea-vote{min-width:82px;min-height:48px;font-size:17px}
+.idea-actions{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.idea-actions .btn:only-child{grid-column:1 / -1}
+.idea-form{display:flex;flex-direction:column;gap:12px}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -1167,6 +1178,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
     <section id="reh" class="reh"></section>
     <section id="folders" class="folders" hidden></section>
     <section id="lineup" class="lineup"></section>
+    <section id="ideas" class="ideas"></section>
     <section id="feed" class="feed"></section>
 
     <section class="panel" id="panel-add" hidden>
@@ -1232,7 +1244,7 @@ var met={ctx:null,running:false,beat:0,next:0,timer:null,songId:null,delta:0};
 var ui={edit:{},more:{},tr:{},arm:{},ced:{}}, fs=15, fss=26;
 var setlist=null, setDoc=null, stage=null, setChain=Promise.resolve();
 var live=null, liveDoc=null, following=false, lastLiveSong='', lyBusy=false;
-var linksCfg=null, linksDoc=null, spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0,hold:null,done:{}};
+var linksCfg=null, linksDoc=null, spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, ideas=[], ideasCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0,hold:null,done:{}};
 var pend={}, drafts={}, renderTimer=null;
 var BG=['flat','top','soft'], BGN={soft:'parede suave',top:'parede só no topo',flat:'liso'}, bgMode='flat';
 try{bgMode=localStorage.getItem('ce-bg2')||'flat'}catch(e){}
@@ -2033,6 +2045,24 @@ function renderLineup(){
   el.innerHTML=members().length?'<h3>A banda <span class="faint">toque no seu nome</span></h3>'+
     '<div class="whoami">'+(meM?'Você é <b>'+esc(first(meM.name))+'</b> ('+esc(meM.instrument)+') ':'Ainda não escolheu quem você é. ')+'<button type="button" class="btn small" data-act="who-open">'+(meM?'Trocar':'Quem sou eu?')+'</button></div><div class="mgrid'+(meM?' has-me':'')+'">'+members().slice().sort(function(x,y){return (y.id===meMember)-(x.id===meMember)}).map(function(m){return mcardHTML(m,false)}).join('')+'</div>':'';
 }
+function ideaVotes(i){return Array.isArray(i.votes)?i.votes:[]}
+function renderIdeas(){
+  var el=$('#ideas');if(!el)return;
+  if(!loaded||!members().length){el.innerHTML='';return}
+  var list=ideas.slice().sort(function(a,b){return ideaVotes(b).length-ideaVotes(a).length||(a.at||0)-(b.at||0)});
+  var h='<h3>Sugestões de músicas <span class="faint">a banda vota no que aprender</span></h3>';
+  if(!list.length)h+='<p class="hint">Ninguém sugeriu música ainda. Que tal a primeira?</p>';
+  else h+='<ul class="idea-list">'+list.map(function(i){
+    var v=ideaVotes(i),mine=!!meMember&&v.indexOf(meMember)>=0,by=member(i.by),
+        armA=ui.armIdea==='a'+i.id,armD=ui.armIdea==='d'+i.id,canDel=(i.by&&i.by===meMember)||canAdmin;
+    return '<li class="idea"><div class="idea-info"><b>'+esc(i.title)+'</b><small>'+esc(i.artist||'')+(by?(i.artist?' · ':'')+'sugerida por '+esc(first(by.name)):'')+'</small></div>'+
+      '<button type="button" class="btn idea-vote'+(mine?' primary':'')+'" data-act="idea-vote" data-id="'+i.id+'" aria-pressed="'+mine+'" aria-label="Votar">👍 '+v.length+'</button>'+
+      '<div class="row-actions idea-actions"><button type="button" class="btn small'+(armA?' primary':'')+'" data-act="idea-ok" data-id="'+i.id+'">'+(armA?'Confirmar: vai para o setlist':'Aprovar e colocar no setlist')+'</button>'+
+      (canDel?'<button type="button" class="btn small'+(armD?' danger armed':'')+'" data-act="idea-del" data-id="'+i.id+'">'+(armD?'Confirmar: remover':'Remover')+'</button>':'')+'</div></li>'}).join('')+'</ul>';
+  h+=ui.ideaOpen?'<div class="idea-form"><input type="text" data-draft="idea:t" data-fk="ideat" value="'+esc(drafts['idea:t']||'')+'" placeholder="Nome da música" maxlength="120" aria-label="Nome da música"><input type="text" data-draft="idea:a" data-fk="ideaa" value="'+esc(drafts['idea:a']||'')+'" placeholder="Artista ou banda" maxlength="120" aria-label="Artista"><div class="row-actions"><button type="button" class="btn primary" data-act="idea-send">Sugerir</button><button type="button" class="btn" data-act="idea-close">Cancelar</button></div></div>'
+    :'<div class="row-actions"><button type="button" class="btn primary" data-act="idea-open">+ Sugerir uma música</button></div>';
+  el.innerHTML=h;
+}
 function renderWho(){
   var el=$('#who');if(!el)return;
   if(!whoOpen||!members().length){el.hidden=true;el.innerHTML='';return}
@@ -2793,7 +2823,7 @@ function commentsBlock(s){
 
 /* ---------- render principal ---------- */
 function renderHome(){
-  renderHero();renderSummary();renderInstallBar();renderReh();renderFolders();renderLineup();renderFeed();
+  renderHero();renderSummary();renderInstallBar();renderReh();renderFolders();renderLineup();renderIdeas();renderFeed();
   if(!loaded)return;
   var q=query.trim().toLowerCase();
   var vis=songs.filter(function(s){
@@ -3431,6 +3461,29 @@ document.addEventListener('click',function(e){
     if(!ui.armLeave){ui.armLeave=true;t.textContent='Confirmar: sair desta banda';t.classList.add('danger','armed');toast('Você vai precisar do código para entrar de novo.');return}
     try{localStorage.removeItem('ce-band');localStorage.removeItem('ce-me')}catch(err){}
     location.href=location.pathname;return}
+  if(/^idea-/.test(act)){
+    if(!ideasCol){toast('O banco de dados não está disponível nesta visualização.');return}
+    if(act==='idea-open'){if(!meMember){toast('Escolha quem você é primeiro.');whoOpen=true;render();return}ui.ideaOpen=true;render();return}
+    if(act==='idea-close'){ui.ideaOpen=false;render();return}
+    if(act==='idea-send'){
+      var it=String(drafts['idea:t']||'').trim().slice(0,120),ia=String(drafts['idea:a']||'').trim().slice(0,120);
+      if(!it){toast('Informe o nome da música.');return}
+      if(ideas.some(function(x){return String(x.title||'').toLowerCase()===it.toLowerCase()&&String(x.artist||'').toLowerCase()===ia.toLowerCase()})){toast('Essa música já foi sugerida.');return}
+      ideasCol.add({title:it,artist:ia,by:meMember||null,votes:meMember?[meMember]:[],at:Date.now()}).then(function(){drafts['idea:t']='';drafts['idea:a']='';ui.ideaOpen=false;toast('Sugestão enviada.');render()}).catch(fail);return}
+    var idea=ideas.filter(function(x){return x.id===id})[0];if(!idea)return;
+    if(act==='idea-vote'){
+      if(!meMember){toast('Escolha quem você é primeiro.');whoOpen=true;render();return}
+      var vs=ideaVotes(idea).slice(),ix=vs.indexOf(meMember);if(ix>=0)vs.splice(ix,1);else vs.push(meMember);
+      ideasCol.doc(id).update({votes:vs}).catch(fail);return}
+    if(act==='idea-ok'){
+      if(ui.armIdea!=='a'+id){ui.armIdea='a'+id;render();clearTimeout(ui.armIdeaT);ui.armIdeaT=setTimeout(function(){ui.armIdea='';render()},5000);return}
+      ui.armIdea='';
+      if(!col){toast('O banco de dados não está disponível nesta visualização.');return}
+      col.add({title:idea.title,artist:idea.artist||'',duration:null,link:'',notes:'',order:Date.now(),parts:{}}).then(function(){return ideasCol.doc(id).delete()}).then(function(){toast('"'+idea.title+'" entrou no setlist.');render()}).catch(fail);return}
+    if(act==='idea-del'){
+      if(ui.armIdea!=='d'+id){ui.armIdea='d'+id;render();clearTimeout(ui.armIdeaT);ui.armIdeaT=setTimeout(function(){ui.armIdea='';render()},5000);return}
+      ui.armIdea='';ideasCol.doc(id).delete().catch(fail);return}
+    return}
   if(act==='invite-rotate'){
     if(!ui.armRot){ui.armRot=true;toast('Quem tem o convite antigo perde o acesso. Toque de novo para confirmar.');renderConfig();clearTimeout(ui.armRotT);ui.armRotT=setTimeout(function(){ui.armRot=false;if(location.hash==='#config')renderConfig()},6000);return}
     ui.armRot=false;toast('Gerando…');
@@ -3789,6 +3842,11 @@ function start(){
     },function(){});
     showDoc=db.doc('config/show');
     showDoc.onSnapshot(function(snap){showCfg=snap.exists?snap.data():null;if(editingField())softRender();else render()},function(){});
+    ideasCol=db.collection('ideas');
+    ideasCol.onSnapshot(function(snap){
+      ideas=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())}).filter(function(x){return x.title});
+      if(editingField())softRender();else render();
+    },function(){});
     cmCol=db.collection('comments');
     cmCol.onSnapshot(function(snap){
       comments=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())}).sort(function(a,b){return (a.at||0)-(b.at||0)});

@@ -19,6 +19,19 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Sugestões de músicas','Song suggestions','Sugerencias de canciones'],
+['a banda vota no que aprender','the band votes on what to learn','la banda vota qué aprender'],
+['Ninguém sugeriu música ainda. Que tal a primeira?','Nobody has suggested a song yet. How about the first one?','Nadie ha sugerido una canción aún. ¿Y si sugieres la primera?'],
+['Aprovar e colocar no setlist','Approve and add to the setlist','Aprobar y añadir al setlist'],
+['Confirmar: vai para o setlist','Confirm: goes to the setlist','Confirmar: va al setlist'],
+['Confirmar: remover','Confirm: remove','Confirmar: quitar'],
+['+ Sugerir uma música','+ Suggest a song','+ Sugerir una canción'],
+['Nome da música','Song name','Nombre de la canción'],
+['Artista ou banda','Artist or band','Artista o banda'],
+['Sugerir','Suggest','Sugerir'],
+['Informe o nome da música.','Enter the song name.','Escribe el nombre de la canción.'],
+['Essa música já foi sugerida.','That song was already suggested.','Esa canción ya fue sugerida.'],
+['Sugestão enviada.','Suggestion sent.','Sugerencia enviada.'],
 ['Gerar novo convite','Generate new invite','Generar nueva invitación'],
 ['Toque de novo para gerar o novo convite','Tap again to generate the new invite','Toca de nuevo para generar la nueva invitación'],
 ['O link e o código atuais deixam de valer. Você manda o novo para a banda.','The current link and code stop working. You send the new one to the band.','El enlace y el código actuales dejan de valer. Tú envías el nuevo a la banda.'],
