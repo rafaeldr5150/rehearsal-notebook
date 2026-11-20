@@ -111,7 +111,7 @@ function arpc(fn,args){
       .then(function(r){return r.ok?r.json():r.text().then(function(t){throw new Error(t)})});
   });
 }
-function uname(s){var u=s.user||{},m=u.user_metadata||{};return {email:u.email||'',name:m.full_name||m.name||''}}
+function uname(s){var u=s.user||{},m=u.user_metadata||{};return {id:u.id||'',email:u.email||'',name:m.full_name||m.name||''}}
 window.CE_AUTH={
   user:null,role:'',
   openEntry:function(){try{sessionStorage.setItem('ce-entry','1')}catch(e){}location.href=location.pathname},

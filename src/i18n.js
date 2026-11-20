@@ -19,6 +19,7 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Você não pode enviar mensagem para você mesmo.','You cannot send a message to yourself.','No puedes enviarte un mensaje a ti mismo.'],
 ['Aceito receber mensagens por e-mail','I accept messages by email','Acepto recibir mensajes por correo'],
 ['Aparece um botão “Enviar mensagem” no seu perfil. A mensagem chega no e-mail da sua conta, sem mostrar esse e-mail a quem escreve. Só vale se o perfil estiver visível.','A “Send message” button shows on your profile. The message arrives at your account email without showing that email to the sender. Only works if the profile is visible.','Aparece un botón “Enviar mensaje” en tu perfil. El mensaje llega al correo de tu cuenta sin mostrar ese correo a quien escribe. Solo vale si el perfil es visible.'],
 ['✉ Enviar mensagem','✉ Send message','✉ Enviar mensaje'],

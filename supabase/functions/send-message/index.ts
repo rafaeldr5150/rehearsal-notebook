@@ -24,12 +24,14 @@ const smtpHost = Deno.env.get("SMTP_HOST") || "smtp.gmail.com";
 const mailFrom = Deno.env.get("MAIL_FROM") || smtpUser;
 const configured = !!(((resendKey || brevoKey) && mailFrom) || (smtpUser && smtpPass));
 
+let lastErr = "";
 async function sendMail(m: { to: string; toName: string; replyTo: string; replyName: string; subject: string; text: string }): Promise<boolean> {
   if (resendKey) {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: "Bearer " + resendKey, "Content-Type": "application/json" },
       body: JSON.stringify({ from: mailFrom, to: [m.to], reply_to: m.replyTo, subject: m.subject, text: m.text }),
     });
+    if (!r.ok) lastErr = "resend:" + r.status + " " + (await r.text()).slice(0, 120);
     return r.ok;
   }
   if (brevoKey) {
@@ -38,6 +40,7 @@ async function sendMail(m: { to: string; toName: string; replyTo: string; replyN
       method: "POST", headers: { "api-key": brevoKey, "Content-Type": "application/json", accept: "application/json" },
       body: JSON.stringify({ sender: { email: addr, name: "Rehearsal Notebook" }, to: [{ email: m.to, name: m.toName || undefined }], replyTo: { email: m.replyTo, name: m.replyName || undefined }, subject: m.subject, textContent: m.text }),
     });
+    if (!r.ok) lastErr = "brevo:" + r.status + " " + (await r.text()).slice(0, 120);
     return r.ok;
   }
   if (smtpUser && smtpPass) {
@@ -46,7 +49,7 @@ async function sendMail(m: { to: string; toName: string; replyTo: string; replyN
     try {
       await client.send({ from: `Rehearsal Notebook <${addr}>`, to: m.to, replyTo: m.replyTo, subject: m.subject, content: m.text });
       return true;
-    } catch (_) { return false; } finally { try { await client.close(); } catch (_) { /* ignore */ } }
+    } catch (e) { lastErr = "smtp:" + String((e as Error).message || e).slice(0, 160); return false; } finally { try { await client.close(); } catch (_) { /* ignore */ } }
   }
   return false;
 }
@@ -83,8 +86,9 @@ Deno.serve(async (req) => {
     `Você recebeu isto porque ligou "Aceito receber mensagens" no seu perfil. Para parar de receber, desligue essa opção em Músicos > Meu perfil.\n` +
     `Se for abuso ou spam, denuncie o perfil de ${fromName} no app.`;
   let sent = false;
-  try { sent = await sendMail({ to: g.to_email, toName: oneLine(g.to_name, 60), replyTo: g.from_email, replyName: fromName, subject: `Mensagem de ${fromName} no Rehearsal Notebook`, text: body }); } catch (_) { sent = false; }
-  if (!sent) return J({ ok: false, error: "send" }, 502);
+  lastErr = "";
+  try { sent = await sendMail({ to: g.to_email, toName: oneLine(g.to_name, 60), replyTo: g.from_email, replyName: fromName, subject: `Mensagem de ${fromName} no Rehearsal Notebook`, text: body }); } catch (e) { sent = false; lastErr = "throw:" + String((e as Error).message || e).slice(0, 160); }
+  if (!sent) { console.error("send-message failed:", lastErr); return J({ ok: false, error: "send", detail: lastErr }, 502); }
   await sb.from("ce_messages").update({ ok: true }).eq("id", g.id);
   return J({ ok: true });
 });

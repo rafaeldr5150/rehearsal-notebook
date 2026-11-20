@@ -2194,6 +2194,7 @@ function musRoute(){var h=location.hash.replace(/^#/,'');if(h==='musicos')return
 function musErr(e){var m=String(e&&e.message||e||'');
   if(/url/.test(m))return 'Link não aceito. Use YouTube, Vimeo, Instagram, TikTok, Facebook ou Google Drive, começando com https://.';
   if(/limit/.test(m))return 'Você chegou ao limite de 30 vídeos. Apague algum para adicionar outro.';
+  if(/self/.test(m))return 'Você não pode enviar mensagem para você mesmo.';
   if(/mail_off/.test(m))return 'O envio de mensagens ainda não foi ativado no app. Use o contato do perfil por enquanto.';
   if(/rate_sender/.test(m))return 'Você já enviou 5 mensagens hoje. Tente amanhã.';
   if(/rate_pair/.test(m))return 'Você já enviou 2 mensagens para essa pessoa hoje. Espere até amanhã.';
@@ -2301,7 +2302,7 @@ function musProfileView(id){
   var back='<a class="btn small" href="#musicos">← Músicos</a>';
   if(!v)return '<div class="phead"><div><div class="faint">Músico</div><h2>Carregando…</h2></div></div>';
   if(v.missing)return '<div class="phead"><div><div class="faint">Músico</div><h2>Perfil não encontrado</h2></div></div><p class="hint">Esse perfil não existe ou não está visível.</p><div class="row-actions no-fill">'+back+'</div>';
-  var p=v.profile,mine=!!(window.CE_AUTH&&mus.me&&mus.me.profile&&mus.me.profile.user_id===p.user_id);
+  var p=v.profile,myId=window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.id,mine=!!((myId&&myId===p.user_id)||(mus.me&&mus.me.profile&&mus.me.profile.user_id===p.user_id));
   var sec=function(t,a,cls){return a&&a.length?'<div class="panel"><h3>'+t+'</h3><div class="mus-tags">'+musChips(a,cls)+'</div></div>':''};
   return '<div class="row-actions no-fill">'+back+'</div>'+
     '<div class="mus-hero">'+musAvatar(p,112)+'<div><h2>'+esc(p.name)+'</h2><div class="faint">'+esc(p.city||'')+'</div>'+(p.visible?'':'<div class="tag">Só você vê este perfil</div>')+'</div></div>'+
