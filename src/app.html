@@ -3091,18 +3091,12 @@ function renderFolders(){
   if(s)h+='<a class="btn" target="_blank" rel="noopener" href="'+esc(s)+'">📁 Pasta das gravações ↗</a>';
   if(window.CE_DRIVE&&d&&d.connected)h+='<button type="button" class="btn primary" data-act="media-open">📷 Fotos e vídeos</button>';
   var warn=(window.CE_DRIVE&&d&&d.connected&&d.expired)?'<div class="drive-warn"><span>A conexão com o Google Drive expirou.</span><button type="button" class="btn small primary" data-act="drive-reconnect">Reconectar</button></div>':'';
-  h+=v?'<a class="btn" target="_blank" rel="noopener" href="'+esc(v)+'">🎬 Vídeos da banda ↗</a>':'<a class="btn" href="#config" data-act="vid-define">🎬 Definir a pasta de vídeos</a>';
+  h+=v?'<a class="btn" target="_blank" rel="noopener" href="'+esc(v)+'">📂 Pasta de fotos e vídeos ↗</a>':'<a class="btn" href="#config" data-act="vid-define">📂 Definir a pasta de fotos e vídeos</a>';
   el.hidden=!(window.CE_DRIVE||v);
   if(el.hidden){el.innerHTML='';return}
-  if(window.CE_DRIVE&&d&&d.connected&&d.videos){
-    ensureVidList();
-    var u=ui.vup,l=ui.vidFiles;
-    extra='<div class="vid-box">'+(u?'<p class="hint">Enviando '+esc(u.name)+' ('+u.i+' de '+u.n+')… <span class="vup-prog mono">'+Math.round(u.p*100)+'%</span></p>':'<div class="row-actions"><button type="button" class="btn small primary" data-act="vid-upload">Enviar vídeo</button></div>');
-    if(l===null)extra+='<p class="hint">Não foi possível carregar a lista agora.</p>';
-    else if(l&&l.length)extra+='<ul class="rec-list">'+l.slice(0,ui.vidAll?50:5).map(function(f){var arm=ui.armDel===f.id;
-      return '<li><div class="rec-meta"><b>'+esc(f.name)+'</b><small>'+esc(f.createdTime?new Date(f.createdTime).toLocaleDateString(window.CE_LOCALE||'pt-BR'):'')+(f.size?' · '+fileSize(f.size):'')+'</small></div><div class="row-actions"><button type="button" class="btn small primary" data-act="vid-watch" data-fid="'+f.id+'" data-name="'+esc(f.name)+'" data-img="'+(/^image\//.test(f.mimeType||'')?'1':'')+'">'+(ui.watchLoad===f.id?'Carregando…':/^image\//.test(f.mimeType||'')?'🖼 Ver':'▶ Assistir')+'</button>'+
-        '<button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="vid-del" data-fid="'+f.id+'">'+(arm?'Confirmar: apagar':'Apagar')+'</button>'+(f.webViewLink?'<a class="btn small" target="_blank" rel="noopener" href="'+esc(f.webViewLink)+'">Drive ↗</a>':'')+'</div></li>'}).join('')+'</ul>'+(l.length>5&&!ui.vidAll?'<div class="row-actions"><button type="button" class="btn small" data-act="vid-all">Ver todos ('+l.length+')</button></div>':'');
-    extra+='</div>';
+  if(window.CE_DRIVE&&d&&d.connected&&d.videos&&ui.vup){
+    var u=ui.vup;
+    extra='<p class="hint">Enviando '+esc(u.name)+' ('+u.i+' de '+u.n+')… <span class="vup-prog mono">'+Math.round(u.p*100)+'%</span></p>';
   }
   el.innerHTML='<h3>Pastas da banda</h3>'+warn+'<div class="row-actions">'+h+'</div>'+extra;
 }

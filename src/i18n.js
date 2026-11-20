@@ -19,6 +19,7 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['📂 Pasta de fotos e vídeos ↗','📂 Photos and videos folder ↗','📂 Carpeta de fotos y vídeos ↗'],['📂 Definir a pasta de fotos e vídeos','📂 Set the photos and videos folder','📂 Definir la carpeta de fotos y vídeos'],
 ['A conexão com o Google Drive expirou','The Google Drive connection expired','La conexión con Google Drive expiró'],
 ['As gravações, fotos e vídeos não conseguem ser enviados até você reconectar. As pastas e os arquivos continuam no seu Drive.','Recordings, photos and videos cannot be sent until you reconnect. The folders and files stay in your Drive.','Las grabaciones, fotos y vídeos no se pueden enviar hasta que reconectes. Las carpetas y los archivos siguen en tu Drive.'],
 ['Reconectar o Google Drive','Reconnect Google Drive','Reconectar Google Drive'],['Entre de novo com a mesma conta. As pastas continuam as mesmas.','Sign in again with the same account. The folders stay the same.','Entra de nuevo con la misma cuenta. Las carpetas siguen siendo las mismas.'],
