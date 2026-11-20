@@ -1014,6 +1014,26 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
   .tools>.btn,.tools>button{flex:1 1 100%;display:inline-flex;align-items:center;justify-content:center}
   .stage-top .chips,.stage-tools .row-actions,#stage .row-actions{flex-wrap:wrap}
 }
+
+/* cartões da banda: maiores, com foto */
+.mico.has-photo{background:transparent!important;border-color:transparent;overflow:hidden;padding:0}
+.mico .av{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+.nv .av,#tabbar .av{width:22px;height:22px;border-radius:50%;object-fit:cover}
+#tabbar .av{width:24px;height:24px}
+.pav{display:inline-block;width:46px;height:46px;border-radius:50%;overflow:hidden;vertical-align:middle;margin-right:10px;border:2px solid currentColor}
+.pav img{width:100%;height:100%;object-fit:cover;display:block}
+@media (max-width:900px){
+  #lineup .mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;gap:16px 14px;padding:14px 2px 6px}
+  #lineup .mcard{flex:none;width:auto;min-height:168px;padding:20px 10px 14px;gap:4px;box-sizing:border-box}
+  #lineup .mgrid .mcard:last-child:nth-child(odd){grid-column:1 / -1}
+  #lineup .mico{width:76px;height:76px;border-width:3px;margin-bottom:6px}
+  #lineup .mico.has-photo{border-width:0}
+  #lineup .mico .ico{width:36px;height:36px}
+  #lineup .mname{font-size:20px}
+  #lineup .minst{font-size:14px;margin:0}
+  #lineup .mcard .stars{font-size:15px;letter-spacing:2px;margin-top:2px}
+  #lineup .mcount{display:block;font-size:13px;margin-top:2px}
+}
 /* ensaio, atividade, status, tour */
 .reh,.feed{display:flex;flex-direction:column;gap:10px}
 .reh:empty,.feed:empty{display:none}
@@ -1926,11 +1946,36 @@ function mstats(m){
   songs.forEach(function(s){var p=partOf(s,m.id);if(p.status===3)return;total++;if(p.status===2)done++});
   return {total:total,done:done,pct:total?Math.round(done/total*100):0,pend:pendingFor(m.id).length};
 }
+function avatarHTML(m,sz){
+  if(m&&m.photo&&/^data:image\//.test(m.photo))return '<img class="av" alt="" src="'+m.photo+'" width="'+sz+'" height="'+sz+'">';
+  return svgIco(icoFor(m.instrument),sz);
+}
+function resizePhoto(file,size){
+  size=size||320;
+  return (window.createImageBitmap?createImageBitmap(file,{imageOrientation:'from-image'}).catch(function(){return createImageBitmap(file)}):Promise.reject()).catch(function(){
+    return new Promise(function(res,rej){var im=new Image(),u=URL.createObjectURL(file);im.onload=function(){URL.revokeObjectURL(u);res(im)};im.onerror=rej;im.src=u});
+  }).then(function(src){
+    var w=src.width||src.naturalWidth,h=src.height||src.naturalHeight,s=Math.min(w,h),c=document.createElement('canvas');c.width=c.height=size;
+    c.getContext('2d').drawImage(src,(w-s)/2,(h-s)/2,s,s,0,0,size,size);
+    return c.toDataURL('image/jpeg',0.82);
+  });
+}
+function setMemberPhoto(mid,url){
+  if(!cfg||!band)return Promise.reject();
+  var nb=Object.assign({},band,{members:(band.members||[]).map(function(m){if(m.id!==mid)return m;var n=Object.assign({},m);if(url)n.photo=url;else delete n.photo;return n})});
+  return cfg.set(nb).then(function(){band=nb;render()});
+}
+var selfPhotoInp=document.createElement('input');selfPhotoInp.type='file';selfPhotoInp.accept='image/*';selfPhotoInp.hidden=true;document.body.appendChild(selfPhotoInp);
+selfPhotoInp.onchange=function(){
+  var f=selfPhotoInp.files&&selfPhotoInp.files[0];selfPhotoInp.value='';var mid=ui.photoFor;if(!f||!mid)return;
+  toast('Preparando a foto…');
+  resizePhoto(f).then(function(u){return setMemberPhoto(mid,u)}).then(function(){toast('Foto salva.')}).catch(function(){toast('Não foi possível usar essa foto.')});
+};
 function mcardHTML(m,pick){
   var st=mstats(m),me=meMember===m.id;
   return '<a class="mcard'+(me?' me':'')+'" href="#pessoa-'+m.id+'" data-act="'+(pick?'pick-me':'go-member')+'" data-id="'+m.id+'">'+
     (me?'<span class="me-tag">Você</span>':'')+(st.pend?'<span class="badge pend" title="'+st.pend+' pendentes">'+st.pend+'</span>':'')+
-    '<span class="mico">'+svgIco(icoFor(m.instrument),30)+'</span>'+
+    '<span class="mico'+(m.photo?' has-photo':'')+'">'+avatarHTML(m,m.photo?96:30)+'</span>'+
     '<span class="mname">'+esc(first(m.name))+'</span><span class="minst">'+esc(m.instrument)+'</span>'+
     starsHTML(st.pct)+'<span class="mcount">'+st.done+' de '+st.total+' prontas</span></a>';
 }
@@ -1952,11 +1997,11 @@ function renderTabbar(){
   var el=$('#tabbar');if(!el)return;
   var pid=view(),hh=location.hash.replace(/^#/,''),me=meMember&&member(meMember);
   function tab(href,label,ico,cur,act){
-    var inner=svgIco(ico,24)+'<span>'+esc(label)+'</span>';
+    var inner=(String(ico).charAt(0)==='<'?ico:svgIco(ico,24))+'<span>'+esc(label)+'</span>';
     return href?'<a href="'+href+'"'+(cur?' aria-current="page"':'')+'>'+inner+'</a>':'<button type="button" data-act="'+act+'"'+(cur?' aria-current="page"':'')+'>'+inner+'</button>';
   }
   el.innerHTML=tab('#geral','Geral','home',!pid&&hh!=='setlist'&&hh!=='config')+tab('#setlist','Setlist','list',hh==='setlist')+
-    (me?tab('#pessoa-'+me.id,first(me.name),icoFor(me.instrument),pid===me.id):tab(null,'Quem sou eu?','user',false,'who-open'))+
+    (me?tab('#pessoa-'+me.id,first(me.name),me.photo?avatarHTML(me,24):icoFor(me.instrument),pid===me.id):tab(null,'Quem sou eu?','user',false,'who-open'))+
     tab('#config','Configurações','gear',hh==='config');
 }
 
@@ -1991,7 +2036,7 @@ function renderSide(){
     '<div class="sl">Banda</div>'+
     members().map(function(m){
       var n=pendingFor(m.id).length;
-      return '<a href="#pessoa-'+m.id+'"'+(pid===m.id?' aria-current="page"':'')+'><span class="nv">'+svgIco(icoFor(m.instrument),22)+'<span><b>'+esc(first(m.name))+(meMember===m.id?' <em>(você)</em>':'')+'</b><small>'+esc(m.instrument)+'</small></span></span>'+(n?'<span class="badge" title="'+n+' pendentes para o próximo ensaio ou setlist">'+n+'</span>':'')+'</a>';
+      return '<a href="#pessoa-'+m.id+'"'+(pid===m.id?' aria-current="page"':'')+'><span class="nv">'+avatarHTML(m,22)+'<span><b>'+esc(first(m.name))+(meMember===m.id?' <em>(você)</em>':'')+'</b><small>'+esc(m.instrument)+'</small></span></span>'+(n?'<span class="badge" title="'+n+' pendentes para o próximo ensaio ou setlist">'+n+'</span>':'')+'</a>';
     }).join('')+'<div class="foot"></div><a href="#config"'+(h==='config'?' aria-current="page"':'')+'><span class="nv">'+svgIco('gear',22)+'<span><b>Configurações</b></span></span></a>';
 }
 function alertHTML(pid){
@@ -2305,7 +2350,7 @@ function renderPerson(pid){
   var body=!loaded?'':!mine.length?'<div class="empty-state"><strong>Nenhuma música para você ainda</strong>Defina a função de '+esc(first(m.name))+' em cada música na página Geral.</div>'
     :!vis.length?'<div class="empty-state"><strong>Nada por aqui</strong>Nenhuma música combina com a busca ou o filtro.</div>'
     :flatHTML(vis,function(s){return pcardHTML(s,pid)});
-  el.innerHTML='<div class="phead"><div><div class="faint">Página pessoal</div><h2>'+esc(m.name)+' <span class="faint" style="font-weight:400">· '+esc(m.instrument)+'</span></h2><div class="row-actions" style="margin-top:8px">'+(meMember===pid?'<span class="tag" style="background:var(--red);color:#fff;border-color:var(--paper-ink)">Esta é a sua página</span>':'<button type="button" class="btn small" data-act="set-me" data-id="'+pid+'">Sou eu</button>')+'<button type="button" class="btn small" data-act="who-nav">Trocar de músico</button></div></div>'+
+  el.innerHTML='<div class="phead"><div><div class="faint">Página pessoal</div><h2>'+(m.photo?'<span class="pav"><img alt="" src="'+m.photo+'"></span>':'')+esc(m.name)+' <span class="faint" style="font-weight:400">· '+esc(m.instrument)+'</span></h2><div class="row-actions" style="margin-top:8px">'+(meMember===pid?'<span class="tag" style="background:var(--red);color:#fff;border-color:var(--paper-ink)">Esta é a sua página</span><button type="button" class="btn small" data-act="photo-pick" data-id="'+pid+'">'+(m.photo?'📷 Trocar minha foto':'📷 Minha foto')+'</button>':'<button type="button" class="btn small" data-act="set-me" data-id="'+pid+'">Sou eu</button>')+'<button type="button" class="btn small" data-act="who-nav">Trocar de músico</button></div></div>'+
     '<div class="pstat"><div class="pl" style="display:flex;justify-content:space-between"><b>'+done+' de '+mine.length+' prontas</b><span class="mono faint">'+pc+'%</span></div>'+starsHTML(pc)+'</div></div>'+
     alertHTML(pid)+'<div class="tools"><input class="grow" type="search" id="pq" data-fk="pq" value="'+esc(pquery)+'" placeholder="Buscar por título ou artista" aria-label="Buscar música"><div class="chips">'+chipsHTML(PFILTERS,'pfilter',pfilter,pcounts)+'</div></div>'+
     '<div id="plist" style="display:flex;flex-direction:column;gap:8px">'+body+'</div>';
@@ -3185,7 +3230,7 @@ function renderConfig(){
   function row(act,ico,t,sub){return '<button type="button" class="cfg-row" data-act="'+act+'">'+svgIco(ico,24)+'<span><b>'+t+'</b><small>'+sub+'</small></span><i aria-hidden="true">›</i></button>'}
   var nl=canFetchLyrics()?songs.filter(function(s){return !s.lyrics}).length:0;
   el.innerHTML='<div class="phead"><div><div class="faint">Ajustes</div><h2>Configurações</h2></div></div>'+
-   '<section class="cfg"><h3>Você</h3>'+row('who-open','user','Quem sou eu',me?'Você é '+esc(first(me.name))+' ('+esc(me.instrument)+')':'Escolha o seu nome')+'</section>'+
+   '<section class="cfg"><h3>Você</h3>'+row('who-open','user','Quem sou eu',me?'Você é '+esc(first(me.name))+' ('+esc(me.instrument)+')':'Escolha o seu nome')+(me?row('photo-pick','user',me.photo?'Trocar a minha foto':'Minha foto','Aparece no seu cartão da banda')+(me.photo?row('photo-del','user','Remover a minha foto','Volta o ícone do instrumento'):''):'')+'</section>'+
    '<section class="cfg"><h3>Aparência</h3>'+row('skin-open','nota','Layout e idioma',esc(sk?sk[1]:'')+' · '+lg)+
      (skin==='cartaz'?row('bg-cycle','list','Fundo da página',BGN[bgMode]):'')+'</section>'+
    '<section class="cfg"><h3>Banda</h3>'+row('open-band','group','Banda','Nome, logo, integrantes e convite')+
@@ -3416,6 +3461,8 @@ document.addEventListener('click',function(e){
   if(act==='rec-cancel'){recStop(true);return}
   if(act==='rec-flush'){toast('Enviando…');window.CE_DRIVE.flush().then(function(n){ui.recPending=n;toast(n?'Ainda há '+n+' aguardando. Tente de novo com internet.':'Tudo enviado.');render()});return}
   if(act==='vid-upload'){videoInp.click();return}
+  if(act==='photo-pick'){ui.photoFor=id||meMember;if(!ui.photoFor){toast('Escolha quem você é primeiro.');return}selfPhotoInp.click();return}
+  if(act==='photo-del'){if(meMember)setMemberPhoto(meMember,null).then(function(){toast('Foto removida.')}).catch(function(){toast('Não foi possível remover agora.')});return}
   if(act==='drive-reconnect'){window.CE_DRIVE.connect();return}
   if(act==='media-open'){ui.mediaPick=true;renderMediaPick();return}
   if(act==='media-close'){ui.mediaPick=false;renderMediaPick();return}

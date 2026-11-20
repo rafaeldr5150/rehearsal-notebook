@@ -19,6 +19,10 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['📷 Minha foto','📷 My photo','📷 Mi foto'],['📷 Trocar minha foto','📷 Change my photo','📷 Cambiar mi foto'],['Minha foto','My photo','Mi foto'],['Trocar a minha foto','Change my photo','Cambiar mi foto'],
+['Aparece no seu cartão da banda','Shows on your band card','Aparece en tu tarjeta de la banda'],['Remover a minha foto','Remove my photo','Quitar mi foto'],['Volta o ícone do instrumento','Brings back the instrument icon','Vuelve el icono del instrumento'],
+['Preparando a foto…','Preparing the photo…','Preparando la foto…'],['Foto salva.','Photo saved.','Foto guardada.'],['Não foi possível usar essa foto.','Could not use that photo.','No se pudo usar esa foto.'],
+['Foto removida.','Photo removed.','Foto quitada.'],['Não foi possível remover agora.','Could not remove right now.','No se pudo quitar ahora.'],['Escolha quem você é primeiro.','Choose who you are first.','Elige quién eres primero.'],
 ['📂 Pasta de fotos e vídeos ↗','📂 Photos and videos folder ↗','📂 Carpeta de fotos y vídeos ↗'],['📂 Definir a pasta de fotos e vídeos','📂 Set the photos and videos folder','📂 Definir la carpeta de fotos y vídeos'],
 ['A conexão com o Google Drive expirou','The Google Drive connection expired','La conexión con Google Drive expiró'],
 ['As gravações, fotos e vídeos não conseguem ser enviados até você reconectar. As pastas e os arquivos continuam no seu Drive.','Recordings, photos and videos cannot be sent until you reconnect. The folders and files stay in your Drive.','Las grabaciones, fotos y vídeos no se pueden enviar hasta que reconectes. Las carpetas y los archivos siguen en tu Drive.'],
