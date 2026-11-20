@@ -161,10 +161,24 @@ function showEntry(msg){
     if(s)showBands(msg);else showLogin(msg||(inv?'Você foi convidado para uma banda. Entre com a sua conta para entrar.':''));
   }).catch(function(){showJoin()});
 }
+/* Login com o Google pela janela do próprio Google (Google Identity Services): mostra o nome do app em vez do endereço técnico do banco. */
+function loadScript(src){return new Promise(function(res,rej){var e=document.querySelector('script[src="'+src+'"]');if(e&&window.google&&google.accounts){res();return}var t=document.createElement('script');t.src=src;t.async=true;t.onload=res;t.onerror=rej;document.head.appendChild(t)})}
+function gisNonce(){var a=new Uint8Array(16);crypto.getRandomValues(a);var raw=Array.prototype.map.call(a,function(b){return ('0'+b.toString(16)).slice(-2)}).join('');
+  return crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)).then(function(h){return {raw:raw,hash:Array.prototype.map.call(new Uint8Array(h),function(b){return ('0'+b.toString(16)).slice(-2)}).join('')}})}
+function setupGis(box,say){
+  if(!CFG.googleClientId||!CFG.gis||!window.crypto||!crypto.subtle)return;
+  var holder=box.querySelector('#a-gis'),old=box.querySelector('#a-google');if(!holder)return;
+  loadScript('https://accounts.google.com/gsi/client').then(gisNonce).then(function(n){
+    google.accounts.id.initialize({client_id:CFG.googleClientId,nonce:n.hash,ux_mode:'popup',use_fedcm_for_prompt:false,auto_select:false,
+      callback:function(r){say('Entrando…');authClient().auth.signInWithIdToken({provider:'google',token:r.credential,nonce:n.raw}).then(function(x){if(x.error)say(errTxt(x.error));else showEntry()}).catch(function(e){say(errTxt(e))})}});
+    google.accounts.id.renderButton(holder,{type:'standard',theme:'filled_black',size:'large',text:'continue_with',shape:'pill',logo_alignment:'left',width:Math.min(320,Math.max(200,holder.clientWidth||300)),locale:window.CE_LANG||'pt'});
+    if(old)old.style.display='none';
+  }).catch(function(){});
+}
 function showLogin(msg){
   var mode='in',inv=pendingInvite();
   var box=mountScreen('<h1>Rehearsal Notebook</h1><p>'+(inv?'Você foi convidado para uma banda. Entre ou crie a sua conta para entrar nela.':'Entre para ver as suas bandas em qualquer aparelho.')+'</p>'+
-    '<button type="button" id="a-google" class="gbtn">Continuar com o Google</button>'+
+    '<div id="a-gis" style="display:flex;justify-content:center"></div><button type="button" id="a-google" class="gbtn">Continuar com o Google</button>'+
     '<div class="jor"><span>ou</span></div>'+
     '<form id="a-form" autocomplete="on"><input id="a-mail" type="email" inputmode="email" placeholder="E-mail" autocomplete="email" aria-label="E-mail" style="margin-bottom:10px"><input id="a-pass" type="password" placeholder="Senha (mínimo 8 caracteres)" autocomplete="current-password" aria-label="Senha"><button type="submit" id="a-go">Entrar</button></form>'+
     '<p class="jhint"><a href="#" id="a-toggle" style="color:#ffb3d0">Não tem conta? Criar conta</a> · <a href="#" id="a-forgot" style="color:#ffb3d0">Esqueci a senha</a></p>'+
@@ -172,6 +186,7 @@ function showLogin(msg){
     (inv?'':'<div class="jor"><span>ou</span></div><button type="button" id="a-code">Só tenho um código de convite</button>'));
   var msgEl=box.querySelector('#join-msg'),go=box.querySelector('#a-go');
   function say(t){msgEl.textContent=t||''}if(msg)say(msg);
+  setupGis(box,say);
   var ac=box.querySelector('#a-code');if(ac)ac.addEventListener('click',function(){showJoin()});
   box.querySelector('#a-google').addEventListener('click',function(){
     say('Abrindo o Google…');
