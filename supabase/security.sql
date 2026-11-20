@@ -46,3 +46,58 @@ begin
 end $$;
 revoke all on function public.ce_band_rotate(text) from public;
 grant execute on function public.ce_band_rotate(text) to authenticated;
+
+-- 4) brute-force guard: wrong band codes are logged per client IP; after 40 misses in an hour the IP is blocked for lookups
+create table if not exists public.ce_guess_log(ip text not null, at timestamptz not null default now());
+create index if not exists ce_guess_log_ip_at on public.ce_guess_log(ip, at);
+alter table public.ce_guess_log enable row level security;
+revoke all on public.ce_guess_log from anon, authenticated;
+
+create or replace function public.ce_ip() returns text language sql stable set search_path=public as $$
+  select coalesce(nullif(trim(split_part(coalesce(nullif(current_setting('request.headers', true), '')::json->>'x-forwarded-for', ''), ',', 1)), ''), '?') $$;
+
+create or replace function public.ce_guess_block() returns void language plpgsql security definer set search_path=public as $$
+begin
+  if (select count(*) from ce_guess_log where ip=ce_ip() and at > now() - interval '1 hour') >= 40 then raise exception 'rate limited'; end if;
+end $$;
+create or replace function public.ce_guess_fail() returns void language plpgsql security definer set search_path=public as $$
+begin
+  delete from ce_guess_log where at < now() - interval '1 day';
+  insert into ce_guess_log(ip) values (ce_ip());
+end $$;
+revoke all on function public.ce_ip(), public.ce_guess_block(), public.ce_guess_fail() from public;
+
+create or replace function public.ce_band_exists(p_code text) returns boolean language plpgsql security definer set search_path=public as $$
+declare ok boolean;
+begin
+  perform ce_guess_block();
+  select exists(select 1 from ce_bands where code=p_code) into ok;
+  if not ok then perform ce_guess_fail(); end if;
+  return ok;
+end $$;
+
+create or replace function public.ce_list(p_band text) returns table(coll text, id text, data jsonb, updated_at timestamp with time zone)
+language plpgsql security definer set search_path=public as $$
+begin
+  perform ce_guess_block();
+  if not exists(select 1 from ce_bands b where b.code=p_band) then perform ce_guess_fail(); return; end if;
+  return query select d.coll,d.id,d.data,d.updated_at from ce_docs d where d.band=p_band;
+end $$;
+
+create or replace function public.ce_write(p_band text, p_op text, p_coll text, p_id text, p_data jsonb) returns boolean
+language plpgsql security definer set search_path=public as $$
+begin
+  perform ce_guess_block();
+  if not exists(select 1 from ce_bands b where b.code=p_band) then perform ce_guess_fail(); raise exception 'banda desconhecida'; end if;
+  if length(p_coll)>40 or length(p_id)>80 or pg_column_size(p_data)>600000 then raise exception 'dados inválidos'; end if;
+  if p_op='set' then
+    insert into ce_docs(band,coll,id,data) values(p_band,p_coll,p_id,coalesce(p_data,'{}'::jsonb))
+    on conflict(band,coll,id) do update set data=excluded.data, updated_at=now();
+  elsif p_op='update' then
+    insert into ce_docs(band,coll,id,data) values(p_band,p_coll,p_id,coalesce(p_data,'{}'::jsonb))
+    on conflict(band,coll,id) do update set data=ce_docs.data||excluded.data, updated_at=now();
+  elsif p_op='delete' then
+    delete from ce_docs where band=p_band and coll=p_coll and id=p_id;
+  else raise exception 'operação inválida'; end if;
+  return true;
+end $$;
