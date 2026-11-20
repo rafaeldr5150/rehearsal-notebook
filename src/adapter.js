@@ -122,6 +122,16 @@ window.CE_AUTH={
   rotate:function(){return arpc('ce_band_rotate',{p_code:band}).then(function(c){try{localStorage.setItem('ce-band',c)}catch(e){}return c})},
   setMe:function(mid){if(window.CE_AUTH.user&&band)arpc('ce_set_me',{p_code:band,p_mid:mid||''}).catch(function(){})}
 };
+window.CE_PROFILE={
+  me:function(){return arpc('ce_profile_me')},
+  save:function(d){return arpc('ce_profile_save',{p:{name:d.name,city:d.city,bio:d.bio,plays:d.plays,owns:d.owns,gear:d.gear,styles:d.styles,photo:d.photo||'',visible:!!d.visible}})},
+  search:function(q,inst,style,off){return arpc('ce_profiles_search',{p_q:q||'',p_inst:inst||'',p_style:style||'',p_limit:20,p_offset:off||0})},
+  get:function(id){return arpc('ce_profile_get',{p_user:id})},
+  addVideo:function(url,title){return arpc('ce_video_add',{p_url:url,p_title:title||''})},
+  delVideo:function(id){return arpc('ce_video_del',{p_id:id})},
+  report:function(id){return arpc('ce_profile_report',{p_user:id,p_video:null,p_reason:''})},
+  remove:function(){return arpc('ce_profile_delete')}
+};
 function pickBand(code,mid){
   try{localStorage.setItem('ce-band',code);sessionStorage.removeItem('ce-entry');if(mid)localStorage.setItem('ce-me',mid);else localStorage.removeItem('ce-me')}catch(e){}
   location.href=location.pathname;

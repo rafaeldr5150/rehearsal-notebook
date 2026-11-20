@@ -74,6 +74,39 @@ body.sk-cus{--rec-on:var(--cb,#33d6a0)}
 .empty-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 .import-pl{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
 .import-pl label{font-weight:600}
+/* ===== rede de músicos ===== */
+#musview{display:flex;flex-direction:column;gap:var(--gap,18px)}
+#musview[hidden]{display:none}
+.mus-av{border-radius:50%;object-fit:cover;flex:none;background:var(--surface2,#2a2b30)}
+.mus-av.ph{display:inline-grid;place-items:center;color:var(--muted)}
+.mus-search{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mus-search input{grid-column:1 / -1}.mus-search .btn{grid-column:1 / -1}
+.mus-grid{display:flex;flex-direction:column;gap:12px}
+.mus-card{display:flex;gap:14px;align-items:center;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none}
+.mus-info{display:flex;flex-direction:column;gap:3px;min-width:0}.mus-info b{font-size:18px}.mus-info small{color:var(--muted);font-size:14px}
+.mus-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}.mus-tags .tag.alt{opacity:.8}
+.mus-hero{display:flex;gap:16px;align-items:center}.mus-hero h2{font-size:26px}
+.mus-bio{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.mus-form{display:flex;flex-direction:column;gap:16px}
+.mus-field{display:flex;flex-direction:column;gap:8px}.mus-field>label{font-weight:600}
+.mus-photo{display:flex;gap:14px;align-items:center}
+.mus-chips{display:flex;flex-wrap:wrap;gap:8px}
+.mus-chip button{margin-left:6px;background:none;border:0;color:inherit;font-size:18px;line-height:1;padding:0 2px}
+.mus-add{display:flex;gap:8px}.mus-add input{flex:1;min-width:0}
+.mus-sugg{display:flex;flex-wrap:wrap;gap:8px}
+.mus-vis{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px}
+.mus-vis input{width:24px;height:24px;margin-top:2px;flex:none}.mus-vis span{display:flex;flex-direction:column;gap:4px}.mus-vis small{color:var(--muted);font-size:13px}
+.mus-vlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.mus-vid{display:grid;grid-template-columns:128px 1fr;gap:6px 12px;align-items:center}
+.mus-vthumb{position:relative;display:block;padding:0;border:0;border-radius:10px;overflow:hidden;aspect-ratio:16/9;background:#000;cursor:pointer}
+.mus-vthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.mus-play{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;color:#fff;font-size:26px;background:rgba(0,0,0,.3)}
+.mus-vph{display:grid;place-items:center;height:100%;color:#999}
+.mus-vmeta{display:flex;flex-direction:column;gap:2px;min-width:0}.mus-vmeta b{overflow-wrap:anywhere}.mus-vmeta small{color:var(--muted)}
+.mus-vact{grid-column:1 / -1;justify-content:flex-end}
+.mus-embed{position:relative;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}.mus-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#musvideo{position:fixed;inset:0;z-index:44;display:flex;align-items:center;justify-content:center;background:rgba(8,4,6,.88);padding:14px}
+#musvideo[hidden]{display:none}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -590,6 +623,7 @@ body.bg-flat{background-color:#1e1f22;background-image:none}
   #tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:15;background-image:linear-gradient(rgba(10,6,8,.94),rgba(10,6,8,.94)),var(--brick);background-size:auto,1176px auto;border-top:3px solid #000;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));gap:6px}
   #tabbar a,#tabbar button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px 6px;background:transparent;border:0;color:var(--ink);text-decoration:none;font-family:var(--f-display);font-size:13px;text-transform:uppercase;letter-spacing:.02em;border-radius:2px;cursor:pointer;box-shadow:none}
   #tabbar span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #tabbar.five span{font-size:11px}
   #tabbar [aria-current=page]{background:var(--paper);color:var(--paper-ink);transform:rotate(-1.5deg);box-shadow:3px 3px 0 #000}
   body{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
   .mgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 14px}
@@ -1194,6 +1228,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
    <div id="personview" hidden></div>
    <div id="setview" hidden></div>
    <div id="cfgview" hidden></div>
+   <div id="musview" hidden></div>
    <div id="home">
     <section class="summary" aria-live="polite">
       <div class="hero" id="hero"></div>
@@ -2109,9 +2144,9 @@ function renderTabbar(){
     var inner=(String(ico).charAt(0)==='<'?ico:svgIco(ico,24))+'<span>'+esc(label)+'</span>';
     return href?'<a href="'+href+'"'+(cur?' aria-current="page"':'')+'>'+inner+'</a>':'<button type="button" data-act="'+act+'"'+(cur?' aria-current="page"':'')+'>'+inner+'</button>';
   }
-  el.innerHTML=tab('#geral','Geral','home',!pid&&hh!=='setlist'&&hh!=='config')+tab('#setlist','Setlist','list',hh==='setlist')+
+  el.className=musOn()?'five':'';el.innerHTML=tab('#geral','Geral','home',!pid&&hh!=='setlist'&&hh!=='config'&&!musRoute())+tab('#setlist','Setlist','list',hh==='setlist')+
     (me?tab('#pessoa-'+me.id,first(me.name),me.photo?avatarHTML(me,24):icoFor(me.instrument),pid===me.id):tab(null,'Quem sou eu?','user',false,'who-open'))+
-    tab('#config','Configurações','gear',hh==='config');
+    (musOn()?tab('#musicos','Músicos','group',!!musRoute()):'')+tab('#config','Configurações','gear',hh==='config');
 }
 
 /* ---------- cartaz da banda ---------- */
@@ -2140,13 +2175,162 @@ function renderSide(){
   var set=setIds();
   $('#side').innerHTML=
     (bandName()?(band.logo?'<img class="brand-logo" src="'+esc(safeUrl(band.logo)||dataImg(band.logo))+'" alt="">':'')+'<div class="brand">'+esc(bandName())+'</div><div class="brand-sub">Rehearsal Notebook</div>':'<div class="brand">Rehearsal Notebook</div>')+countdownHTML()+
-    '<a href="#geral"'+(!pid&&h!=='setlist'&&h!=='config'?' aria-current="page"':'')+'><span>Geral</span></a>'+
+    '<a href="#geral"'+(!pid&&h!=='setlist'&&h!=='config'&&!musRoute()?' aria-current="page"':'')+'><span>Geral</span></a>'+
     '<a href="#setlist"'+(h==='setlist'?' aria-current="page"':'')+'><span>Setlist</span>'+(set.length?'<span class="badge">'+set.length+'</span>':'')+'</a>'+
     '<div class="sl">Banda</div>'+
     members().map(function(m){
       var n=pendingFor(m.id).length;
       return '<a href="#pessoa-'+m.id+'"'+(pid===m.id?' aria-current="page"':'')+'><span class="nv">'+avatarHTML(m,22)+'<span><b>'+esc(first(m.name))+(meMember===m.id?' <em>(você)</em>':'')+'</b><small>'+esc(m.instrument)+'</small></span></span>'+(n?'<span class="badge" title="'+n+' pendentes para o próximo ensaio ou setlist">'+n+'</span>':'')+'</a>';
-    }).join('')+'<div class="foot"></div><a href="#config"'+(h==='config'?' aria-current="page"':'')+'><span class="nv">'+svgIco('gear',22)+'<span><b>Configurações</b></span></span></a>';
+    }).join('')+(musOn()?'<div class="sl">Rede</div><a href="#musicos"'+(musRoute()?' aria-current="page"':'')+'><span class="nv">'+svgIco('group',22)+'<span><b>Músicos</b></span></span></a>':'')+'<div class="foot"></div><a href="#config"'+(h==='config'?' aria-current="page"':'')+'><span class="nv">'+svgIco('gear',22)+'<span><b>Configurações</b></span></span></a>';
+}
+/* ---------- rede de músicos (independente da banda) ---------- */
+var MUS_INST=['Guitarra','Violão','Baixo','Bateria','Voz','Teclado','Piano','Saxofone','Violino','Percussão','DJ'];
+var MUS_STYLE=['Rock','Pop','Blues','Jazz','Metal','Samba','MPB','Funk','Reggae','Sertanejo','Country','Folk','Eletrônica','Gospel','Clássica'];
+var mus={tab:'discover',q:'',inst:'',style:'',list:null,more:false,busy:false,me:undefined,meBusy:false,draft:null,saving:false,view:undefined,viewBusy:false,vurl:'',vtitle:'',video:null,armDel:'',err:''};
+function musOn(){return !!(window.CE_PROFILE&&window.CE_STANDALONE)}
+function musAuthed(){return !!(window.CE_AUTH&&window.CE_AUTH.user)}
+function musRoute(){var h=location.hash.replace(/^#/,'');if(h==='musicos')return {k:'dir'};var m=/^musico-([0-9a-f-]{36})$/.exec(h);return m?{k:'prof',id:m[1]}:null}
+function musErr(e){var m=String(e&&e.message||e||'');
+  if(/url/.test(m))return 'Link não aceito. Use YouTube, Vimeo, Instagram, TikTok, Facebook ou Google Drive, começando com https://.';
+  if(/limit/.test(m))return 'Você chegou ao limite de 30 vídeos. Apague algum para adicionar outro.';
+  if(/photo/.test(m))return 'Não foi possível usar essa foto. Tente outra.';
+  if(/rate/.test(m))return 'Muitas denúncias hoje. Tente amanhã.';
+  if(/auth/.test(m))return 'Entre com a sua conta para continuar.';
+  return 'Não foi possível agora. Tente de novo.'}
+function musChips(a,cls){return (a||[]).map(function(x){return '<span class="tag '+(cls||'')+'">'+esc(x)+'</span>'}).join('')}
+function musAvatar(p,sz){var u=dataImg(p&&p.photo);return u?'<img class="mus-av" alt="" src="'+esc(u)+'" width="'+sz+'" height="'+sz+'">':'<span class="mus-av ph" style="width:'+sz+'px;height:'+sz+'px">'+svgIco('user',Math.round(sz*0.5))+'</span>'}
+function musThumb(v){var id=ytId(v.url);return id?'<img alt="" loading="lazy" src="https://img.youtube.com/vi/'+id+'/mqdefault.jpg">':'<span class="mus-vph">'+svgIco('list',30)+'</span>'}
+function musVideos(videos,mine){
+  if(!videos.length)return '<p class="hint">'+(mine?'Você ainda não postou vídeos. Cole um link do YouTube, Vimeo, Instagram, TikTok, Facebook ou Google Drive.':'Nenhum vídeo ainda.')+'</p>';
+  return '<ul class="mus-vlist">'+videos.map(function(v){
+    var id=ytId(v.url),arm=mus.armDel===v.id;
+    return '<li class="mus-vid"><button type="button" class="mus-vthumb" data-act="mus-play" data-url="'+esc(v.url)+'" aria-label="Ver vídeo">'+musThumb(v)+(id?'<i class="mus-play">▶</i>':'')+'</button>'+
+      '<div class="mus-vmeta"><b>'+esc(v.title||'Vídeo')+'</b><small>'+esc((String(v.url).replace(/^https:\/\/(www\.)?/,'').split('/')[0]))+'</small></div>'+
+      '<div class="row-actions no-fill mus-vact">'+(id?'':'<a class="btn small" target="_blank" rel="noopener noreferrer" href="'+esc(v.url)+'">Abrir ↗</a>')+
+      (mine?'<button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="mus-vdel" data-v="'+esc(v.id)+'">'+(arm?'Confirmar: apagar':'Apagar')+'</button>':'')+'</div></li>'}).join('')+'</ul>';
+}
+function musLoadMe(){
+  if(mus.meBusy)return;mus.meBusy=true;
+  window.CE_PROFILE.me().then(function(r){mus.me=r;if(!mus.draft)musDraftFrom(r.profile)}).catch(function(e){mus.me=null;mus.err=musErr(e)}).then(function(){mus.meBusy=false;render()});
+}
+function musDraftFrom(p){p=p||{};mus.draft={name:p.name||(window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.name)||'',city:p.city||'',bio:p.bio||'',plays:(p.plays||[]).slice(),owns:(p.owns||[]).slice(),gear:(p.gear||[]).slice(),styles:(p.styles||[]).slice(),photo:p.photo||'',visible:!!p.visible}}
+function musSearch(reset){
+  if(mus.busy)return;mus.busy=true;if(reset){mus.list=null}
+  window.CE_PROFILE.search(mus.q,mus.inst,mus.style,reset?0:(mus.list||[]).length).then(function(rows){mus.list=(reset?[]:(mus.list||[])).concat(rows||[]);mus.more=(rows||[]).length>=20;mus.err=''}).catch(function(e){mus.list=mus.list||[];mus.err=musErr(e)}).then(function(){mus.busy=false;render()});
+}
+function musLoadView(id){
+  if(mus.viewBusy||(mus.view&&mus.view.id===id))return;mus.viewBusy=true;
+  window.CE_PROFILE.get(id).then(function(r){mus.view=r?Object.assign({id:id},r):{id:id,missing:true}}).catch(function(){mus.view={id:id,missing:true}}).then(function(){mus.viewBusy=false;render()});
+}
+function musListEditor(key,label,ph,sugg){
+  var d=mus.draft,cur=d[key]||[];
+  return '<div class="mus-field"><label>'+label+'</label><div class="mus-chips">'+(cur.length?cur.map(function(x,i){return '<span class="tag mus-chip">'+esc(x)+'<button type="button" data-act="mus-del" data-k="'+key+'" data-i="'+i+'" aria-label="Remover '+esc(x)+'">×</button></span>'}).join(''):'<span class="faint">nada ainda</span>')+'</div>'+
+    '<div class="mus-add"><input type="text" data-mus-add="'+key+'" data-draft="mus" maxlength="60" placeholder="'+ph+'" autocomplete="off"><button type="button" class="btn small primary" data-act="mus-add" data-k="'+key+'">Adicionar</button></div>'+
+    (sugg?'<div class="mus-sugg">'+sugg.filter(function(s){return cur.map(function(c){return c.toLowerCase()}).indexOf(s.toLowerCase())<0}).map(function(s){return '<button type="button" class="chip" data-act="mus-sug" data-k="'+key+'" data-v="'+esc(s)+'">+ '+esc(s)+'</button>'}).join('')+'</div>':'')+'</div>';
+}
+function musEditor(){
+  if(!mus.draft)musDraftFrom(mus.me&&mus.me.profile);
+  var d=mus.draft,vids=(mus.me&&mus.me.videos)||[];
+  return '<div class="panel mus-form"><h3>Meu perfil</h3>'+
+    '<div class="mus-photo">'+musAvatar(d,96)+'<div class="row-actions no-fill"><button type="button" class="btn small" data-act="mus-photo">'+(d.photo?'Trocar foto':'Escolher foto')+'</button>'+(d.photo?'<button type="button" class="btn small" data-act="mus-photo-del">Remover</button>':'')+'</div></div>'+
+    '<div class="mus-field"><label for="mus-name">Nome artístico</label><input id="mus-name" type="text" maxlength="60" data-mus="name" data-draft="mus" value="'+esc(d.name)+'" placeholder="Como você quer ser chamado"></div>'+
+    '<div class="mus-field"><label for="mus-city">Cidade</label><input id="mus-city" type="text" maxlength="60" data-mus="city" data-draft="mus" value="'+esc(d.city)+'" placeholder="Ex.: São Paulo"></div>'+
+    '<div class="mus-field"><label for="mus-bio">Sobre mim</label><textarea id="mus-bio" rows="4" maxlength="600" data-mus="bio" data-draft="mus" placeholder="Conte um pouco da sua história musical…">'+esc(d.bio)+'</textarea></div>'+
+    musListEditor('plays','Instrumentos que eu toco','Ex.: Guitarra',MUS_INST)+
+    musListEditor('owns','Instrumentos que eu tenho','Ex.: Fender Stratocaster')+
+    musListEditor('gear','Equipamentos','Ex.: Amplificador Marshall, pedal Boss DS-1')+
+    musListEditor('styles','Estilos favoritos','Ex.: Rock',MUS_STYLE)+
+    '<label class="mus-vis"><input type="checkbox" data-mus-vis="1" data-draft="mus"'+(d.visible?' checked':'')+'><span><b>Visível para outros músicos</b><small>Desligado, só você vê o perfil. Ligado, outros músicos do app podem encontrar você, ver seu nome, cidade, foto, instrumentos e vídeos. O seu e-mail nunca aparece.</small></span></label>'+
+    '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="mus-save"'+(mus.saving?' disabled':'')+'>'+(mus.saving?'Salvando…':'Salvar perfil')+'</button>'+
+    (mus.me&&mus.me.profile?'<a class="btn" href="#musico-'+esc(mus.me.profile.user_id)+'">Ver como os outros veem</a>':'')+'</div></div>'+
+    '<div class="panel mus-form"><h3>Meus vídeos</h3>'+musVideos(vids,true)+
+    '<div class="mus-field"><label for="mus-vurl">Adicionar vídeo (link)</label><input id="mus-vurl" type="url" inputmode="url" autocapitalize="off" data-mus="vurl" data-draft="mus" value="'+esc(mus.vurl)+'" placeholder="https://youtube.com/watch?v=…"></div>'+
+    '<div class="mus-field"><input type="text" maxlength="100" data-mus="vtitle" data-draft="mus" value="'+esc(mus.vtitle)+'" placeholder="Título (opcional)" aria-label="Título do vídeo"></div>'+
+    '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="mus-vadd">Adicionar vídeo</button></div>'+
+    '<p class="hint">Os vídeos ficam no site de origem (YouTube, Vimeo…). Aqui só guardamos o link.</p></div>'+
+    '<div class="panel mus-form"><h3>Privacidade</h3><p class="hint">Você pode apagar o seu perfil e os seus vídeos a qualquer momento. Isso não apaga a sua conta nem as suas bandas.</p>'+
+    '<div class="row-actions no-fill"><button type="button" class="btn'+(mus.armDel==='profile'?' danger armed':'')+'" data-act="mus-delprofile">'+(mus.armDel==='profile'?'Confirmar: apagar o meu perfil':'Apagar o meu perfil')+'</button></div></div>';
+}
+function musDiscover(){
+  if(mus.list===null&&!mus.busy)musSearch(true);
+  var opt=function(arr,cur,all){return '<option value="">'+all+'</option>'+arr.map(function(x){return '<option'+(cur===x?' selected':'')+'>'+esc(x)+'</option>'}).join('')};
+  var rows=(mus.list||[]).map(function(p){
+    return '<a class="mus-card" href="#musico-'+esc(p.user_id)+'">'+musAvatar(p,64)+'<span class="mus-info"><b>'+esc(p.name)+'</b><small>'+esc(p.city||'')+'</small><span class="mus-tags">'+musChips((p.plays||[]).slice(0,4))+musChips((p.styles||[]).slice(0,3),'alt')+'</span></span></a>'}).join('');
+  return '<div class="mus-search"><input type="search" data-mus="q" data-draft="mus" value="'+esc(mus.q)+'" placeholder="Buscar por nome ou cidade" aria-label="Buscar músicos"><select data-mus-sel="inst" aria-label="Instrumento">'+opt(MUS_INST,mus.inst,'Qualquer instrumento')+'</select><select data-mus-sel="style" aria-label="Estilo">'+opt(MUS_STYLE,mus.style,'Qualquer estilo')+'</select>'+
+    '<button type="button" class="btn primary" data-act="mus-find">Buscar</button></div>'+
+    (mus.err?'<p class="hint">'+esc(mus.err)+'</p>':'')+
+    (mus.list===null?'<p class="hint">Buscando…</p>':rows?'<div class="mus-grid">'+rows+'</div>'+(mus.more?'<div class="row-actions no-fill"><button type="button" class="btn" data-act="mus-more"'+(mus.busy?' disabled':'')+'>Ver mais</button></div>':''):'<div class="empty-state"><strong>Nenhum músico encontrado</strong>Quando outros músicos ligarem “Visível” no perfil, eles aparecem aqui. Que tal ser o primeiro? Abra “Meu perfil”.</div>');
+}
+function musProfileView(id){
+  musLoadView(id);
+  var v=mus.view&&mus.view.id===id?mus.view:null;
+  var back='<a class="btn small" href="#musicos">← Músicos</a>';
+  if(!v)return '<div class="phead"><div><div class="faint">Músico</div><h2>Carregando…</h2></div></div>';
+  if(v.missing)return '<div class="phead"><div><div class="faint">Músico</div><h2>Perfil não encontrado</h2></div></div><p class="hint">Esse perfil não existe ou não está visível.</p><div class="row-actions no-fill">'+back+'</div>';
+  var p=v.profile,mine=!!(window.CE_AUTH&&mus.me&&mus.me.profile&&mus.me.profile.user_id===p.user_id);
+  var sec=function(t,a,cls){return a&&a.length?'<div class="panel"><h3>'+t+'</h3><div class="mus-tags">'+musChips(a,cls)+'</div></div>':''};
+  return '<div class="row-actions no-fill">'+back+'</div>'+
+    '<div class="mus-hero">'+musAvatar(p,112)+'<div><h2>'+esc(p.name)+'</h2><div class="faint">'+esc(p.city||'')+'</div>'+(p.visible?'':'<div class="tag">Só você vê este perfil</div>')+'</div></div>'+
+    (p.bio?'<div class="panel"><h3>Sobre</h3><p class="mus-bio">'+esc(p.bio)+'</p></div>':'')+
+    sec('Toca',p.plays)+sec('Tem',p.owns,'alt')+sec('Equipamentos',p.gear,'alt')+sec('Estilos favoritos',p.styles)+
+    '<div class="panel"><h3>Vídeos</h3>'+musVideos(v.videos||[],false)+'</div>'+
+    (mine?'':'<div class="row-actions no-fill"><button type="button" class="btn small'+(mus.armDel==='rep'?' danger armed':'')+'" data-act="mus-report" data-u="'+esc(p.user_id)+'">'+(mus.armDel==='rep'?'Confirmar: denunciar este perfil':'Denunciar')+'</button></div>');
+}
+function renderMus(){
+  var el=$('#musview');if(!el)return;
+  var r=musRoute();if(!r){el.innerHTML='';return}
+  if(!musOn()){el.innerHTML='<div class="empty-state"><strong>Rede de músicos</strong>Disponível no app da banda.</div>';return}
+  var head='<div class="phead mus-head"><div><div class="faint">Rede de músicos · fora das bandas</div><h2>Músicos</h2></div></div>';
+  if(!musAuthed()){
+    el.innerHTML=head+'<div class="panel"><h3>Entre com a sua conta</h3><p class="hint">Aqui você cria o seu perfil de músico, mostra seus instrumentos, equipamentos e vídeos, e encontra outros músicos. É separado das suas bandas e só funciona com conta.</p><div class="row-actions no-fill"><button type="button" class="btn primary" data-act="acct-login">Entrar com a minha conta</button></div></div>';return}
+  if(r.k==='prof'){el.innerHTML=musProfileView(r.id);return}
+  var tabs='<div class="chips mus-tabs" role="tablist"><button type="button" class="chip" role="tab" aria-pressed="'+(mus.tab==='discover')+'" data-act="mus-tab" data-v="discover">Descobrir</button><button type="button" class="chip" role="tab" aria-pressed="'+(mus.tab==='me')+'" data-act="mus-tab" data-v="me">Meu perfil</button></div>';
+  var body;
+  if(mus.tab==='me'){
+    if(mus.me===undefined){musLoadMe();body='<p class="hint">Carregando…</p>'}else if(mus.me===null)body='<p class="hint">'+esc(mus.err||'Não foi possível carregar.')+'</p><div class="row-actions no-fill"><button type="button" class="btn" data-act="mus-retry">Tentar de novo</button></div>';else body=musEditor();
+  }else body=musDiscover();
+  el.innerHTML=head+tabs+body;
+}
+var musPhotoInp=document.createElement('input');musPhotoInp.type='file';musPhotoInp.accept='image/*';musPhotoInp.hidden=true;document.body.appendChild(musPhotoInp);
+musPhotoInp.onchange=function(){var f=musPhotoInp.files&&musPhotoInp.files[0];musPhotoInp.value='';if(!f||!mus.draft)return;resizePhoto(f,192).then(function(u){mus.draft.photo=u;render()}).catch(function(){toast('Não foi possível usar essa foto.')})};
+function musAddItem(key,val){val=String(val||'').trim();if(!val||!mus.draft)return;var a=mus.draft[key]=mus.draft[key]||[];if(a.map(function(x){return x.toLowerCase()}).indexOf(val.toLowerCase())>=0)return;if(a.length>=(key==='gear'?30:key==='owns'?20:12)){toast('Limite de itens atingido.');return}a.push(val.slice(0,60))}
+function musAct(act,t){
+  var P=window.CE_PROFILE;if(!P)return;
+  if(act==='mus-tab'){mus.tab=t.dataset.v;mus.armDel='';render();return}
+  if(act==='mus-find'){musSearch(true);return}
+  if(act==='mus-more'){musSearch(false);return}
+  if(act==='mus-retry'){mus.me=undefined;mus.err='';render();return}
+  if(act==='mus-photo'){musPhotoInp.click();return}
+  if(act==='mus-photo-del'){if(mus.draft)mus.draft.photo='';render();return}
+  if(act==='mus-add'){var inp=document.querySelector('[data-mus-add="'+t.dataset.k+'"]');musAddItem(t.dataset.k,inp&&inp.value);render();var again=document.querySelector('[data-mus-add="'+t.dataset.k+'"]');if(again)again.focus();return}
+  if(act==='mus-sug'){musAddItem(t.dataset.k,t.dataset.v);render();return}
+  if(act==='mus-del'){var a=mus.draft&&mus.draft[t.dataset.k];if(a)a.splice(+t.dataset.i,1);render();return}
+  if(act==='mus-save'){
+    if(!mus.draft||mus.saving)return;
+    if(!String(mus.draft.name||'').trim()){toast('Informe o seu nome artístico.');return}
+    mus.saving=true;render();
+    P.save(mus.draft).then(function(){mus.me=undefined;mus.meBusy=false;mus.draft=null;mus.view=undefined;mus.list=null;toast(mus.draftWasVisible===false?'Perfil salvo.':'Perfil salvo.')}).catch(function(e){toast(musErr(e))}).then(function(){mus.saving=false;render()});return}
+  if(act==='mus-vadd'){
+    var u=String(mus.vurl||'').trim();if(!/^https:\/\//i.test(u)){toast('Cole um link que comece com https://');return}
+    P.addVideo(u,mus.vtitle).then(function(){mus.vurl='';mus.vtitle='';mus.me=undefined;mus.meBusy=false;toast('Vídeo adicionado.');render()}).catch(function(e){toast(musErr(e))});return}
+  if(act==='mus-vdel'){
+    if(mus.armDel!==t.dataset.v){mus.armDel=t.dataset.v;render();clearTimeout(mus._t);mus._t=setTimeout(function(){mus.armDel='';render()},5000);return}
+    mus.armDel='';P.delVideo(t.dataset.v).then(function(){mus.me=undefined;mus.meBusy=false;mus.view=undefined;render()}).catch(function(e){toast(musErr(e))});return}
+  if(act==='mus-play'){var url=t.dataset.url,id=ytId(url);if(!id){window.open(url,'_blank','noopener');return}mus.video=id;renderMusVideo();return}
+  if(act==='mus-vclose'){mus.video=null;renderMusVideo();return}
+  if(act==='mus-delprofile'){
+    if(mus.armDel!=='profile'){mus.armDel='profile';render();clearTimeout(mus._t);mus._t=setTimeout(function(){mus.armDel='';render()},5000);return}
+    mus.armDel='';P.remove().then(function(){mus.me=undefined;mus.meBusy=false;mus.draft=null;mus.view=undefined;mus.list=null;toast('Perfil apagado.');render()}).catch(function(e){toast(musErr(e))});return}
+  if(act==='mus-report'){
+    if(mus.armDel!=='rep'){mus.armDel='rep';render();clearTimeout(mus._t);mus._t=setTimeout(function(){mus.armDel='';render()},5000);return}
+    mus.armDel='';P.report(t.dataset.u).then(function(){toast('Denúncia enviada. Obrigado.')}).catch(function(e){toast(musErr(e))});render();return}
+}
+function renderMusVideo(){
+  var el=document.getElementById('musvideo');
+  if(!el){el=document.createElement('div');el.id='musvideo';el.hidden=true;document.body.appendChild(el)}
+  if(!mus.video){el.hidden=true;el.innerHTML='';return}
+  el.hidden=false;
+  el.innerHTML='<div class="watch-box" role="dialog" aria-label="Vídeo"><div class="watch-top"><b>Vídeo</b><button type="button" class="btn small" data-act="mus-vclose">Fechar</button></div><div class="mus-embed"><iframe src="https://www.youtube-nocookie.com/embed/'+esc(mus.video)+'?autoplay=1&rel=0&playsinline=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="Vídeo"></iframe></div></div>';
 }
 function alertHTML(pid){
   var p=pendingFor(pid);
@@ -2971,6 +3155,7 @@ var TOUR=[
  {v:1,r:'me',open:1,sel:function(){return h3Block($('#drawer'),'comentários')},skip:1,t:'Comentários',x:'Deixe recados para a banda sobre a música, como "refrão rápido demais".'},
  {v:1,r:'setlist',sel:'#setview .phead',t:'Setlist',x:'Monte a ordem do show, ajuste a pausa entre as músicas e marque a data e o local do show.'},
  {v:1,r:'setlist',sel:'[data-act="live-start"]',skip:1,t:'Ensaio ao vivo',x:'Começar ensaio ao vivo: a banda toda acompanha a mesma música, com rolagem automática e metrônomo sincronizado entre os celulares.'},
+ {v:3,r:'musicos',sel:'#musview .mus-head',skip:1,t:'Rede de músicos',x:'Uma aba à parte, fora das bandas: crie o seu perfil com instrumentos, equipamentos, estilos favoritos e vídeos, e encontre outros músicos. O perfil só aparece para os outros se você ligar “Visível”.'},
  {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'você')},t:'Você',x:'Escolha quem você é e coloque a sua foto, que aparece no cartão da banda.'},
  {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'aparência')},skip:1,t:'Aparência',x:'Troque o layout (Neon, Cartaz, Estúdio ou Personalizado) e o idioma.'},
  {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'banda')},skip:1,t:'Banda e convite',x:'Nome, logo e integrantes. Copie o link de convite para chamar a banda; o dono pode gerar um convite novo se o antigo vazar.'},
@@ -3585,17 +3770,17 @@ function render(){
   if((ui.playId||ui.playLoad)&&ui.playSong!==openId)stopPlayback();
   if(ui.pres===undefined&&!ui.presLoad&&ui.drive&&ui.drive.connected&&!ui.drive.expired&&Date.now()-(ui.presTry||0)>20000)loadPresence();
   var hp=$('#hdr-pl');if(hp){var okp=spotCfg&&spotCfg.playlist;hp.hidden=!okp;if(okp)hp.href='https://open.spotify.com/playlist/'+spotCfg.playlist}
-  var bp=$('#btn-pl');if(bp){var hh0=location.hash,onHome=!view()&&hh0!=='#setlist'&&hh0!=='#config';bp.hidden=!(onHome&&spotCfg&&spotCfg.playlist&&window.CE_PLAYLIST);bp.textContent=ui.plBusy?'Buscando…':'↻ Atualizar playlist';bp.disabled=!!ui.plBusy}
+  var bp=$('#btn-pl');if(bp){var hh0=location.hash,onHome=!view()&&hh0!=='#setlist'&&hh0!=='#config'&&!musRoute();bp.hidden=!(onHome&&spotCfg&&spotCfg.playlist&&window.CE_PLAYLIST);bp.textContent=ui.plBusy?'Buscando…':'↻ Atualizar playlist';bp.disabled=!!ui.plBusy}
   if(!ui.plAuto&&loaded&&band&&spotCfg&&spotCfg.playlist&&col){ui.plAuto=true;if(Date.now()-(spotCfg.last||0)>6*3600000)setTimeout(function(){syncPlaylist(false)},1500)}
   var lb=$('#btn-lyrics-all');if(lb){var nl=canFetchLyrics()?songs.filter(function(s){return !s.lyrics}).length:0;lb.hidden=!nl;lb.textContent='Buscar letras que faltam ('+nl+')'}
   var a=document.activeElement,fk=a&&a.dataset?a.dataset.fk:null,ss=null,se=null;
   if(fk){try{ss=a.selectionStart;se=a.selectionEnd}catch(e){}}
-  var pid=view(),isSet=location.hash==='#setlist',isCfg=location.hash==='#config';
+  var pid=view(),isSet=location.hash==='#setlist',isCfg=location.hash==='#config',isMus=!!musRoute();
   var h1=document.querySelector('header h1');if(h1)h1.textContent=bandName()||'Rehearsal Notebook';
-  $('#home').hidden=!!pid||isSet||isCfg;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;
-  $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=!!pid||isSet||isCfg;
-  if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
-  renderDrawer();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.mediaPick)renderMediaPick();if(ui.ytOpen)ytPanel();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
+  $('#home').hidden=!!pid||isSet||isCfg||isMus;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;$('#musview').hidden=!isMus;
+  $('#btn-add').hidden=!!pid||isSet||isCfg||isMus;$('#btn-import').hidden=!!pid||isSet||isCfg||isMus;
+  if(isMus)renderMus();else if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
+  renderDrawer();renderMusVideo();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.mediaPick)renderMediaPick();if(ui.ytOpen)ytPanel();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
   if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
   if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
     try{var qs=new URLSearchParams(location.search),dv=qs.get('drive');if(dv){var M={ok:'Google Drive conectado!',denied:'Conexão cancelada.',err:'Não foi possível conectar o Drive. Tente de novo.',nosecret:'O Drive ainda não está configurado no servidor.'};toast(M[dv]||'');qs.delete('drive');history.replaceState(null,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}}catch(e){}}
@@ -3607,6 +3792,7 @@ function route(){
   window.scrollTo(0,0);ui.pushAsked=false;render();
 }
 window.addEventListener('hashchange',route);
+window.addEventListener('ce-auth',function(){mus.me=undefined;mus.list=null;render()});
 window.addEventListener('ce-installed',function(){ui.install=false;toast('App instalado!');render()});
 window.addEventListener('ce-auth',function(){try{renderBandPanel()}catch(e){}var A=window.CE_AUTH;if(A&&A.mid&&!meMember&&member(A.mid)){meMember=A.mid;try{localStorage.setItem('ce-me',A.mid)}catch(e){}}render()});
 document.addEventListener('pointerdown',function(){if(smOn()&&!audioReady())ensureAudio()},{passive:true});
@@ -3674,6 +3860,7 @@ document.addEventListener('click',function(e){
   if(act==='mv-part'){var cur3=partOf(get(id),t.dataset.mid).status,nx=cur3+ +t.dataset.d;if(nx>=0&&nx<=2){setPart(id,t.dataset.mid,{status:nx},true);render()}return}
   if(act==='drawer-close'){ui.cePick=null;openId=null;render();return}
   if(act==='bg-cycle'){bgMode=BG[(BG.indexOf(bgMode)+1)%BG.length];try{localStorage.setItem('ce-bg2',bgMode)}catch(err){}applyBg();toast('Fundo: '+BGN[bgMode]);render();return}
+  if(/^mus-/.test(act)){musAct(act,t);return}
   if(act==='acct-login'){window.CE_AUTH.signInToBand();return}
   if(act==='import-open'){toggle('#panel-import','#import-pl');return}
   if(act==='add-open'){toggle('#panel-add','#new-title');return}
@@ -3895,6 +4082,7 @@ document.addEventListener('click',function(e){
     col.doc(id).delete().catch(fail);songs=songs.filter(function(s){return s.id!==id});openId=null;metStop();render();return}
 });
 document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&e.target&&e.target.dataset){var kt=e.target.dataset;if(kt.musAdd){e.preventDefault();musAddItem(kt.musAdd,e.target.value);render();var ag=document.querySelector('[data-mus-add="'+kt.musAdd+'"]');if(ag)ag.focus();return}if(kt.mus==='q'){e.preventDefault();musSearch(true);return}}
   if(stage){
     if(e.key==='Escape'){if(ui.sheet){ui.sheet=false;render();return}closeStage();return}
     if(e.key===' '&&!/^(BUTTON|INPUT|TEXTAREA|SELECT|A)$/.test(e.target.tagName)){e.preventDefault();setAuto(!auto.on);render();return}
@@ -3912,6 +4100,7 @@ document.addEventListener('keydown',function(e){
 var TEXTF=['title','artist','link','notes','key','moises','lyrics','chords','tuning','capo','yt'];
 document.addEventListener('input',function(e){
   var t=e.target;
+  if(t.dataset&&t.dataset.mus){var mk=t.dataset.mus;if(mk==='q')mus.q=t.value;else if(mk==='vurl')mus.vurl=t.value;else if(mk==='vtitle')mus.vtitle=t.value;else if(mus.draft)mus.draft[mk]=t.value;return}
   if(t.classList&&t.classList.contains('pl-seek')){t.dataset.drag='1';if(recAudio)recAudio.currentTime=+t.value/10;var d=recAudio&&plDur();t.style.setProperty('--p',d?(+t.value/10/d*100)+'%':'0%');var tc=document.querySelector('.pl-cur');if(tc)tc.textContent=plClock(+t.value/10);clearTimeout(t._dt);t._dt=setTimeout(function(){delete t.dataset.drag},400);return}
   if(t.dataset.f==='asp'){auto.speed=+t.value;var av2=$('#asp-val');if(av2)av2.textContent=auto.speed;try{localStorage.setItem('ce-asp',auto.speed)}catch(err){}return}
   if(t.dataset.f==='sfs'){var pre=document.querySelector('.stage-body pre,.stage-body .cwrap');if(stage&&stage.kind==='chords'&&!cwrapOn()){ui.fit=false;ui.cfs=+t.value;try{localStorage.setItem('ce-cfs',ui.cfs)}catch(err){}if(pre)pre.style.fontSize=ui.cfs+'px';var fb=document.querySelector('[data-act="fit-toggle"]');if(fb){fb.textContent='Ajustar à largura: não';fb.classList.remove('primary')}return}fss=+t.value;try{localStorage.setItem('ce-fss',fss)}catch(err){}if(pre)pre.style.fontSize=fss+'px';return}
@@ -3929,6 +4118,9 @@ document.addEventListener('input',function(e){
   if(f==='part-notes'){setPart(id,t.dataset.mid,{notes:t.value});return}
 });
 document.addEventListener('change',function(e){
+  var mt=e.target;
+  if(mt.dataset&&mt.dataset.musSel){mus[mt.dataset.musSel]=mt.value;musSearch(true);return}
+  if(mt.dataset&&mt.dataset.musVis){if(mus.draft)mus.draft.visible=!!mt.checked;return}
   var t=e.target;
   if(t.id==='band-logo-file'){readLogo(t.files&&t.files[0]);t.value='';return}
   if(t.id==='as'){as=t.value;try{localStorage.setItem('ce-as',as)}catch(err){}render();return}
