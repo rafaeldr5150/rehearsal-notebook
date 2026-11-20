@@ -1026,6 +1026,13 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
   #lineup .mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;gap:16px 14px;padding:14px 2px 6px}
   #lineup .mcard{flex:none;width:auto;min-height:168px;padding:20px 10px 14px;gap:4px;box-sizing:border-box}
   #lineup .mgrid .mcard:last-child:nth-child(odd){grid-column:1 / -1}
+  #lineup .mgrid.has-me .mcard:last-child:nth-child(odd){grid-column:auto}
+  #lineup .mgrid.has-me .mcard:last-child:nth-child(even){grid-column:1 / -1}
+  #lineup .mgrid.has-me .mcard:first-child{grid-column:1 / -1;min-height:230px;padding-top:26px}
+  #lineup .mgrid.has-me .mcard:first-child .mico{width:120px;height:120px}
+  #lineup .mgrid.has-me .mcard:first-child .mico .ico{width:56px;height:56px}
+  #lineup .mgrid.has-me .mcard:first-child .mname{font-size:26px}
+  #lineup .mgrid.has-me .mcard:first-child .minst{font-size:16px}
   #lineup .mico{width:76px;height:76px;border-width:3px;margin-bottom:6px}
   #lineup .mico.has-photo{border-width:0}
   #lineup .mico .ico{width:36px;height:36px}
@@ -1983,7 +1990,7 @@ function renderLineup(){
   var el=$('#lineup');if(!el)return;
   var meM=meMember&&member(meMember);
   el.innerHTML=members().length?'<h3>A banda <span class="faint">toque no seu nome</span></h3>'+
-    '<div class="whoami">'+(meM?'Você é <b>'+esc(first(meM.name))+'</b> ('+esc(meM.instrument)+') ':'Ainda não escolheu quem você é. ')+'<button type="button" class="btn small" data-act="who-open">'+(meM?'Trocar':'Quem sou eu?')+'</button></div><div class="mgrid">'+members().map(function(m){return mcardHTML(m,false)}).join('')+'</div>':'';
+    '<div class="whoami">'+(meM?'Você é <b>'+esc(first(meM.name))+'</b> ('+esc(meM.instrument)+') ':'Ainda não escolheu quem você é. ')+'<button type="button" class="btn small" data-act="who-open">'+(meM?'Trocar':'Quem sou eu?')+'</button></div><div class="mgrid'+(meM?' has-me':'')+'">'+members().slice().sort(function(x,y){return (y.id===meMember)-(x.id===meMember)}).map(function(m){return mcardHTML(m,false)}).join('')+'</div>':'';
 }
 function renderWho(){
   var el=$('#who');if(!el)return;
