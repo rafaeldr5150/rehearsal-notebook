@@ -108,6 +108,11 @@ body.sk-cus{--rec-on:var(--cb,#33d6a0)}
 #musvideo{position:fixed;inset:0;z-index:44;display:flex;align-items:center;justify-content:center;background:rgba(8,4,6,.88);padding:14px}
 #musvideo[hidden]{display:none}
 .mus-contact-btns{display:flex;flex-wrap:wrap;gap:10px}.mus-contact-btns .btn{flex:1 1 120px;text-align:center}
+#bandel{position:fixed;inset:0;z-index:46;display:flex;align-items:center;justify-content:center;background:rgba(8,4,6,.88);padding:18px;overflow:auto}
+#bandel[hidden]{display:none}
+.bd-box{text-align:left;display:flex;flex-direction:column;gap:14px;width:min(460px,100%)}
+.bd-btns{justify-content:space-between}.bd-btns .btn{flex:1 1 0}
+.cfg-row.danger b{color:#ff6b6b}.cfg-row.danger svg{color:#ff6b6b}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -2047,6 +2052,7 @@ function transposeKey(key,k){var t=String(key||'').trim();return t&&isChordTok(t
 
 /* ---------- escolher o músico ---------- */
 var ICO={
+trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
 lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   voz:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>',
@@ -2382,6 +2388,18 @@ function musAct(act,t){
   if(act==='mus-report'){
     if(mus.armDel!=='rep'){mus.armDel='rep';render();clearTimeout(mus._t);mus._t=setTimeout(function(){mus.armDel='';render()},5000);return}
     mus.armDel='';P.report(t.dataset.u).then(function(){toast('Denúncia enviada. Obrigado.')}).catch(function(e){toast(musErr(e))});render();return}
+}
+function renderBandDel(){
+  var el=document.getElementById('bandel');
+  if(!el){el=document.createElement('div');el.id='bandel';el.hidden=true;document.body.appendChild(el)}
+  var d=ui.bandDel;
+  if(!d){el.hidden=true;el.innerHTML='';return}
+  el.hidden=false;
+  el.innerHTML='<div class="who-box tourbox bd-box" role="dialog" aria-label="Excluir banda"><h2>Excluir '+esc(bandName()||'a banda')+'?</h2>'+
+    '<p class="hint">Isso apaga <b>para todos os integrantes</b> as '+songs.length+(songs.length===1?' música':' músicas')+', as anotações, os comentários, o setlist, os lembretes e a ligação com o Google Drive. <b>Não dá para desfazer.</b></p>'+
+    '<p class="hint">As gravações, fotos e vídeos que estão no seu Google Drive <b>não</b> são apagados. As contas dos integrantes continuam existindo.</p>'+
+    '<label class="mus-vis"><input type="checkbox" data-bd-ack="1"'+(d.ack?' checked':'')+'><span><b>Entendo que a banda será apagada para sempre</b></span></label>'+
+    '<div class="row-actions no-fill bd-btns"><button type="button" class="btn danger" data-act="band-delete-go"'+(d.ack&&!d.busy?'':' disabled')+'>'+(d.busy?'Excluindo…':'Excluir definitivamente')+'</button><button type="button" class="btn" data-act="band-delete-cancel">Cancelar</button></div></div>';
 }
 function renderMusVideo(){
   var el=document.getElementById('musvideo');
@@ -3809,7 +3827,7 @@ function renderConfig(){
    '<section class="cfg"><h3>Você</h3>'+(window.CE_STANDALONE&&window.CE_AUTH&&!window.CE_AUTH.user&&window.CE_AUTH.signInToBand?row('acct-login','user','Entrar com a minha conta','Sem conta você não aparece na lista de donos da banda. Entre com o Google ou o e-mail.'):'')+row('who-open','user','Quem sou eu',me?'Você é '+esc(first(me.name))+' ('+esc(me.instrument)+')':'Escolha o seu nome')+(me?row('photo-pick','user',me.photo?'Trocar a minha foto':'Minha foto','Aparece no seu cartão da banda')+(me.photo?row('photo-del','user','Remover a minha foto','Volta o ícone do instrumento'):''):'')+'</section>'+
    '<section class="cfg"><h3>Aparência</h3>'+row('skin-open','nota','Layout e idioma',esc(sk?sk[1]:'')+' · '+lg)+
      (skin==='cartaz'?row('bg-cycle','list','Fundo da página',BGN[bgMode]):'')+'</section>'+
-   '<section class="cfg"><h3>Banda</h3>'+row('open-band','group','Banda','Nome, logo, integrantes e convite')+
+   '<section class="cfg"><h3>Banda</h3>'+row('open-band','group','Banda','Nome, logo, integrantes e convite')+(window.CE_AUTH&&window.CE_AUTH.role==='owner'&&window.CE_AUTH.deleteBand?row('band-delete','trash','Excluir banda','Apaga a banda e tudo dentro dela. Só o dono pode, e não dá para desfazer.').replace('class="cfg-row','class="cfg-row danger'):'')+
      (window.CE_STANDALONE?row('copy-invite','group','Copiar link de convite','Quem abrir esse link entra no caderno da banda.')+row('copy-code','group','Copiar código','Para quem prefere colar o código na tela de entrada.')+(window.CE_AUTH&&window.CE_AUTH.role==='owner'?row('invite-rotate','lock',ui.armRot?'Toque de novo para gerar o novo convite':'Gerar novo convite','O link e o código atuais deixam de valer. Você manda o novo para a banda.'):''):'')+'</section>'+
    '<section class="cfg"><h3>Google Drive</h3>'+driveRows(row)+'</section>'+
    '<section class="cfg"><h3>Vídeos da banda</h3>'+videoRows(row)+'</section>'+
@@ -3838,7 +3856,7 @@ function render(){
   $('#home').hidden=!!pid||isSet||isCfg||isMus;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;$('#musview').hidden=!isMus;
   $('#btn-add').hidden=!!pid||isSet||isCfg||isMus;$('#btn-import').hidden=!!pid||isSet||isCfg||isMus;
   if(isMus)renderMus();else if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
-  renderDrawer();renderMusVideo();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.mediaPick)renderMediaPick();if(ui.ytOpen)ytPanel();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
+  renderDrawer();renderMusVideo();renderBandDel();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.mediaPick)renderMediaPick();if(ui.ytOpen)ytPanel();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
   if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
   if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
     try{var qs=new URLSearchParams(location.search),dv=qs.get('drive');if(dv){var M={ok:'Google Drive conectado!',denied:'Conexão cancelada.',err:'Não foi possível conectar o Drive. Tente de novo.',nosecret:'O Drive ainda não está configurado no servidor.'};toast(M[dv]||'');qs.delete('drive');history.replaceState(null,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}}catch(e){}}
@@ -3919,6 +3937,11 @@ document.addEventListener('click',function(e){
   if(act==='drawer-close'){ui.cePick=null;openId=null;render();return}
   if(act==='bg-cycle'){bgMode=BG[(BG.indexOf(bgMode)+1)%BG.length];try{localStorage.setItem('ce-bg2',bgMode)}catch(err){}applyBg();toast('Fundo: '+BGN[bgMode]);render();return}
   if(/^mus-/.test(act)){musAct(act,t);return}
+  if(act==='band-delete'){ui.bandDel={ack:false,busy:false};renderBandDel();return}
+  if(act==='band-delete-cancel'){if(ui.bandDel&&ui.bandDel.busy)return;ui.bandDel=null;renderBandDel();return}
+  if(act==='band-delete-go'){
+    var bd=ui.bandDel;if(!bd||!bd.ack||bd.busy)return;bd.busy=true;renderBandDel();
+    window.CE_AUTH.deleteBand().catch(function(err){bd.busy=false;renderBandDel();toast(/forbidden/.test(String(err&&err.message))?'Só o dono da banda pode excluir.':'Não foi possível excluir a banda agora. Tente de novo.')});return}
   if(act==='acct-login'){window.CE_AUTH.signInToBand();return}
   if(act==='import-open'){toggle('#panel-import','#import-pl');return}
   if(act==='add-open'){toggle('#panel-add','#new-title');return}
@@ -4182,6 +4205,7 @@ document.addEventListener('change',function(e){
   var mt=e.target;
   if(mt.dataset&&mt.dataset.musSel){mus[mt.dataset.musSel]=mt.value;musSearch(true);return}
   if(mt.dataset&&mt.dataset.musVis){if(mus.draft)mus.draft.visible=!!mt.checked;return}
+  if(mt.dataset&&mt.dataset.bdAck){if(ui.bandDel){ui.bandDel.ack=!!mt.checked;renderBandDel()}return}
   if(mt.dataset&&mt.dataset.musMsgs){if(mus.draft)mus.draft.accept_msgs=!!mt.checked;return}
   var t=e.target;
   if(t.id==='band-logo-file'){readLogo(t.files&&t.files[0]);t.value='';return}

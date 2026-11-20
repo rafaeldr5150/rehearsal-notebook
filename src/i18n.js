@@ -19,6 +19,13 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Excluir banda','Delete band','Eliminar banda'],
+['Apaga a banda e tudo dentro dela. Só o dono pode, e não dá para desfazer.','Deletes the band and everything in it. Only the owner can, and it cannot be undone.','Elimina la banda y todo lo que hay en ella. Solo el dueño puede y no se puede deshacer.'],
+['Entendo que a banda será apagada para sempre','I understand the band will be deleted forever','Entiendo que la banda se borrará para siempre'],
+['Excluir definitivamente','Delete permanently','Eliminar definitivamente'],
+['Excluindo…','Deleting…','Eliminando…'],
+['Só o dono da banda pode excluir.','Only the band owner can delete.','Solo el dueño de la banda puede eliminar.'],
+['Não foi possível excluir a banda agora. Tente de novo.','Could not delete the band right now. Try again.','No se pudo eliminar la banda ahora. Inténtalo de nuevo.'],
 ['Você não pode enviar mensagem para você mesmo.','You cannot send a message to yourself.','No puedes enviarte un mensaje a ti mismo.'],
 ['Aceito receber mensagens por e-mail','I accept messages by email','Acepto recibir mensajes por correo'],
 ['Aparece um botão “Enviar mensagem” no seu perfil. A mensagem chega no e-mail da sua conta, sem mostrar esse e-mail a quem escreve. Só vale se o perfil estiver visível.','A “Send message” button shows on your profile. The message arrives at your account email without showing that email to the sender. Only works if the profile is visible.','Aparece un botón “Enviar mensaje” en tu perfil. El mensaje llega al correo de tu cuenta sin mostrar ese correo a quien escribe. Solo vale si el perfil es visible.'],

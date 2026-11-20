@@ -165,9 +165,9 @@ begin
   if (select count(*) from ce_messages where sender=p_from and at > now() - interval '1 day') >= 5 then raise exception 'rate_sender'; end if;
   if (select count(*) from ce_messages where sender=p_from and recipient=p_to and at > now() - interval '1 day') >= 2 then raise exception 'rate_pair'; end if;
   if (select count(*) from ce_messages where recipient=p_to and at > now() - interval '1 day') >= 20 then raise exception 'rate_recipient'; end if;
-  select coalesce(nullif(p.name,''), split_part(u.email,'@',1)) as name, u.email into v_from from auth.users u left join ce_profiles p on p.user_id=u.id where u.id=p_from;
+  select coalesce(nullif(p.name,''), nullif(u.raw_user_meta_data->>'full_name',''), nullif(u.raw_user_meta_data->>'name',''), 'Um músico') as name, u.email into v_from from auth.users u left join ce_profiles p on p.user_id=u.id where u.id=p_from;
   insert into ce_messages(sender,recipient) values(p_from,p_to) returning id into v_id;
-  return jsonb_build_object('id',v_id,'to_email',v_to.email,'to_name',v_to.name,'from_email',v_from.email,'from_name',v_from.name);
+  return jsonb_build_object('id',v_id,'to_email',v_to.email,'to_name',v_to.name,'from_email',v_from.email,'from_name',v_from.name,'from_id',p_from);
 end $$;
 revoke all on function public.ce_msg_gate(uuid,uuid) from public, anon, authenticated;
 grant execute on function public.ce_msg_gate(uuid,uuid) to service_role;

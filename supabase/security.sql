@@ -101,3 +101,16 @@ begin
   else raise exception 'operação inválida'; end if;
   return true;
 end $$;
+
+
+-- 5) an owner can delete the whole band (songs, members, reminders and the Drive link are removed with it)
+create or replace function public.ce_band_delete(p_code text) returns boolean
+language plpgsql security definer set search_path=public as $$
+begin
+  if auth.uid() is null then raise exception 'auth'; end if;
+  if not exists(select 1 from ce_members m where m.band=p_code and m.user_id=auth.uid() and m.role='owner') then raise exception 'forbidden'; end if;
+  delete from ce_bands where code=p_code;
+  return true;
+end $$;
+revoke all on function public.ce_band_delete(text) from public;
+grant execute on function public.ce_band_delete(text) to authenticated;
