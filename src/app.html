@@ -47,6 +47,15 @@
 /* ===== o nome da banda fica só no cabeçalho da tela Geral e do Setlist, não no topo de tudo ===== */
 header>div:first-child{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 #setview .hero-line{display:none}
+details.more.prim>summary{display:flex;align-items:center;justify-content:space-between;min-height:56px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-weight:700;font-size:18px;list-style:none}
+details.more.prim>summary::-webkit-details-marker{display:none}
+details.more.prim>summary::after{content:"▸";font-size:20px;color:var(--muted)}
+details.more.prim[open]>summary::after{content:"▾"}
+details.more.prim[open]>summary{margin-bottom:12px}
+.folders .row-actions.media-quick{grid-template-columns:repeat(2,minmax(0,1fr))}
+.folders .row-actions.media-quick .btn{min-height:64px;font-size:17px}
+.folders .row-actions.pastas{grid-template-columns:repeat(3,minmax(0,1fr))}
+.folders .row-actions.pastas .btn{white-space:normal;font-size:14px;padding:6px;line-height:1.2}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -1177,9 +1186,9 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
       <div class="people" id="people"></div>
     </section>
 
+    <section id="folders" class="folders" hidden></section>
     <section id="installbar" class="reh" hidden></section>
     <section id="reh" class="reh"></section>
-    <section id="folders" class="folders" hidden></section>
     <section id="lineup" class="lineup"></section>
     <section id="ideas" class="ideas"></section>
     <section id="feed" class="feed"></section>
@@ -1244,7 +1253,7 @@ var bandDraft=[], bandOpen=false, bandMeta={name:'',tagline:'',logo:''};
 var openId=null, filter='all', query='', as='', pfilter='all', pquery='', bcol=0, bcolUser=false, wl=null, meMember='', whoOpen=false, whoMode='me', whoAsked=false;
 var taps=[];
 var met={ctx:null,running:false,beat:0,next:0,timer:null,songId:null,delta:0};
-var ui={edit:{},more:{},tr:{},arm:{},ced:{}}, fs=15, fss=26;
+var ui={prim:{},edit:{},more:{},tr:{},arm:{},ced:{}}, fs=15, fss=26;
 var setlist=null, setDoc=null, stage=null, setChain=Promise.resolve();
 var live=null, liveDoc=null, following=false, lastLiveSong='', lyBusy=false;
 var linksCfg=null, linksDoc=null, spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, ideas=[], ideasCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0,hold:null,done:{}};
@@ -2413,7 +2422,9 @@ function studyHTML(s,m){
     (safeUrl(s.moises)?'<a class="btn small" target="_blank" rel="noopener" href="'+esc(s.moises)+'">Faixas da música ↗</a>':'')+
     '<a class="btn small" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">'+(s.spotify?'▶ Ouvir no Spotify':'Buscar no Spotify ↗')+'</a></div></div>';
   var more=ui.more[id];
-  return '<div class="detail"><div class="block study">'+prim.map(function(x){return B[x]}).join('')+mine+recBlock(s)+ratingBlock(s)+commentsBlock(s)+
+  var PN={chords:'Cifra',lyrics:'Letra',metro:'Metrônomo'};
+  var primHTML=prim.map(function(x){var op=!!ui.prim[id+x];return '<details class="more prim"'+(op?' open':'')+'><summary data-act="prim" data-id="'+id+'" data-k="'+x+'">'+PN[x]+'</summary><div>'+B[x]+'</div></details>'}).join('');
+  return '<div class="detail"><div class="block study">'+primHTML+mine+recBlock(s)+ratingBlock(s)+commentsBlock(s)+
     '<details class="more"'+(more?' open':'')+'><summary data-act="more" data-id="'+id+'">Mais ferramentas</summary><div>'+sec.map(function(x){return B[x]}).join('')+'</div></details></div></div>';
 }
 function renderPerson(pid){
@@ -3309,17 +3320,18 @@ function ensureVidList(){
 function renderFolders(){
   var el=$('#folders');if(!el)return;
   var d=ui.drive,s=setlistUrl(),v=vidUrl(),h='',extra='';
-  if(s)h+='<a class="btn" target="_blank" rel="noopener" href="'+esc(s)+'">📁 Pasta das gravações ↗</a>';
-  if(window.CE_DRIVE&&d&&d.connected)h+='<button type="button" class="btn primary" data-act="media-open">📷 Fotos e vídeos</button>';
+  if(s)h+='<a class="btn" target="_blank" rel="noopener" href="'+esc(s)+'">📁 Gravações ↗</a>';
+  if(window.CE_DRIVE&&d&&d.connected)h+='<button type="button" class="btn" data-act="media-open">🖼 Galeria</button>';
   var warn=(window.CE_DRIVE&&d&&d.connected&&d.expired)?'<div class="drive-warn"><span>A conexão com o Google Drive expirou.</span><button type="button" class="btn small primary" data-act="drive-reconnect">Reconectar</button></div>':'';
-  h+=v?'<a class="btn" target="_blank" rel="noopener" href="'+esc(v)+'">📂 Pasta de fotos e vídeos ↗</a>':'<a class="btn" href="#config" data-act="vid-define">📂 Definir a pasta de fotos e vídeos</a>';
+  h+=v?'<a class="btn" target="_blank" rel="noopener" href="'+esc(v)+'">📂 Fotos e vídeos ↗</a>':'<a class="btn" href="#config" data-act="vid-define">📂 Definir pasta</a>';
   el.hidden=!(window.CE_DRIVE||v);
   if(el.hidden){el.innerHTML='';return}
   if(window.CE_DRIVE&&d&&d.connected&&d.videos&&ui.vup){
     var u=ui.vup;
     extra='<p class="hint">Enviando '+esc(u.name)+' ('+u.i+' de '+u.n+')… <span class="vup-prog mono">'+Math.round(u.p*100)+'%</span></p>';
   }
-  el.innerHTML='<h3>Pastas da banda</h3>'+warn+'<div class="row-actions">'+h+'</div>'+extra;
+  var quick='<div class="row-actions no-fill media-quick"><button type="button" class="btn primary" data-act="media-quick" data-k="photo">📷 Tirar foto</button><button type="button" class="btn primary" data-act="media-quick" data-k="video">🎥 Gravar vídeo</button></div>';
+  el.innerHTML='<h3>Fotos, vídeos e pastas</h3>'+warn+(window.CE_DRIVE?quick:'')+'<div class="row-actions no-fill pastas">'+h+'</div>'+extra;
 }
 function videoRows(row){
   var d=ui.drive,api='';
@@ -3455,6 +3467,7 @@ document.addEventListener('click',function(e){
   if(act==='pfilter'){pfilter=t.dataset.v;render();return}
   if(act==='toggle'){if(met.running&&met.songId!==id)metStop();openId=openId===id?null:id;met.delta=0;render();return}
   if(act==='star'){e.stopPropagation();patch(id,{next:!(get(id)||{}).next},true);render();return}
+  if(act==='prim'){e.preventDefault();var pk=id+t.dataset.k;ui.prim[pk]=!ui.prim[pk];render();return}
   if(act==='more'){e.preventDefault();ui.more[id]=!ui.more[id];render();return}
   if(act==='edit-toggle'){var k=t.dataset.k;var cur=ui.edit[k];if(cur===undefined)cur=false;ui.edit[k]=!cur;render();return}
   if(act==='fs'){fs=Math.min(34,Math.max(11,fs+ +t.dataset.d*2));try{localStorage.setItem('ce-fs',fs)}catch(err){}render();return}
@@ -3655,6 +3668,7 @@ document.addEventListener('click',function(e){
   if(act==='photo-pick'){ui.photoFor=id||meMember;if(!ui.photoFor){toast('Escolha quem você é primeiro.');return}selfPhotoInp.click();return}
   if(act==='photo-del'){if(meMember)setMemberPhoto(meMember,null).then(function(){toast('Foto removida.')}).catch(function(){toast('Não foi possível remover agora.')});return}
   if(act==='drive-reconnect'){window.CE_DRIVE.connect();return}
+  if(act==='media-quick'){var dq=ui.drive;if(dq&&dq.connected&&dq.videos&&!dq.expired){if(t.dataset.k==='video')camVidInp.click();else photoInp.click();return}ui.mediaPick=true;renderMediaPick();return}
   if(act==='media-open'){ui.mediaPick=true;renderMediaPick();return}
   if(act==='media-close'){ui.mediaPick=false;renderMediaPick();return}
   if(act==='media-photo'){ui.mediaPick=false;photoInp.click();renderMediaPick();return}

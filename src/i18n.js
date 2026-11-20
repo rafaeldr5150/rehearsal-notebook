@@ -19,6 +19,8 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['📁 Gravações ↗','📁 Recordings ↗','📁 Grabaciones ↗'],['🖼 Galeria','🖼 Gallery','🖼 Galería'],['📂 Fotos e vídeos ↗','📂 Photos and videos ↗','📂 Fotos y vídeos ↗'],['📂 Definir pasta','📂 Set folder','📂 Definir carpeta'],
+['Tirar foto','Take photo','Tomar foto'],['Gravar vídeo','Record video','Grabar vídeo'],['Fotos, vídeos e pastas','Photos, videos and folders','Fotos, vídeos y carpetas'],['Enviar da galeria','Upload from gallery','Subir desde la galería'],['Cifra','Chords','Acordes'],['Letra','Lyrics','Letra'],['Metrônomo','Metronome','Metrónomo'],
 ['Sugestões de músicas','Song suggestions','Sugerencias de canciones'],
 ['a banda vota no que aprender','the band votes on what to learn','la banda vota qué aprender'],
 ['Ninguém sugeriu música ainda. Que tal a primeira?','Nobody has suggested a song yet. How about the first one?','Nadie ha sugerido una canción aún. ¿Y si sugieres la primera?'],
