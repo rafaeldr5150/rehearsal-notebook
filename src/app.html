@@ -71,6 +71,7 @@ body.sk-cus{--rec-on:var(--cb,#33d6a0)}
 .tour-count{font-size:13px;color:var(--muted)}
 .tour-btns{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
 .tour-btns .btn{flex:1 1 0}
+.empty-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -948,7 +949,7 @@ body.sk-neo #stage{--chord:#ffb020}
 .cfg-row b{font-size:15px}
 .cfg-row small{font-size:12.5px;opacity:.7;overflow:hidden;text-overflow:ellipsis}
 .cfg-row i{font-style:normal;opacity:.6;font-size:20px}
-header #btn-skin,header #btn-bg,header #btn-band,header #btn-import{display:none!important}
+header #btn-skin,header #btn-bg,header #btn-band{display:none!important}
 @media (max-width:900px){
   .tools .chips{gap:8px 10px}
   .tools .chips .chip{padding:8px 12px;font-size:13px;margin:0}
@@ -2877,7 +2878,7 @@ function renderHome(){
     return !q||((s.title||'')+' '+(s.artist||'')).toLowerCase().indexOf(q)>=0;
   });
   if(!songs.length){
-    listEl.innerHTML='<div class="empty-state"><strong>O caderno está vazio</strong>Use “Importar lista” para colar as músicas da playlist, ou “+ Música” para adicionar uma por vez.</div>';
+    listEl.innerHTML='<div class="empty-state"><strong>O caderno está vazio</strong>Use “Importar lista” para colar as músicas da playlist, ou “+ Música” para adicionar uma por vez.<div class="row-actions no-fill empty-actions"><button type="button" class="btn primary" data-act="import-open">Importar lista</button><button type="button" class="btn" data-act="add-open">+ Música</button></div></div>';
   }else if(!vis.length){
     listEl.innerHTML='<div class="empty-state"><strong>Nada por aqui</strong>Nenhuma música combina com a busca ou o filtro.</div>';
   }else{
@@ -3589,7 +3590,7 @@ function render(){
   var pid=view(),isSet=location.hash==='#setlist',isCfg=location.hash==='#config';
   var h1=document.querySelector('header h1');if(h1)h1.textContent=bandName()||'Rehearsal Notebook';
   $('#home').hidden=!!pid||isSet||isCfg;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;
-  $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=true;
+  $('#btn-add').hidden=!!pid||isSet||isCfg;$('#btn-import').hidden=!!pid||isSet||isCfg;
   if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
   renderDrawer();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.mediaPick)renderMediaPick();if(ui.ytOpen)ytPanel();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
   if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
@@ -3670,6 +3671,8 @@ document.addEventListener('click',function(e){
   if(act==='mv-part'){var cur3=partOf(get(id),t.dataset.mid).status,nx=cur3+ +t.dataset.d;if(nx>=0&&nx<=2){setPart(id,t.dataset.mid,{status:nx},true);render()}return}
   if(act==='drawer-close'){ui.cePick=null;openId=null;render();return}
   if(act==='bg-cycle'){bgMode=BG[(BG.indexOf(bgMode)+1)%BG.length];try{localStorage.setItem('ce-bg2',bgMode)}catch(err){}applyBg();toast('Fundo: '+BGN[bgMode]);render();return}
+  if(act==='import-open'){toggle('#panel-import','#import-text');return}
+  if(act==='add-open'){toggle('#panel-add','#new-title');return}
   if(act==='cfg-import'){location.hash='#geral';setTimeout(function(){toggle('#panel-import','#import-text')},60);return}
   if(act==='open-band'){openBand();window.scrollTo(0,0);return}
   if(act==='yt-open'){ytOpen(id);return}
@@ -3940,7 +3943,7 @@ document.addEventListener('change',function(e){
 });
 
 /* painéis */
-function toggle(p,focus){var el=$(p);var show=el.hidden;$('#panel-add').hidden=true;$('#panel-import').hidden=true;el.hidden=!show;if(show&&focus)$(focus).focus()}
+function toggle(p,focus){var el=$(p);var show=el.hidden;$('#panel-add').hidden=true;$('#panel-import').hidden=true;el.hidden=!show;if(show){try{el.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}if(focus)$(focus).focus()}}
 $('#btn-add').onclick=function(){toggle('#panel-add','#new-title')};
 $('#btn-import').onclick=function(){toggle('#panel-import','#import-text')};
 $('#btn-skin').onclick=function(){ui.skinOpen=true;renderSkinPick()};
