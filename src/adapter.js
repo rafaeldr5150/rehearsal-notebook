@@ -113,6 +113,7 @@ window.CE_AUTH={
   signOut:function(){return authClient().auth.signOut().then(function(){try{sessionStorage.removeItem('ce-entry');localStorage.removeItem('ce-band');localStorage.removeItem('ce-me')}catch(e){}location.href=location.pathname})},
   accounts:function(){return arpc('ce_band_accounts',{p_code:band})},
   setRole:function(u,r){return arpc('ce_band_set_role',{p_code:band,p_user:u,p_role:r})},
+  rotate:function(){return arpc('ce_band_rotate',{p_code:band}).then(function(c){try{localStorage.setItem('ce-band',c)}catch(e){}return c})},
   setMe:function(mid){if(window.CE_AUTH.user&&band)arpc('ce_set_me',{p_code:band,p_mid:mid||''}).catch(function(){})}
 };
 function pickBand(code,mid){
@@ -301,7 +302,10 @@ function rpc(fn,args){
 (function(){
   var FN=CFG.url+'/functions/v1/drive-oauth';
   function call(action,extra){
-    return fetch(FN,{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action:action,band:band},extra||{}))}).then(function(r){return r.json()});
+    return sess().catch(function(){return null}).then(function(se){
+      var h={apikey:CFG.key,'Content-Type':'application/json'};if(se&&se.access_token)h['x-user-token']=se.access_token;
+      return fetch(FN,{method:'POST',headers:h,body:JSON.stringify(Object.assign({action:action,band:band},extra||{}))}).then(function(r){return r.json()}).then(function(j){if(j&&j.error==='owner'&&action!=='connect-url'&&window.CE_TOAST)window.CE_TOAST('Só o dono da banda pode conectar o Drive. Entre com a sua conta de dono.');return j});
+    });
   }
   function idb(){return new Promise(function(res,rej){var q=indexedDB.open('ce-rec',1);q.onupgradeneeded=function(){q.result.createObjectStore('q',{keyPath:'id'})};q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})}
   function tx(mode,fn){return idb().then(function(d){return new Promise(function(res,rej){var t=d.transaction('q',mode),r=fn(t.objectStore('q'));t.oncomplete=function(){res(r&&r.result)};t.onerror=function(){rej(t.error)}})})}
@@ -328,7 +332,13 @@ function rpc(fn,args){
   }
   window.CE_DRIVE={
     status:function(){return call('status').catch(function(){return null})},
-    connect:function(){location.href=FN+'?start=1&band='+encodeURIComponent(band)+'&ret='+encodeURIComponent(location.origin)},
+    connect:function(){
+      call('connect-url',{origin:location.origin}).then(function(r){
+        if(r&&r.ok&&r.url){location.href=r.url;return}
+        if(r&&r.error==='owner'){if(window.CE_TOAST)window.CE_TOAST('Só o dono da banda pode conectar o Drive. Entre com a sua conta de dono.');return}
+        location.href=FN+'?start=1&band='+encodeURIComponent(band)+'&ret='+encodeURIComponent(location.origin);
+      }).catch(function(){location.href=FN+'?start=1&band='+encodeURIComponent(band)+'&ret='+encodeURIComponent(location.origin)});
+    },
     disconnect:function(){return call('disconnect')},
     list:function(songId){return call('list',{songId:songId})},
     listVideos:function(){return call('list',{kind:'video'})},

@@ -19,6 +19,14 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Gerar novo convite','Generate new invite','Generar nueva invitación'],
+['Toque de novo para gerar o novo convite','Tap again to generate the new invite','Toca de nuevo para generar la nueva invitación'],
+['O link e o código atuais deixam de valer. Você manda o novo para a banda.','The current link and code stop working. You send the new one to the band.','El enlace y el código actuales dejan de valer. Tú envías el nuevo a la banda.'],
+['Quem tem o convite antigo perde o acesso. Toque de novo para confirmar.','Anyone with the old invite loses access. Tap again to confirm.','Quien tenga la invitación anterior pierde el acceso. Toca de nuevo para confirmar.'],
+['Gerando…','Generating…','Generando…'],
+['Não foi possível gerar o novo convite agora.','Could not generate the new invite right now.','No se pudo generar la nueva invitación ahora.'],
+['Novo convite gerado. Toque em Copiar link de convite e envie para a banda.','New invite generated. Tap Copy invite link and send it to the band.','Nueva invitación generada. Toca Copiar enlace de invitación y envíala a la banda.'],
+['Só o dono da banda pode conectar o Drive. Entre com a sua conta de dono.','Only the band owner can connect Drive. Sign in with your owner account.','Solo el dueño de la banda puede conectar Drive. Entra con tu cuenta de dueño.'],
 ['📷 Minha foto','📷 My photo','📷 Mi foto'],['📷 Trocar minha foto','📷 Change my photo','📷 Cambiar mi foto'],['Minha foto','My photo','Mi foto'],['Trocar a minha foto','Change my photo','Cambiar mi foto'],
 ['Aparece no seu cartão da banda','Shows on your band card','Aparece en tu tarjeta de la banda'],['Remover a minha foto','Remove my photo','Quitar mi foto'],['Volta o ícone do instrumento','Brings back the instrument icon','Vuelve el icono del instrumento'],
 ['Preparando a foto…','Preparing the photo…','Preparando la foto…'],['Foto salva.','Photo saved.','Foto guardada.'],['Não foi possível usar essa foto.','Could not use that photo.','No se pudo usar esa foto.'],

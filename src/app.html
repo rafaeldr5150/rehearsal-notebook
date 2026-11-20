@@ -1293,6 +1293,7 @@ function parseT(t){t=String(t||'').trim();if(!t)return null;if(/^\d+$/.test(t))r
   return p.reduce(function(a,b){return a*60+b},0)}
 function uid(){return Math.random().toString(36).slice(2,9)}
 function toast(msg){var t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(function(){t.hidden=true},4000)}
+window.CE_TOAST=toast;
 function fail(e){toast(e&&e.code==='invalid_argument'?'Não foi possível salvar. Você precisa de acesso de colaborador para editar.':'Não foi possível salvar agora. Tente de novo.')}
 function get(id){return songs.find(function(s){return s.id===id})}
 function members(){return band&&band.members?band.members:[]}
@@ -1967,6 +1968,7 @@ function transposeKey(key,k){var t=String(key||'').trim();return t&&isChordTok(t
 
 /* ---------- escolher o músico ---------- */
 var ICO={
+lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   voz:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>',
   guit:'<circle cx="8" cy="16" r="4"/><circle cx="11.5" cy="12.5" r="2.6"/><path d="M13 11l7-7M17.5 4H20v2.5"/>',
@@ -3361,7 +3363,7 @@ function renderConfig(){
    '<section class="cfg"><h3>Aparência</h3>'+row('skin-open','nota','Layout e idioma',esc(sk?sk[1]:'')+' · '+lg)+
      (skin==='cartaz'?row('bg-cycle','list','Fundo da página',BGN[bgMode]):'')+'</section>'+
    '<section class="cfg"><h3>Banda</h3>'+row('open-band','group','Banda','Nome, logo, integrantes e convite')+
-     (window.CE_STANDALONE?row('copy-invite','group','Copiar link de convite','Quem abrir esse link entra no caderno da banda.')+row('copy-code','group','Copiar código','Para quem prefere colar o código na tela de entrada.'):'')+'</section>'+
+     (window.CE_STANDALONE?row('copy-invite','group','Copiar link de convite','Quem abrir esse link entra no caderno da banda.')+row('copy-code','group','Copiar código','Para quem prefere colar o código na tela de entrada.')+(window.CE_AUTH&&window.CE_AUTH.role==='owner'?row('invite-rotate','lock',ui.armRot?'Toque de novo para gerar o novo convite':'Gerar novo convite','O link e o código atuais deixam de valer. Você manda o novo para a banda.'):''):'')+'</section>'+
    '<section class="cfg"><h3>Google Drive</h3>'+driveRows(row)+'</section>'+
    '<section class="cfg"><h3>Vídeos da banda</h3>'+videoRows(row)+'</section>'+
    '<section class="cfg"><h3>Lembretes</h3>'+pushRows(row)+'</section>'+
@@ -3429,6 +3431,11 @@ document.addEventListener('click',function(e){
     if(!ui.armLeave){ui.armLeave=true;t.textContent='Confirmar: sair desta banda';t.classList.add('danger','armed');toast('Você vai precisar do código para entrar de novo.');return}
     try{localStorage.removeItem('ce-band');localStorage.removeItem('ce-me')}catch(err){}
     location.href=location.pathname;return}
+  if(act==='invite-rotate'){
+    if(!ui.armRot){ui.armRot=true;toast('Quem tem o convite antigo perde o acesso. Toque de novo para confirmar.');renderConfig();clearTimeout(ui.armRotT);ui.armRotT=setTimeout(function(){ui.armRot=false;if(location.hash==='#config')renderConfig()},6000);return}
+    ui.armRot=false;toast('Gerando…');
+    window.CE_AUTH.rotate().then(function(){try{sessionStorage.setItem('ce-rotated','1')}catch(e){}location.href=location.pathname+'#config'}).catch(function(){toast('Não foi possível gerar o novo convite agora.');renderConfig()});
+    return}
   if(act==='copy-invite'){var lk=location.origin+location.pathname+'?b='+encodeURIComponent(window.CE_BAND||'');var done=function(){toast('Link de convite copiado.')};try{navigator.clipboard.writeText(lk).then(done,function(){toast(lk)})}catch(err){toast(lk)}return}
   if(act==='bpmd'){met.delta=Math.max(-200,Math.min(200,met.delta+ +t.dataset.d));render();return}
   if(act==='bpm-reset'){met.delta=0;render();return}
@@ -3713,6 +3720,7 @@ $('#btn-band').onclick=function(){if(bandOpen){bandOpen=false;renderBandPanel()}
 $('#band-addrow').onclick=function(){bandDraft.push({id:uid(),name:'',instrument:''});renderBandPanel()};
 $('#band-save').onclick=saveBand;
 if(window.CE_STANDALONE&&window.CE_BAND)$('#invite-row').hidden=false;
+try{if(sessionStorage.getItem('ce-rotated')){sessionStorage.removeItem('ce-rotated');setTimeout(function(){toast('Novo convite gerado. Toque em Copiar link de convite e envie para a banda.')},800)}}catch(e){}
 function syncPill(){var s=window.CE_SYNC||{},el=$('#syncpill');if(!el)return;var off=s.online===false;el.hidden=!(off||s.pending>0);el.textContent=off?('Sem internet'+(s.pending?' · '+s.pending+(s.pending===1?' alteração guardada':' alterações guardadas'):'')):'Enviando alterações…'}
 window.addEventListener('ce-sync',syncPill);syncPill();
 $('#band-logo-rm').onclick=function(){bandMeta.logo='';renderBandPanel()};

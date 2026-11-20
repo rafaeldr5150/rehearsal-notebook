@@ -9,7 +9,7 @@ const CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET") || "";
 const KEY = Deno.env.get("CRON_SECRET") || "";
 const SELF = Deno.env.get("SUPABASE_URL")! + "/functions/v1/drive-oauth";
 const ORIGINS = ["https://caderno-de-ensaio.vercel.app", "https://caderno-de-ensaio-rafaeldr5150s-projects.vercel.app", "https://rehearsal-notebook-rafaeldr5150s-projects.vercel.app", "https://rehearsal-notebook-band.vercel.app", "http://localhost:8765"];
-const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "apikey, content-type, authorization, x-client-info", "Access-Control-Allow-Methods": "GET, POST, OPTIONS" };
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "apikey, content-type, authorization, x-client-info, x-user-token", "Access-Control-Allow-Methods": "GET, POST, OPTIONS" };
 const J = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const b64u = (b: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(b as ArrayBuffer))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
@@ -27,6 +27,23 @@ async function readState(s: string) {
   } catch (_) { return null; }
 }
 const bandOk = async (band: string) => !!band && !!(await sb.from("ce_bands").select("code").eq("code", band).maybeSingle()).data;
+
+// Owner check. A band that already has an owner account only lets its owners manage the Drive connection
+// (connect, disconnect, change folders). Bands with no owner (created without an account) keep the old behaviour.
+async function bandOwners(band: string): Promise<string[]> {
+  const { data } = await sb.from("ce_members").select("user_id").eq("band", band).eq("role", "owner");
+  return (data || []).map((r: { user_id: string }) => r.user_id);
+}
+async function isOwner(req: Request, band: string): Promise<boolean> {
+  const owners = await bandOwners(band);
+  if (!owners.length) return true;
+  const t = req.headers.get("x-user-token") || "";
+  if (!t) return false;
+  const { data } = await sb.auth.getUser(t);
+  return !!data?.user && owners.includes(data.user.id);
+}
+const maskEmail = (e: string) => e.replace(/^(.).*(@.*)$/, "$1•••$2");
+const MANAGE = ["disconnect", "set-folder", "set-videos", "clear-videos", "videos-create"];
 const bounce = (ret: string, q: string) => new Response(null, { status: 302, headers: { Location: `${ret}/?${q}#config` } });
 
 async function accessToken(row: { refresh_token: string }) {
@@ -61,6 +78,7 @@ Deno.serve(async (req) => {
   if (req.method === "GET" && url.searchParams.get("start")) {
     const band = url.searchParams.get("band") || "", ret = url.searchParams.get("ret") || "";
     if (!ORIGINS.includes(ret) || !(await bandOk(band))) return new Response("bad request", { status: 400 });
+    if ((await bandOwners(band)).length) return new Response("use the app to connect", { status: 403 });
     if (!CLIENT_ID || !CLIENT_SECRET) return bounce(ret, "drive=nosecret");
     const state = await makeState({ band, ret, exp: Date.now() + 10 * 60000 });
     const q = new URLSearchParams({ client_id: CLIENT_ID, redirect_uri: SELF, response_type: "code", access_type: "offline", prompt: "consent select_account", include_granted_scopes: "true",
@@ -97,12 +115,22 @@ Deno.serve(async (req) => {
   let b: any = {};
   try { b = await req.json(); } catch (_) { /* empty */ }
   if (!(await bandOk(b.band))) return J({ ok: false, error: "band" }, 404);
+  if (b.action === "connect-url") {
+    if (!(await isOwner(req, b.band))) return J({ ok: false, error: "owner" }, 403);
+    if (!ORIGINS.includes(b.origin)) return J({ ok: false, error: "origin" }, 400);
+    if (!CLIENT_ID || !CLIENT_SECRET) return J({ ok: false, error: "nosecret" }, 400);
+    const state = await makeState({ band: b.band, ret: b.origin, exp: Date.now() + 10 * 60000 });
+    const q = new URLSearchParams({ client_id: CLIENT_ID, redirect_uri: SELF, response_type: "code", access_type: "offline", prompt: "consent select_account", include_granted_scopes: "true",
+      scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email", state });
+    return J({ ok: true, url: "https://accounts.google.com/o/oauth2/v2/auth?" + q });
+  }
+  if (MANAGE.includes(b.action) && !(await isOwner(req, b.band))) return J({ ok: false, error: "owner" }, 403);
   const { data: row } = await sb.from("ce_drive").select("*").eq("band", b.band).maybeSingle();
 
   if (b.action === "status") {
     let expired = false;
     if (row) { try { await accessToken(row); } catch (e) { expired = /invalid_grant/.test(String((e as Error).message)); } }
-    return J({ ok: true, connected: !!row, expired, email: row?.email || "", folder: row?.folder_id || "", root: row?.root_name || "", videos: row?.videos_id || "", videosName: row?.videos_name || "", configured: !!(CLIENT_ID && CLIENT_SECRET) });
+    return J({ ok: true, connected: !!row, expired, email: await isOwner(req, b.band) ? (row?.email || "") : maskEmail(row?.email || ""), folder: row?.folder_id || "", root: row?.root_name || "", videos: row?.videos_id || "", videosName: row?.videos_name || "", configured: !!(CLIENT_ID && CLIENT_SECRET) });
   }
   if (!row) return J({ ok: false, error: "not_connected" }, 409);
 
