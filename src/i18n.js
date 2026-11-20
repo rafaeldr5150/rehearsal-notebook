@@ -19,6 +19,20 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Aceito receber mensagens por e-mail','I accept messages by email','Acepto recibir mensajes por correo'],
+['Aparece um botão “Enviar mensagem” no seu perfil. A mensagem chega no e-mail da sua conta, sem mostrar esse e-mail a quem escreve. Só vale se o perfil estiver visível.','A “Send message” button shows on your profile. The message arrives at your account email without showing that email to the sender. Only works if the profile is visible.','Aparece un botón “Enviar mensaje” en tu perfil. El mensaje llega al correo de tu cuenta sin mostrar ese correo a quien escribe. Solo vale si el perfil es visible.'],
+['✉ Enviar mensagem','✉ Send message','✉ Enviar mensaje'],
+['Escreva a sua mensagem…','Write your message…','Escribe tu mensaje…'],
+['Vai por e-mail. Você não vê o e-mail da pessoa. Se ela responder, o e-mail dela chega a você, e o seu e-mail de login passa a ser visto por ela.','It goes by email. You do not see the person\'s email. If they reply, their email reaches you, and your login email becomes visible to them.','Va por correo. No ves el correo de la persona. Si responde, su correo te llega y tu correo de acceso pasa a ser visible para ella.'],
+['Enviar','Send','Enviar'],
+['Mensagem enviada. A resposta chega no seu e-mail.','Message sent. The reply arrives in your email.','Mensaje enviado. La respuesta llega a tu correo.'],
+['Escreva uma mensagem um pouco maior.','Write a slightly longer message.','Escribe un mensaje un poco más largo.'],
+['O envio de mensagens ainda não foi ativado no app. Use o contato do perfil por enquanto.','Sending messages is not enabled in the app yet. Use the profile contact for now.','El envío de mensajes aún no está activado en la app. Usa el contacto del perfil por ahora.'],
+['Você já enviou 5 mensagens hoje. Tente amanhã.','You already sent 5 messages today. Try tomorrow.','Ya enviaste 5 mensajes hoy. Inténtalo mañana.'],
+['Você já enviou 2 mensagens para essa pessoa hoje. Espere até amanhã.','You already sent 2 messages to this person today. Wait until tomorrow.','Ya enviaste 2 mensajes a esta persona hoy. Espera hasta mañana.'],
+['Essa pessoa recebeu muitas mensagens hoje. Tente amanhã.','This person received many messages today. Try tomorrow.','Esta persona recibió muchos mensajes hoy. Inténtalo mañana.'],
+['Essa pessoa não está aceitando mensagens.','This person is not accepting messages.','Esta persona no acepta mensajes.'],
+['Não foi possível enviar agora. Tente de novo mais tarde.','Could not send now. Try again later.','No se pudo enviar ahora. Inténtalo más tarde.'],
 ['Contato (opcional)','Contact (optional)','Contacto (opcional)'],
 ['Só quem está logado no app e abre o seu perfil visível vê estes dados. Preencha só o que quiser mostrar.','Only people signed in to the app who open your visible profile see this. Fill in only what you want to show.','Solo quien está en la app con sesión iniciada y abre tu perfil visible ve estos datos. Rellena solo lo que quieras mostrar.'],
 ['WhatsApp com DDD, ex.: 11 91234-5678','WhatsApp with area code, e.g.: 11 91234-5678','WhatsApp con prefijo, ej.: 11 91234-5678'],

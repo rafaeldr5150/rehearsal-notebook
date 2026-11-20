@@ -28,6 +28,7 @@ create table if not exists public.ce_reports(
   target uuid not null, video uuid, reason text not null default '',
   at timestamptz not null default now());
 alter table public.ce_profiles add column if not exists contact jsonb not null default '{}'::jsonb;
+alter table public.ce_profiles add column if not exists accept_msgs boolean not null default false;
 alter table public.ce_profiles enable row level security;
 alter table public.ce_profile_videos enable row level security;
 alter table public.ce_reports enable row level security;
@@ -65,12 +66,12 @@ begin
   if v_ig <> '' and v_ig !~ '^[A-Za-z0-9._]{1,30}$' then raise exception 'contact'; end if;
   if v_em <> '' and (length(v_em) > 120 or v_em !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$') then raise exception 'contact'; end if;
   v_contact := jsonb_build_object('whatsapp',v_wa,'instagram',v_ig,'email',v_em);
-  insert into ce_profiles(user_id,name,bio,city,plays,owns,gear,styles,photo,contact,visible)
+  insert into ce_profiles(user_id,name,bio,city,plays,owns,gear,styles,photo,contact,accept_msgs,visible)
   values(auth.uid(), left(btrim(coalesce(p->>'name','')),60), left(btrim(coalesce(p->>'bio','')),600), left(btrim(coalesce(p->>'city','')),60),
     ce_clean_list(p->'plays',12,40), ce_clean_list(p->'owns',20,40), ce_clean_list(p->'gear',30,60), ce_clean_list(p->'styles',12,40), ph, v_contact,
-    coalesce((p->>'visible')::boolean,false))
+    coalesce((p->>'accept_msgs')::boolean,false), coalesce((p->>'visible')::boolean,false))
   on conflict(user_id) do update set name=excluded.name, bio=excluded.bio, city=excluded.city, plays=excluded.plays, owns=excluded.owns,
-    gear=excluded.gear, styles=excluded.styles, photo=excluded.photo, contact=excluded.contact, visible=excluded.visible, updated_at=now();
+    gear=excluded.gear, styles=excluded.styles, photo=excluded.photo, contact=excluded.contact, accept_msgs=excluded.accept_msgs, visible=excluded.visible, updated_at=now();
   return true;
 end $$;
 
@@ -142,3 +143,33 @@ revoke all on function public.ce_clean_list(jsonb,int,int), public.ce_profile_me
   public.ce_profile_get(uuid), public.ce_video_add(text,text), public.ce_video_del(uuid), public.ce_profile_report(uuid,uuid,text), public.ce_profile_delete() from public;
 grant execute on function public.ce_profile_me(), public.ce_profile_save(jsonb), public.ce_profiles_search(text,text,text,int,int),
   public.ce_profile_get(uuid), public.ce_video_add(text,text), public.ce_video_del(uuid), public.ce_profile_report(uuid,uuid,text), public.ce_profile_delete() to authenticated;
+
+
+-- Messages by e-mail: the sender never sees the recipient's address. Only the send-message edge function (service role) calls the gate.
+create table if not exists public.ce_messages(
+  id bigserial primary key,
+  sender uuid not null references auth.users(id) on delete cascade,
+  recipient uuid not null references auth.users(id) on delete cascade,
+  at timestamptz not null default now(),
+  ok boolean not null default false);
+create index if not exists ce_messages_sender_at on public.ce_messages(sender, at desc);
+create index if not exists ce_messages_recipient_at on public.ce_messages(recipient, at desc);
+alter table public.ce_messages enable row level security;
+revoke all on public.ce_messages from anon, authenticated;
+
+create or replace function public.ce_msg_gate(p_from uuid, p_to uuid) returns jsonb
+language plpgsql security definer set search_path=public as $$
+declare v_to record; v_from record; v_id bigint;
+begin
+  if p_from is null or p_to is null or p_from = p_to then raise exception 'self'; end if;
+  select p.name, u.email into v_to from ce_profiles p join auth.users u on u.id=p.user_id where p.user_id=p_to and p.visible and p.accept_msgs and u.email is not null;
+  if v_to is null then raise exception 'closed'; end if;
+  if (select count(*) from ce_messages where sender=p_from and at > now() - interval '1 day') >= 5 then raise exception 'rate_sender'; end if;
+  if (select count(*) from ce_messages where sender=p_from and recipient=p_to and at > now() - interval '1 day') >= 2 then raise exception 'rate_pair'; end if;
+  if (select count(*) from ce_messages where recipient=p_to and at > now() - interval '1 day') >= 20 then raise exception 'rate_recipient'; end if;
+  select coalesce(nullif(p.name,''), split_part(u.email,'@',1)) as name, u.email into v_from from auth.users u left join ce_profiles p on p.user_id=u.id where u.id=p_from;
+  insert into ce_messages(sender,recipient) values(p_from,p_to) returning id into v_id;
+  return jsonb_build_object('id',v_id,'to_email',v_to.email,'to_name',v_to.name,'from_email',v_from.email,'from_name',v_from.name);
+end $$;
+revoke all on function public.ce_msg_gate(uuid,uuid) from public, anon, authenticated;
+grant execute on function public.ce_msg_gate(uuid,uuid) to service_role;

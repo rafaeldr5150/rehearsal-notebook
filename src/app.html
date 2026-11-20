@@ -2187,13 +2187,20 @@ function renderSide(){
 /* ---------- rede de músicos (independente da banda) ---------- */
 var MUS_INST=['Guitarra','Violão','Baixo','Bateria','Voz','Teclado','Piano','Saxofone','Violino','Percussão','DJ'];
 var MUS_STYLE=['Rock','Pop','Blues','Jazz','Metal','Samba','MPB','Funk','Reggae','Sertanejo','Country','Folk','Eletrônica','Gospel','Clássica'];
-var mus={tab:'discover',q:'',inst:'',style:'',list:null,more:false,busy:false,me:undefined,meBusy:false,draft:null,saving:false,view:undefined,viewBusy:false,vurl:'',vtitle:'',vtitleAuto:'',vtitleFor:'',tstat:'',add:{},video:null,armDel:'',err:''};
+var mus={tab:'discover',q:'',inst:'',style:'',list:null,more:false,busy:false,me:undefined,meBusy:false,draft:null,saving:false,view:undefined,viewBusy:false,msg:'',compose:false,msgReady:undefined,sending:false,vurl:'',vtitle:'',vtitleAuto:'',vtitleFor:'',tstat:'',add:{},video:null,armDel:'',err:''};
 function musOn(){return !!(window.CE_PROFILE&&window.CE_STANDALONE)}
 function musAuthed(){return !!(window.CE_AUTH&&window.CE_AUTH.user)}
 function musRoute(){var h=location.hash.replace(/^#/,'');if(h==='musicos')return {k:'dir'};var m=/^musico-([0-9a-f-]{36})$/.exec(h);return m?{k:'prof',id:m[1]}:null}
 function musErr(e){var m=String(e&&e.message||e||'');
   if(/url/.test(m))return 'Link não aceito. Use YouTube, Vimeo, Instagram, TikTok, Facebook ou Google Drive, começando com https://.';
   if(/limit/.test(m))return 'Você chegou ao limite de 30 vídeos. Apague algum para adicionar outro.';
+  if(/mail_off/.test(m))return 'O envio de mensagens ainda não foi ativado no app. Use o contato do perfil por enquanto.';
+  if(/rate_sender/.test(m))return 'Você já enviou 5 mensagens hoje. Tente amanhã.';
+  if(/rate_pair/.test(m))return 'Você já enviou 2 mensagens para essa pessoa hoje. Espere até amanhã.';
+  if(/rate_recipient/.test(m))return 'Essa pessoa recebeu muitas mensagens hoje. Tente amanhã.';
+  if(/closed/.test(m))return 'Essa pessoa não está aceitando mensagens.';
+  if(/short/.test(m))return 'Escreva uma mensagem um pouco maior.';
+  if(/send/.test(m))return 'Não foi possível enviar agora. Tente de novo mais tarde.';
   if(/contact/.test(m))return 'Contato inválido. Confira o WhatsApp (com DDD), o Instagram e o e-mail.';
   if(/photo/.test(m))return 'Não foi possível usar essa foto. Tente outra.';
   if(/rate/.test(m))return 'Muitas denúncias hoje. Tente amanhã.';
@@ -2215,7 +2222,7 @@ function musLoadMe(){
   if(mus.meBusy)return;mus.meBusy=true;
   window.CE_PROFILE.me().then(function(r){mus.me=r;if(!mus.draft)musDraftFrom(r.profile)}).catch(function(e){mus.me=null;mus.err=musErr(e)}).then(function(){mus.meBusy=false;render()});
 }
-function musDraftFrom(p){p=p||{};mus.draft={name:p.name||(window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.name)||'',city:p.city||'',bio:p.bio||'',plays:(p.plays||[]).slice(),owns:(p.owns||[]).slice(),gear:(p.gear||[]).slice(),styles:(p.styles||[]).slice(),photo:p.photo||'',contact:Object.assign({whatsapp:'',instagram:'',email:''},p.contact||{}),visible:!!p.visible}}
+function musDraftFrom(p){p=p||{};mus.draft={name:p.name||(window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.name)||'',city:p.city||'',bio:p.bio||'',plays:(p.plays||[]).slice(),owns:(p.owns||[]).slice(),gear:(p.gear||[]).slice(),styles:(p.styles||[]).slice(),photo:p.photo||'',contact:Object.assign({whatsapp:'',instagram:'',email:''},p.contact||{}),accept_msgs:!!p.accept_msgs,visible:!!p.visible}}
 function musSearch(reset){
   if(mus.busy)return;mus.busy=true;if(reset){mus.list=null}
   window.CE_PROFILE.search(mus.q,mus.inst,mus.style,reset?0:(mus.list||[]).length).then(function(rows){mus.list=(reset?[]:(mus.list||[])).concat(rows||[]);mus.more=(rows||[]).length>=20;mus.err=''}).catch(function(e){mus.list=mus.list||[];mus.err=musErr(e)}).then(function(){mus.busy=false;render()});
@@ -2247,6 +2254,7 @@ function musEditor(){
       '<input type="text" data-mus-c="instagram" data-draft="mus" data-fk="musc2" maxlength="60" autocapitalize="off" value="'+esc((d.contact||{}).instagram||'')+'" placeholder="Instagram, ex.: @meuusuario" aria-label="Instagram" autocomplete="off">'+
       '<input type="email" inputmode="email" data-mus-c="email" data-draft="mus" data-fk="musc3" maxlength="120" autocapitalize="off" value="'+esc((d.contact||{}).email||'')+'" placeholder="E-mail para contato" aria-label="E-mail de contato" autocomplete="off"></div>'+
     '<label class="mus-vis"><input type="checkbox" data-mus-vis="1" data-draft="mus"'+(d.visible?' checked':'')+'><span><b>Visível para outros músicos</b><small>Desligado, só você vê o perfil. Ligado, outros músicos do app podem encontrar você, ver seu nome, cidade, foto, instrumentos e vídeos. O seu e-mail nunca aparece.</small></span></label>'+
+    '<label class="mus-vis"><input type="checkbox" data-mus-msgs="1" data-draft="mus"'+(d.accept_msgs?' checked':'')+'><span><b>Aceito receber mensagens por e-mail</b><small>Aparece um botão “Enviar mensagem” no seu perfil. A mensagem chega no e-mail da sua conta, sem mostrar esse e-mail a quem escreve. Só vale se o perfil estiver visível.</small></span></label>'+
     '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="mus-save"'+(mus.saving?' disabled':'')+'>'+(mus.saving?'Salvando…':'Salvar perfil')+'</button>'+
     (mus.me&&mus.me.profile?'<a class="btn" href="#musico-'+esc(mus.me.profile.user_id)+'">Ver como os outros veem</a>':'')+'</div></div>'+
     '<div class="panel mus-form"><h3>Meus vídeos</h3>'+musVideos(vids,true)+
@@ -2266,6 +2274,15 @@ function musDiscover(){
     '<button type="button" class="btn primary" data-act="mus-find">Buscar</button></div>'+
     (mus.err?'<p class="hint">'+esc(mus.err)+'</p>':'')+
     (mus.list===null?'<p class="hint">Buscando…</p>':rows?'<div class="mus-grid">'+rows+'</div>'+(mus.more?'<div class="row-actions no-fill"><button type="button" class="btn" data-act="mus-more"'+(mus.busy?' disabled':'')+'>Ver mais</button></div>':''):'<div class="empty-state"><strong>Nenhum músico encontrado</strong>Quando outros músicos ligarem “Visível” no perfil, eles aparecem aqui. Que tal ser o primeiro? Abra “Meu perfil”.</div>');
+}
+function musCompose(p){
+  if(!mus.compose)return '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="mus-msg-open" data-u="'+esc(p.user_id)+'">✉ Enviar mensagem</button></div>';
+  var off=mus.msgReady===false;
+  return '<div class="panel mus-compose"><h3>Mensagem para '+esc(p.name)+'</h3>'+
+    (off?'<p class="hint">O envio de mensagens ainda não foi ativado no app. Use o contato do perfil por enquanto.</p>':'')+
+    '<textarea rows="6" maxlength="1000" data-mus-msg="1" data-draft="mus" data-fk="musmsg" placeholder="Escreva a sua mensagem…" aria-label="Mensagem">'+esc(mus.msg)+'</textarea><div class="faint mono" id="mus-msg-count">'+mus.msg.length+' / 1000</div>'+
+    '<p class="hint">Vai por e-mail. Você não vê o e-mail da pessoa. Se ela responder, o e-mail dela chega a você, e o seu e-mail de login passa a ser visto por ela.</p>'+
+    '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="mus-msg-send" data-u="'+esc(p.user_id)+'"'+(mus.sending||off?' disabled':'')+'>'+(mus.sending?'Enviando…':'Enviar')+'</button><button type="button" class="btn" data-act="mus-msg-cancel">Cancelar</button></div></div>';
 }
 function musContactHTML(c){
   c=c||{};var wa=/^[0-9]{8,15}$/.test(c.whatsapp||'')?c.whatsapp:'',ig=/^[A-Za-z0-9._]{1,30}$/.test(c.instagram||'')?c.instagram:'',em=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email||'')&&String(c.email).length<=120?c.email:'';
@@ -2289,6 +2306,7 @@ function musProfileView(id){
     musContactHTML(p.contact)+
     sec('Toca',p.plays)+sec('Tem',p.owns,'alt')+sec('Equipamentos',p.gear,'alt')+sec('Estilos favoritos',p.styles)+
     '<div class="panel"><h3>Vídeos</h3>'+musVideos(v.videos||[],false)+'</div>'+
+    (!mine&&p.accept_msgs?musCompose(p):'')+
     (mine?'':'<div class="row-actions no-fill"><button type="button" class="btn small'+(mus.armDel==='rep'?' danger armed':'')+'" data-act="mus-report" data-u="'+esc(p.user_id)+'">'+(mus.armDel==='rep'?'Confirmar: denunciar este perfil':'Denunciar')+'</button></div>');
 }
 function renderMus(){
@@ -2345,6 +2363,14 @@ function musAct(act,t){
     if(mus.armDel!==t.dataset.v){mus.armDel=t.dataset.v;render();clearTimeout(mus._t);mus._t=setTimeout(function(){mus.armDel='';render()},5000);return}
     mus.armDel='';P.delVideo(t.dataset.v).then(function(){mus.me=undefined;mus.meBusy=false;mus.view=undefined;render()}).catch(function(e){toast(musErr(e))});return}
   if(act==='mus-play'){var url=t.dataset.url,id=ytId(url);if(!id){window.open(url,'_blank','noopener');return}mus.video=id;renderMusVideo();return}
+  if(act==='mus-msg-open'){mus.compose=true;mus.msgReady=undefined;render();if(P.ready)P.ready().then(function(r){mus.msgReady=r}).catch(function(){mus.msgReady=undefined}).then(function(){render()});return}
+  if(act==='mus-msg-cancel'){mus.compose=false;render();return}
+  if(act==='mus-msg-send'){
+    var mt=String(mus.msg||'').trim();if(mt.length<10){toast('Escreva uma mensagem um pouco maior.');return}
+    if(mus.sending)return;mus.sending=true;render();
+    P.message(t.dataset.u,mt).then(function(r){
+      if(r&&r.ok){mus.msg='';mus.compose=false;toast('Mensagem enviada. A resposta chega no seu e-mail.')}else toast(musErr({message:(r&&r.error)||'send'}));
+    }).catch(function(e){toast(musErr(e))}).then(function(){mus.sending=false;render()});return}
   if(act==='mus-vclose'){mus.video=null;renderMusVideo();return}
   if(act==='mus-delprofile'){
     if(mus.armDel!=='profile'){mus.armDel='profile';render();clearTimeout(mus._t);mus._t=setTimeout(function(){mus.armDel='';render()},5000);return}
@@ -3816,7 +3842,7 @@ function render(){
   if(fk){var el=document.querySelector('[data-fk="'+fk+'"]');if(el){el.focus();try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
 }
 function route(){
-  metStop();openId=null;taps=[];stage=null;met.delta=0;closeStageSilent();
+  mus.compose=false;metStop();openId=null;taps=[];stage=null;met.delta=0;closeStageSilent();
   window.scrollTo(0,0);ui.pushAsked=false;render();
 }
 window.addEventListener('hashchange',route);
@@ -4130,6 +4156,7 @@ document.addEventListener('input',function(e){
   var t=e.target;
   if(t.dataset&&t.dataset.mus){var mk=t.dataset.mus;if(mk==='q')mus.q=t.value;else if(mk==='vurl'){mus.vurl=t.value;musTitleSoon()}else if(mk==='vtitle')mus.vtitle=t.value;else if(mus.draft)mus.draft[mk]=t.value;return}
   if(t.dataset&&t.dataset.musAdd){mus.add[t.dataset.musAdd]=t.value;return}
+  if(t.dataset&&t.dataset.musMsg){mus.msg=t.value;var cn=document.getElementById('mus-msg-count');if(cn)cn.textContent=mus.msg.length+' / 1000';return}
   if(t.dataset&&t.dataset.musC){if(mus.draft){mus.draft.contact=mus.draft.contact||{};mus.draft.contact[t.dataset.musC]=t.value}return}
   if(t.classList&&t.classList.contains('pl-seek')){t.dataset.drag='1';if(recAudio)recAudio.currentTime=+t.value/10;var d=recAudio&&plDur();t.style.setProperty('--p',d?(+t.value/10/d*100)+'%':'0%');var tc=document.querySelector('.pl-cur');if(tc)tc.textContent=plClock(+t.value/10);clearTimeout(t._dt);t._dt=setTimeout(function(){delete t.dataset.drag},400);return}
   if(t.dataset.f==='asp'){auto.speed=+t.value;var av2=$('#asp-val');if(av2)av2.textContent=auto.speed;try{localStorage.setItem('ce-asp',auto.speed)}catch(err){}return}
@@ -4151,6 +4178,7 @@ document.addEventListener('change',function(e){
   var mt=e.target;
   if(mt.dataset&&mt.dataset.musSel){mus[mt.dataset.musSel]=mt.value;musSearch(true);return}
   if(mt.dataset&&mt.dataset.musVis){if(mus.draft)mus.draft.visible=!!mt.checked;return}
+  if(mt.dataset&&mt.dataset.musMsgs){if(mus.draft)mus.draft.accept_msgs=!!mt.checked;return}
   var t=e.target;
   if(t.id==='band-logo-file'){readLogo(t.files&&t.files[0]);t.value='';return}
   if(t.id==='as'){as=t.value;try{localStorage.setItem('ce-as',as)}catch(err){}render();return}
