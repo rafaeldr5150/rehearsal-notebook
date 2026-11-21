@@ -185,6 +185,19 @@ body.sk-car .t-wrap{gap:10px}
 .spot-del{flex:none;width:32px;height:32px;border:0;background:transparent;color:var(--muted);font-size:22px;line-height:1}
 .spot-add{display:flex;gap:8px}.spot-add input{flex:1;min-width:0}
 .spot-tag{background:rgba(245,184,60,.18);border-color:#f5b83c}
+/* ===== diário de estudo ===== */
+.study{display:flex;flex-direction:column;gap:14px}
+.study-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.study-top h3{margin:0 0 4px;font-size:18px}
+.study-flame{font-size:20px;font-weight:700;color:#ff9a3c}
+.study-min{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.study-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.study-nums span{display:flex;flex-direction:column;gap:2px;padding:10px 4px;border:1px solid var(--line);border-radius:12px}
+.study-nums b{font-size:22px}.study-nums small{color:var(--muted);font-size:12px}
+.study-badges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.badge-s{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;border-radius:12px;text-align:center;opacity:.32;filter:grayscale(1)}
+.badge-s i{font-style:normal;font-size:26px}.badge-s small{font-size:11px;line-height:1.15;color:var(--muted)}
+.badge-s.on{opacity:1;filter:none;background:rgba(255,154,60,.12)}
+.mflame{font-size:14px;font-weight:700;color:#ff9a3c}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -1390,7 +1403,7 @@ var met={ctx:null,running:false,beat:0,next:0,timer:null,songId:null,delta:0};
 var ui={prim:{},edit:{},more:{},tr:{},arm:{},ced:{}}, fs=15, fss=26;
 var setlist=null, setDoc=null, stage=null, setChain=Promise.resolve();
 var live=null, liveDoc=null, following=false, lastLiveSong='', lyBusy=false;
-var linksCfg=null, linksDoc=null, spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, ideas=[], ideasCol=null, events=[], evCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0,hold:null,done:{}};
+var linksCfg=null, linksDoc=null, spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, ideas=[], ideasCol=null, events=[], evCol=null, studyDocs=[], studyCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0,hold:null,done:{}};
 var pend={}, drafts={}, renderTimer=null;
 var BG=['flat','top','soft'], BGN={soft:'parede suave',top:'parede só no topo',flat:'liso'}, bgMode='flat';
 try{bgMode=localStorage.getItem('ce-bg2')||'flat'}catch(e){}
@@ -2184,7 +2197,7 @@ function mcardHTML(m,pick){
     (me?'<span class="me-tag">Você</span>':'')+(st.pend?'<span class="badge pend" title="'+st.pend+' pendentes">'+st.pend+'</span>':'')+
     '<span class="mico'+(m.photo?' has-photo':'')+'">'+avatarHTML(m,m.photo?96:30)+'</span>'+
     '<span class="mname">'+esc(first(m.name))+'</span><span class="minst">'+esc(m.instrument)+'</span>'+
-    starsHTML(st.pct)+'<span class="mcount">'+st.done+' de '+st.total+' prontas</span></a>';
+    starsHTML(st.pct)+'<span class="mcount">'+st.done+' de '+st.total+' prontas</span>'+(function(){var sk=streakOf(studyDaysOf(m.id));return sk?'<span class="mflame" title="Dias seguidos estudando">🔥 '+sk+'</span>':''})()+'</a>';
 }
 function renderLineup(){
   var el=$('#lineup');if(!el)return;
@@ -2907,7 +2920,7 @@ function renderPerson(pid){
     :flatHTML(vis,function(s){return pcardHTML(s,pid)});
   el.innerHTML='<div class="phead"><div><div class="faint">Página pessoal</div><h2>'+(avatarHTML(m,46).indexOf('class="av"')>=0?'<span class="pav">'+avatarHTML(m,46)+'</span>':'')+esc(m.name)+' <span class="faint" style="font-weight:400">· '+esc(m.instrument)+'</span></h2><div class="row-actions" style="margin-top:8px">'+(meMember===pid?'<span class="tag" style="background:var(--red);color:#fff;border-color:var(--paper-ink)">Esta é a sua página</span><button type="button" class="btn small" data-act="photo-pick" data-id="'+pid+'">'+(m.photo?'📷 Trocar minha foto':'📷 Minha foto')+'</button>':'<button type="button" class="btn small" data-act="set-me" data-id="'+pid+'">Sou eu</button>')+'<button type="button" class="btn small" data-act="who-nav">Trocar de músico</button></div></div>'+
     '<div class="pstat"><div class="pl" style="display:flex;justify-content:space-between"><b>'+done+' de '+mine.length+' prontas</b><span class="mono faint">'+pc+'%</span></div>'+starsHTML(pc)+'</div></div>'+
-    alertHTML(pid)+'<div class="tools"><input class="grow" type="search" id="pq" data-fk="pq" value="'+esc(pquery)+'" placeholder="Buscar por título ou artista" aria-label="Buscar música"><div class="chips">'+chipsHTML(PFILTERS,'pfilter',pfilter,pcounts)+'</div></div>'+
+    studyCardHTML(pid)+alertHTML(pid)+'<div class="tools"><input class="grow" type="search" id="pq" data-fk="pq" value="'+esc(pquery)+'" placeholder="Buscar por título ou artista" aria-label="Buscar música"><div class="chips">'+chipsHTML(PFILTERS,'pfilter',pfilter,pcounts)+'</div></div>'+
     '<div id="plist" style="display:flex;flex-direction:column;gap:8px">'+body+'</div>';
 }
 
@@ -2969,6 +2982,61 @@ function renderAgenda(){
       :'<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="ev-new">+ Novo compromisso</button></div>')+
     '<h3 class="ev-h">Próximos</h3>'+(up.length?'<ul class="ev-list">'+up.map(card).join('')+'</ul>':'<div class="empty-state"><strong>Nada marcado ainda</strong>Toque em “Novo compromisso” para marcar um ensaio ou um show. A banda confirma presença por aqui.</div>')+
     (past.length?'<details class="more"><summary>Já passaram ('+past.length+')</summary><ul class="ev-list">'+past.map(card).join('')+'</ul></details>':'');
+}
+
+/* ---------- diário de estudo: sequência de dias e selos ---------- */
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function studyDaysOf(mid){var seen={};studyDocs.forEach(function(x){if(x.mid===mid)seen[x.day]=x.min||0});return seen}
+function streakOf(days){
+  var d=new Date();d.setHours(12,0,0,0);var n=0;
+  if(days[ymd(d)]==null)d.setDate(d.getDate()-1);
+  while(days[ymd(d)]!=null){n++;d.setDate(d.getDate()-1)}
+  return n;
+}
+function bestStreak(days){
+  var ks=Object.keys(days).sort(),best=0,cur=0,prev=null;
+  ks.forEach(function(k){var dt=new Date(k+'T12:00:00');if(prev&&Math.round((dt-prev)/864e5)===1)cur++;else cur=1;prev=dt;if(cur>best)best=cur});
+  return best;
+}
+function studyStats(mid){
+  var days=studyDaysOf(mid),total=Object.keys(days).length,now=new Date(),wk=0;
+  for(var i=0;i<7;i++){var d=new Date(now);d.setDate(now.getDate()-i);wk+=days[ymd(d)]||0}
+  var ready=songs.filter(function(x){return partOf(x,mid).status===2}).length,mine=songs.filter(function(x){return partOf(x,mid).status!==3}).length;
+  return {days:days,total:total,streak:streakOf(days),best:bestStreak(days),weekMin:wk,ready:ready,mine:mine,today:days[ymd(now)]!=null};
+}
+function studyBadges(st){
+  return [
+    {k:'d1',t:'Primeiro dia',ok:st.total>=1,ico:'🌱'},
+    {k:'s3',t:'3 dias seguidos',ok:st.best>=3,ico:'🔥'},
+    {k:'s7',t:'7 dias seguidos',ok:st.best>=7,ico:'⚡'},
+    {k:'s30',t:'30 dias seguidos',ok:st.best>=30,ico:'🏆'},
+    {k:'r1',t:'Primeira música pronta',ok:st.ready>=1,ico:'🎸'},
+    {k:'r5',t:'5 músicas prontas',ok:st.ready>=5,ico:'⭐'},
+    {k:'r10',t:'10 músicas prontas',ok:st.ready>=10,ico:'🌟'},
+    {k:'all',t:'Repertório todo pronto',ok:st.mine>0&&st.ready>=st.mine,ico:'👑'}
+  ];
+}
+function studyCardHTML(pid){
+  var st=studyStats(pid),mine=meMember===pid,bd=studyBadges(st),got=bd.filter(function(b){return b.ok}).length;
+  var flame=st.streak?'🔥 '+st.streak+(st.streak===1?' dia seguido':' dias seguidos'):'Comece a sua sequência';
+  var mins=st.today?st.days[ymd(new Date())]:0;
+  return '<section class="study panel"><div class="study-top"><div><h3>Diário de estudo</h3><div class="study-flame">'+flame+'</div></div>'+
+    (mine?'<button type="button" class="btn '+(st.today?'':'primary')+'" data-act="study-today">'+(st.today?'✓ Estudei hoje':'Estudei hoje')+'</button>':'')+'</div>'+
+    (mine&&st.today?'<div class="study-min"><span class="faint">Quanto tempo? (opcional)</span>'+[15,30,60].map(function(m){return '<button type="button" class="chip" data-act="study-min" data-v="'+m+'" aria-pressed="'+(mins===m)+'">'+(m===60?'1 h':m+' min')+'</button>'}).join('')+'</div>':'')+
+    '<div class="study-nums"><span><b>'+st.best+'</b><small>melhor sequência</small></span><span><b>'+st.total+'</b><small>dias de estudo</small></span><span><b>'+st.weekMin+'</b><small>min na semana</small></span></div>'+
+    '<div class="study-badges" aria-label="Selos: '+got+' de '+bd.length+'">'+bd.map(function(b){return '<span class="badge-s'+(b.ok?' on':'')+'" title="'+esc(b.t)+(b.ok?'':' (ainda não)')+'"><i>'+b.ico+'</i><small>'+esc(b.t)+'</small></span>'}).join('')+'</div></section>';
+}
+function studyToggleToday(){
+  if(!studyCol||!meMember){toast('Escolha quem você é primeiro.');whoOpen=true;render();return}
+  var day=ymd(new Date()),id=meMember+'_'+day,st=studyStats(meMember);
+  if(st.today){studyDocs=studyDocs.filter(function(x){return x.id!==id});studyCol.doc(id).delete().catch(fail);render();return}
+  studyDocs=studyDocs.concat([{id:id,mid:meMember,day:day,min:0}]);studyCol.doc(id).set({mid:meMember,day:day,min:0,at:Date.now()}).catch(fail);
+  var s2=studyStats(meMember);if(s2.streak===3||s2.streak===7||s2.streak===30)toast('🔥 '+s2.streak+' dias seguidos! Selo novo.');else toast('Estudo de hoje registrado. 🎸');
+  render();
+}
+function studyMinutes(v){
+  if(!studyCol||!meMember)return;var day=ymd(new Date()),id=meMember+'_'+day,cur=studyDaysOf(meMember)[day];
+  var m=cur===v?0:v;studyDocs.forEach(function(x){if(x.id===id)x.min=m});studyCol.doc(id).update({min:m}).catch(fail);render();
 }
 /* ---------- adicionar / remover pausa com o dedo ---------- */
 function pauseSrc(){var s=stage&&get(stage.id);return {s:s,kind:(stage&&stage.kind==='lyrics')?'lyrics':'chords'}}
@@ -4124,6 +4192,8 @@ document.addEventListener('click',function(e){
   if(act==='spot-add'){spotAdd(id,t.dataset.mid);return}
   if(act==='spot-toggle'){spotSave(id,t.dataset.mid,function(a){a.forEach(function(x){if(x.id===t.dataset.sid)x.done=!x.done});return a});return}
   if(act==='spot-del'){spotSave(id,t.dataset.mid,function(a){return a.filter(function(x){return x.id!==t.dataset.sid})});return}
+  if(act==='study-today'){studyToggleToday();return}
+  if(act==='study-min'){studyMinutes(+t.dataset.v);return}
   if(act==='rsvp'){rsvpSet(t.dataset.k,id,t.dataset.v);return}
   if(act==='ev-new'){ui.evDraft={type:'ensaio',title:'',date:'',time:'',place:'',notes:''};render();return}
   if(act==='ev-cancel'){ui.evDraft=null;render();return}
@@ -4578,6 +4648,11 @@ function start(){
     },function(){});
     showDoc=db.doc('config/show');
     showDoc.onSnapshot(function(snap){showCfg=snap.exists?snap.data():null;if(editingField())softRender();else render()},function(){});
+    studyCol=db.collection('study');
+    studyCol.onSnapshot(function(snap){
+      studyDocs=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())}).filter(function(x){return x.mid&&x.day});
+      if(editingField())softRender();else render();
+    },function(){});
     evCol=db.collection('events');
     evCol.onSnapshot(function(snap){
       events=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())}).filter(function(x){return x.title&&x.date});
