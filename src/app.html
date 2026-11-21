@@ -4180,7 +4180,6 @@ function renderFolders(){
   var el=$('#folders');if(!el)return;
   var d=ui.drive,s=setlistUrl(),v=vidUrl(),h='',extra='';
   if(s)h+='<a class="btn" target="_blank" rel="noopener" href="'+esc(s)+'">📁 Gravações ↗</a>';
-  if(window.CE_DRIVE&&d&&d.connected)h+='<button type="button" class="btn" data-act="media-open">🖼 Galeria</button>';
   var warn=(window.CE_DRIVE&&d&&d.connected&&d.expired)?'<div class="drive-warn"><span>A conexão com o Google Drive expirou.</span><button type="button" class="btn small primary" data-act="drive-reconnect">Reconectar</button></div>':'';
   h+=v?'<a class="btn" target="_blank" rel="noopener" href="'+esc(v)+'">📂 Fotos e vídeos ↗</a>':'<a class="btn" href="#config" data-act="vid-define">📂 Definir pasta</a>';
   el.hidden=!(window.CE_DRIVE||v);
