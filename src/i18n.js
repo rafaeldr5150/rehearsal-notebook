@@ -19,6 +19,8 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Mostre o seu som. Marque uma jam.','Show your sound. Set up a jam.','Muestra tu sonido. Organiza una jam.'],
+['<b>Marque uma jam.</b> Chame o músico por uma mensagem dentro do app. O seu e-mail não aparece para ninguém.','<b>Set up a jam.</b> Reach out to the musician with a message inside the app. Your email is not shown to anyone.','<b>Organiza una jam.</b> Escribe al músico con un mensaje dentro de la app. Tu correo no aparece para nadie.'],
 ['Um tour rápido, só com o principal. O resto você descobre usando. Toque em Próximo para avançar.','A quick tour with just the essentials. You\'ll discover the rest by using it. Tap Next to continue.','Un tour rápido, solo con lo principal. El resto lo descubres usando la app. Toca Siguiente para avanzar.'],
 ['Geral é o resumo da banda. Setlist é a ordem do show. A página com o seu nome tem só as suas músicas. Ajustes guarda o resto.','Home is the band summary. Setlist is the show order. The page with your name has only your songs. Settings holds the rest.','General es el resumen de la banda. Setlist es el orden del show. La página con tu nombre tiene solo tus canciones. Ajustes guarda el resto.'],
 ['Nome da banda, a data do próximo show e quanto do repertório já está tirado.','Band name, the date of the next show and how much of the repertoire is already learned.','Nombre de la banda, la fecha del próximo show y cuánto del repertorio ya está sacado.'],

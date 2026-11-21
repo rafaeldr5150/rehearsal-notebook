@@ -2482,7 +2482,7 @@ function musIntroHTML(force){
     '<p>A <b>Sonora</b> é a rede de músicos do Rehearsal Notebook. É um espaço seu, <b>separado das bandas</b>, para mostrar quem você é como músico e encontrar gente para tocar junto.</p>'+
     '<ol class="sonora-steps"><li><b>Monte o seu perfil.</b> Conte quais instrumentos você toca e tem, os seus equipamentos, os estilos que curte, as bandas que te inspiram e poste vídeos.</li>'+
     '<li><b>Encontre músicos.</b> Busque por nome, cidade, instrumento ou estilo, e veja quem toca perto de você.</li>'+
-    '<li><b>Combine de tocar.</b> Mande uma mensagem por e-mail pelo próprio app. O seu e-mail não aparece para ninguém.</li></ol>'+
+    '<li><b>Marque uma jam.</b> Chame o músico por uma mensagem dentro do app. O seu e-mail não aparece para ninguém.</li></ol>'+
     '<p class="hint">O seu perfil começa <b>privado</b>. Ele só aparece para os outros se você ligar “Visível para outros músicos”. Você pode apagar tudo quando quiser.</p>'+
     '<div class="row-actions no-fill sonora-cta">'+(force?'':'<button type="button" class="btn primary" data-act="mus-intro-go">Criar o meu perfil</button><button type="button" class="btn" data-act="mus-intro-hide">Entendi</button>')+'</div></section>';
 }
@@ -2496,7 +2496,7 @@ function renderMus(){
   var el=$('#musview');if(!el)return;
   var r=musRoute();if(!r){el.innerHTML='';return}
   if(!musOn()){el.innerHTML='<div class="empty-state"><strong>Sonora</strong>Disponível no app da banda.</div>';return}
-  var head='<div class="phead mus-head"><div><div class="faint">A rede de músicos · fora das bandas</div><h2 class="sonora-title">Sonora</h2><div class="sonora-tag">Encontre quem toca com você.</div></div></div>';
+  var head='<div class="phead mus-head"><div><div class="faint">Rede de músicos</div><h2 class="sonora-title">Sonora</h2><div class="sonora-tag">Mostre o seu som. Marque uma jam.</div></div></div>';
   if(!musAuthed()){
     el.innerHTML=head+musIntroHTML(true)+'<div class="panel"><h3>Entre para participar</h3><p class="hint">A Sonora só funciona com conta, para que cada perfil tenha um dono de verdade.</p><div class="row-actions no-fill"><button type="button" class="btn primary" data-act="acct-login">Entrar com a minha conta</button></div></div>';return}
   if(r.k==='prof'){el.innerHTML=musProfileView(r.id);return}
