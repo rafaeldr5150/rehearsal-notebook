@@ -1134,8 +1134,9 @@ body.sk-car #tabbar span{font-size:10px}
 .board.one .cw{display:flex;flex-direction:column;min-width:0}
 .board.one .cw .card{flex:1;min-width:0;justify-content:space-between}
 .card>.t-title,.card>.t-wrap{min-width:0}
-.card .t-title{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:normal;line-height:1.2}
+.card .t-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;word-break:normal;line-height:1.2}
 .card .t-artist{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.25}
+.cbar .pbar,.state .pbar{flex:1 1 auto;width:auto;min-width:40px;height:8px}
 .card .inst{flex-wrap:nowrap;overflow:hidden;min-width:0}
 .card .inst .tag{flex:0 0 auto}
 .card .inst.who{flex-wrap:wrap;overflow:visible}
@@ -2628,7 +2629,7 @@ function renderSetlist(){
     return '<article class="song"><div class="srow"><span class="mono idx">'+(i+1)+'</span>'+
       '<div class="t-wrap">'+coverHTML(s,'sm')+'<div class="t-txt"><div class="t-title">'+esc(s.title)+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':' · sem duração')+'</div></div></div>'+
       '<span class="mono faint" title="Início no show">'+fmt(start)+'</span>'+
-      '<div class="state"><span class="pill s'+st+'">'+STATE_LABEL[st]+'</span>'+starsHTML(pct(s))+'</div>'+
+      '<div class="state"><span class="pill s'+st+'">'+STATE_LABEL[st]+'</span>'+pbarHTML(pct(s))+'</div>'+
       '<div class="row-actions"><button type="button" class="btn small" data-act="set-up" data-id="'+s.id+'" aria-label="Subir"'+(i===0?' disabled':'')+'>↑</button><button type="button" class="btn small" data-act="set-down" data-id="'+s.id+'" aria-label="Descer"'+(i===inSet.length-1?' disabled':'')+'>↓</button><button type="button" class="btn small" data-act="stage" data-id="'+s.id+'" data-kind="lyrics">Modo show</button><button type="button" class="x" data-act="set-rm" data-id="'+s.id+'" aria-label="Tirar do setlist">×</button></div></div></article>';
   }).join('');
   $('#setview').innerHTML=
@@ -2841,14 +2842,14 @@ function cardHTML(s){
   }
   var meta=metaTags(s)+recInd(s);
   return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+
-    '<div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-wrap">'+coverHTML(s)+'<div class="t-txt"><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div></div>'+
+    '<div class="t-title">'+esc(s.title||'Sem título')+'</div><div class="t-wrap">'+coverHTML(s)+'<div class="t-txt"><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div></div>'+
     (meta?'<div class="inst">'+meta+'</div>':'')+mid2+
-    '<div class="cbar">'+(vstate(s)===3?checkHTML():'')+starsHTML(p)+'<span class="pct">'+p+'%</span>'+(vstate(s)>=0&&STATE_LABEL[vstate(s)]?statPill(vstate(s),STATE_LABEL[vstate(s)]):'')+'</div></div>';
+    '<div class="cbar">'+(vstate(s)===3?checkHTML():'')+pbarHTML(p)+'<span class="pct">'+p+'%</span>'+(vstate(s)>=0&&STATE_LABEL[vstate(s)]?statPill(vstate(s),STATE_LABEL[vstate(s)]):'')+'</div></div>';
 }
 function pcardHTML(s,pid){
   var p=partOf(s,pid),nsp=p.spots.filter(function(x){return !x.done}).length,meta=metaTags(s)+(nsp?'<span class="tag spot-tag" title="Trechos difíceis a resolver">⚑ '+nsp+(nsp===1?' trecho':' trechos')+'</span>':'')+recInd(s);
   return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+
-    '<div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-wrap">'+coverHTML(s)+'<div class="t-txt"><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div></div>'+
+    '<div class="t-title">'+esc(s.title||'Sem título')+'</div><div class="t-wrap">'+coverHTML(s)+'<div class="t-txt"><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div></div>'+
     (meta?'<div class="inst">'+meta+'</div>':'')+(p.role?'<div class="mine">'+esc(p.role)+'</div>':'')+(p.tone?'<div class="faint">Timbre: '+esc(p.tone)+'</div>':'')+
     '<div class="cbar cst">'+(p.status===2?checkHTML():'')+'<button type="button" class="pill s'+(p.status===2?3:p.status)+' stpill" data-act="pill-status" data-id="'+s.id+'" data-mid="'+pid+'" aria-label="Mudar o status">'+STATE_LABEL[p.status===2?3:p.status]+' ▾</button></div></div>';
 }
@@ -2870,7 +2871,7 @@ function renderDrawer(){
   if(!s){el.hidden=true;bg.hidden=true;el.innerHTML='';lastDrawer=null;return}
   var pid=view(),old=el.querySelector('.dbody'),top=old&&lastDrawer===s.id?old.scrollTop:0;
   el.hidden=false;bg.hidden=false;
-  el.innerHTML='<div class="dhead"><div class="t-wrap">'+coverHTML(s)+'<div class="t-txt"><div class="t-title">'+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+'</div></div></div><div class="row-actions"><a class="btn small primary" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">'+(s.spotify?'▶ Ouvir no Spotify':'Buscar no Spotify ↗')+'</a><button type="button" class="btn small" data-act="drawer-close">Fechar</button></div></div><div class="dbody">'+(pid?studyHTML(s,member(pid)):detailHTML(s))+'</div>';
+  el.innerHTML='<div class="dhead"><div class="t-wrap">'+coverHTML(s)+'<div class="t-txt"><div class="t-title">'+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+'</div></div></div><div class="row-actions"><button type="button" class="btn small" data-act="star" data-id="'+s.id+'" aria-pressed="'+(!!s.next)+'">'+(s.next?'★ No próximo ensaio':'☆ Próximo ensaio')+'</button><a class="btn small primary" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">'+(s.spotify?'▶ Ouvir no Spotify':'Buscar no Spotify ↗')+'</a><button type="button" class="btn small" data-act="drawer-close">Fechar</button></div></div><div class="dbody">'+(pid?studyHTML(s,member(pid)):detailHTML(s))+'</div>';
   el.querySelector('.dbody').scrollTop=top;lastDrawer=s.id;
 }
 function detailHTML(s){
@@ -2899,7 +2900,7 @@ function detailHTML(s){
     '<div class="block"><h3>Quem faz o quê <span class="faint">toque no status para avançar</span></h3>'+partRows+'</div>'+
     '<label class="f">Observações<textarea rows="3" placeholder="Afinação, andamento, pegadas, pontos de atenção…" data-f="notes" data-id="'+id+'" data-fk="'+id+'notes">'+esc(s.notes||'')+'</textarea></label>'+
     recBlock(s)+ratingBlock(s)+commentsBlock(s)+
-    '<div class="row-actions"><a class="btn small primary" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">'+(s.spotify?'▶ Ouvir no Spotify':'Buscar no Spotify ↗')+'</a>'+
+    '<div class="row-actions"><button type="button" class="btn small" data-act="star" data-id="'+s.id+'" aria-pressed="'+(!!s.next)+'">'+(s.next?'★ No próximo ensaio':'☆ Próximo ensaio')+'</button><a class="btn small primary" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">'+(s.spotify?'▶ Ouvir no Spotify':'Buscar no Spotify ↗')+'</a>'+
       (safeUrl(s.link)?'<a class="btn small" target="_blank" rel="noopener" href="'+esc(s.link)+'">Abrir referência ↗</a>':'')+
       '<button type="button" class="btn small danger" data-act="del" data-id="'+id+'">Excluir música</button></div>'+
   '</div>';

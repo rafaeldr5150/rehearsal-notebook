@@ -19,6 +19,8 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['★ No próximo ensaio','★ In next rehearsal','★ En el próximo ensayo'],
+['☆ Próximo ensaio','☆ Next rehearsal','☆ Próximo ensayo'],
 ['Violino','Violin','Violín'],
 ['Ouvir','Listen','Escuchar'],
 ['Curtir','Like','Me gusta'],
