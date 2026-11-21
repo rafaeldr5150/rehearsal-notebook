@@ -3025,8 +3025,8 @@ function renderAgCard(){
   if(!loaded||!members().length){el.innerHTML='';return}
   var up=evUpcoming().slice(0,2);
   el.innerHTML='<div class="ag-top"><h3>Agenda da banda</h3><a class="btn small" href="#agenda">'+(events.length?'Abrir a agenda':'+ Evento')+'</a></div>'+
-    (up.length?'<ul class="ag-list">'+up.map(function(e){var m=e.rsvp||{},yes=members().filter(function(x){return m[x.id]==='yes'}).length;return '<li class="ag-item">'+evBadge(e)+'<div class="ag-info"><span class="tag ev-'+esc(e.type||'outro')+'">'+esc(EV_TYPES[e.type]||'Outro')+'</span><b>'+esc(e.title)+'</b><small>'+esc(evLine(e))+'</small></div><span class="ag-yes" title="Confirmados">'+yes+'/'+members().length+'</span></li>'}).join('')+'</ul>'
-      :'<p class="hint">Marque ensaios, shows e outros compromissos, e a banda confirma presença.</p>');
+    (up.length?'<ul class="ag-list">'+up.map(function(e){var m=e.rsvp||{},yes=members().filter(function(x){return m[x.id]==='yes'}).length;return '<li class="ag-item">'+evBadge(e)+'<div class="ag-info"><span class="tag ev-'+esc(e.type||'outro')+'">'+esc(EV_TYPES[e.type]||'Outro')+'</span><b>'+esc(e.title)+'</b><small>'+esc(evLine(e))+'</small></div>'+(e.type==='ensaio'?'<span class="ag-yes" title="Confirmados no ensaio">'+yes+'/'+members().length+'</span>':'')+'</li>'}).join('')+'</ul>'
+      :'<p class="hint">Marque ensaios, shows e outros compromissos. Nos ensaios, a banda confirma presença.</p>');
 }
 function renderAgenda(){
   var el=$('#agview');if(!el)return;
@@ -3036,7 +3036,7 @@ function renderAgenda(){
   var card=function(e){
     var arm=ui.armEv===e.id;
     return '<li class="ev-card"><div class="ev-head">'+evBadge(e)+'<div class="ag-info"><span class="tag ev-'+esc(e.type||'outro')+'">'+esc(EV_TYPES[e.type]||'Outro')+'</span><b>'+esc(e.title)+'</b><small>'+esc(evLine(e))+'</small></div></div>'+
-      (e.notes?'<p class="ev-notes">'+esc(e.notes)+'</p>':'')+(evWhen(e)>=now?rsvpHTML('ev',e.id,e.rsvp):'')+
+      (e.notes?'<p class="ev-notes">'+esc(e.notes)+'</p>':'')+(e.type==='ensaio'&&evWhen(e)>=now?rsvpHTML('ev',e.id,e.rsvp):'')+
       '<div class="row-actions no-fill"><button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="ev-del" data-id="'+esc(e.id)+'">'+(arm?'Confirmar: apagar':'Apagar')+'</button></div></li>'};
   el.innerHTML='<div class="phead"><div><div class="faint">Compromissos da banda</div><h2>Agenda</h2></div><div class="row-actions no-fill"><a class="btn small" href="#geral">← Geral</a></div></div>'+
     (d?'<div class="panel ev-form"><h3>Novo compromisso</h3>'+
@@ -3047,7 +3047,7 @@ function renderAgenda(){
       '<label class="f">Observações (opcional)<textarea rows="3" maxlength="300" data-evf="notes" data-draft="ev" data-fk="evnotes" placeholder="Passagem de som às 18h, cachê, o que levar…">'+esc(d.notes)+'</textarea></label>'+
       '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="ev-save">Salvar</button><button type="button" class="btn" data-act="ev-cancel">Cancelar</button></div></div>'
       :'<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="ev-new">+ Novo compromisso</button></div>')+
-    '<h3 class="ev-h">Próximos</h3>'+(up.length?'<ul class="ev-list">'+up.map(card).join('')+'</ul>':'<div class="empty-state"><strong>Nada marcado ainda</strong>Toque em “Novo compromisso” para marcar um ensaio ou um show. A banda confirma presença por aqui.</div>')+
+    '<h3 class="ev-h">Próximos</h3>'+(up.length?'<ul class="ev-list">'+up.map(card).join('')+'</ul>':'<div class="empty-state"><strong>Nada marcado ainda</strong>Toque em “Novo compromisso” para marcar um ensaio ou um show. Nos ensaios, a banda confirma presença por aqui.</div>')+
     (past.length?'<details class="more"><summary>Já passaram ('+past.length+')</summary><ul class="ev-list">'+past.map(card).join('')+'</ul></details>':'');
 }
 
@@ -3675,7 +3675,7 @@ var TOUR=[
  {v:1,r:'me',open:1,sel:function(){return h3Block($('#drawer'),'comentários')},skip:1,t:'Comentários',x:'Deixe recados para a banda sobre a música, como "refrão rápido demais".'},
  {v:1,r:'setlist',sel:'#setview .phead',t:'Setlist',x:'Monte a ordem do show, ajuste a pausa entre as músicas e marque a data e o local do show.'},
  {v:1,r:'setlist',sel:'[data-act="live-start"]',skip:1,t:'Ensaio ao vivo',x:'Começar ensaio ao vivo: a banda toda acompanha a mesma música, com rolagem automática e metrônomo sincronizado entre os celulares.'},
- {v:3,r:'geral',sel:'#agcard',skip:1,t:'Agenda e presença',x:'Marque ensaios, shows e outros compromissos. Cada integrante responde Vou, Talvez ou Não vou, e todo mundo vê quem confirmou. A resposta do próximo ensaio fica no cartão do ensaio.'},
+ {v:3,r:'geral',sel:'#agcard',skip:1,t:'Agenda e presença',x:'Marque ensaios, shows e outros compromissos. Nos ensaios, cada integrante responde Vou, Talvez ou Não vou, e todo mundo vê quem confirmou. A resposta do próximo ensaio também fica no cartão do ensaio.'},
  {v:3,r:'geral',sel:'#btn-tuner',skip:1,t:'Afinador',x:'Afine o violão, a guitarra, o baixo ou o ukulele pelo microfone. A agulha mostra se a corda está grave, afinada ou aguda.'},
  {v:3,r:'musicos',sel:'#musview .mus-head',skip:1,t:'Sonora',x:'A Sonora é a rede de músicos do app, separada das bandas. Monte o seu perfil, siga outros músicos, curta vídeos, encontre quem toca na sua cidade e combine de tocar. O perfil só aparece para os outros se você ligar “Visível”.'},
  {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'você')},t:'Você',x:'Escolha quem você é e coloque a sua foto, que aparece no cartão da banda.'},
