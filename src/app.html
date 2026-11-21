@@ -142,6 +142,7 @@ body.sk-car .t-wrap{gap:10px}
 @media (max-width:600px){body.sk-car .card .cbar .pill,body.sk-car .card .cbar .stpill{font-size:15px;padding:5px 9px;letter-spacing:.02em}body.sk-car .card .t-title{font-size:17px}}
 .cv.cvb{position:relative;cursor:pointer}
 .cv-play{position:absolute;right:3px;bottom:3px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;line-height:1;color:#fff;background:rgba(0,0,0,.62);backdrop-filter:blur(2px)}
+.cv-play svg{width:62%;height:62%;fill:currentColor;display:block}
 .cv.playing .cv-play{background:#ff3d8b}
 .cv.playing{box-shadow:0 0 0 2px #ff3d8b,0 2px 8px rgba(0,0,0,.35)}
 .cv.sm .cv-play{width:18px;height:18px;font-size:9px}
@@ -2822,7 +2823,7 @@ function coverHTML(s,cls){
   var u=coverOf(s),img=u?'<img alt="" loading="lazy" decoding="async" src="'+esc(u)+'" title="'+esc(s.coverAlbum||'')+'">':ICO_NOTE;
   if(!window.CE_PREVIEW)return '<span class="cv'+(u?'':' ph')+(cls?' '+cls:'')+'">'+img+'</span>';
   var on=ui.prevId===s.id,ld=ui.prevLoad===s.id;
-  return '<span class="cv cvb'+(u?'':' ph')+(on?' playing':'')+(cls?' '+cls:'')+'" role="button" tabindex="0" data-act="prev-play" data-id="'+esc(s.id)+'" aria-label="'+(on?'Parar a prévia':'Ouvir uma prévia de 30 segundos')+'">'+img+'<i class="cv-play" aria-hidden="true">'+(ld?'…':on?'■':'▶')+'</i></span>';
+  return '<span class="cv cvb'+(u?'':' ph')+(on?' playing':'')+(cls?' '+cls:'')+'" role="button" tabindex="0" data-act="prev-play" data-id="'+esc(s.id)+'" aria-label="'+(on?'Parar a prévia':'Ouvir uma prévia de 30 segundos')+'">'+img+'<i class="cv-play" aria-hidden="true">'+(ld?'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2.4"/><circle cx="12" cy="12" r="2.4"/><circle cx="19" cy="12" r="2.4"/></svg>':on?'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.5v13l11-6.5z"/></svg>')+'</i></span>';
 }
 var prevAudio=null,SILENT=(function(){try{var n=1600,b=new Uint8Array(44+n),v=new DataView(b.buffer),w=function(o,t){for(var i=0;i<t.length;i++)b[o+i]=t.charCodeAt(i)};w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);for(var i=0;i<n;i++)b[44+i]=128;var bin='';for(var j=0;j<b.length;j++)bin+=String.fromCharCode(b[j]);return 'data:audio/wav;base64,'+btoa(bin)}catch(e){return ''}})();
 function prevIsSilent(){return !prevAudio||String(prevAudio.src||'').indexOf('data:')===0}
