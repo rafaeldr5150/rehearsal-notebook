@@ -19,6 +19,63 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Violino','Violin','Violín'],
+['Ouvir','Listen','Escuchar'],
+['Curtir','Like','Me gusta'],
+['Estilo','Style','Estilo'],
+['Escolher layout','Choose layout','Elegir diseño'],
+['Mensagem','Message','Mensaje'],
+['Permissões','Permissions','Permisos'],
+['Vídeo','Video','Vídeo'],
+['Timbre','Tone','Timbre'],
+['Saxofone','Saxophone','Saxofón'],
+['Apagar trecho','Delete spot','Borrar pasaje'],
+['Marcar como resolvido','Mark as solved','Marcar como resuelto'],
+['Marcar como não resolvido','Mark as not solved','Marcar como no resuelto'],
+['Trechos difíceis a resolver','Hard spots to solve','Pasajes difíciles por resolver'],
+['Sem resposta','No answer','Sin respuesta'],
+['Vai','Going','Va'],
+['Não vai','Not going','No va'],
+['Talvez','Maybe','Quizás'],
+['Você vai?','Are you going?','¿Vas?'],
+['Título do vídeo','Video title','Título del vídeo'],
+['Passagem de som às 18h, cachê, o que levar…','Sound check at 6pm, fee, what to bring…','Prueba de sonido a las 18h, caché, qué llevar…'],
+['foto','photo','foto'],
+['nome','name','nombre'],
+['cidade','city','ciudad'],
+['bio','bio','bio'],
+['instrumentos','instruments','instrumentos'],
+['estilos','styles','estilos'],
+['referências','references','referencias'],
+['vídeo','video','vídeo'],
+['visível','visible','visible'],
+['As gravações, fotos e vídeos que estão no seu Google Drive <b>não</b> são apagados. As contas dos integrantes continuam existindo.','The recordings, photos and videos in your Google Drive are <b>not</b> deleted. Members\' accounts keep existing.','Las grabaciones, fotos y vídeos que están en tu Google Drive <b>no</b> se borran. Las cuentas de los integrantes siguen existiendo.'],
+['Ouvir uma prévia de 30 segundos','Listen to a 30-second preview','Escuchar una vista previa de 30 segundos'],
+['Parar a prévia','Stop the preview','Parar la vista previa'],
+['1 gravação de áudio','1 audio recording','1 grabación de audio'],
+['Tem gravação de áudio','Has an audio recording','Tiene grabación de audio'],
+['Sem gravação de áudio','No audio recording','Sin grabación de audio'],
+['1 vídeo','1 video','1 vídeo'],
+['Tem vídeo','Has a video','Tiene vídeo'],
+['Sem vídeo','No video','Sin vídeo'],
+['Data do ensaio','Rehearsal date','Fecha del ensayo'],
+['Hora do ensaio','Rehearsal time','Hora del ensayo'],
+['Local do ensaio','Rehearsal place','Lugar del ensayo'],
+['ainda não','not yet','todavía no'],
+['Novo trecho difícil','New hard spot','Nuevo pasaje difícil'],
+['Observações (opcional)','Notes (optional)','Observaciones (opcional)'],
+['Cole uma música por linha','Paste one song per line','Pega una canción por línea'],
+['Eletrônica','Electronic','Electrónica'],
+['Clássica','Classical','Clásica'],
+['Quem mostrar','Who to show','A quién mostrar'],
+['Buscar músicos','Search musicians','Buscar músicos'],
+['Ver vídeo','Watch video','Ver vídeo'],
+['<b>Ou</b> cole uma música por linha no formato <span class="mono">Título - Artista</span>. Músicas que já estão no caderno são ignoradas.','<b>Or</b> paste one song per line in the format <span class="mono">Title - Artist</span>. Songs already in the notebook are skipped.','<b>O</b> pega una canción por línea con el formato <span class="mono">Título - Artista</span>. Las canciones que ya están en el cuaderno se ignoran.'],
+['A <b>Sonora</b> é a rede de músicos do Rehearsal Notebook. É um espaço seu, <b>separado das bandas</b>, para mostrar quem você é como músico e encontrar gente para tocar junto.','<b>Sonora</b> is the musician network of Rehearsal Notebook. It is your own space, <b>separate from the bands</b>, to show who you are as a musician and find people to play with.','<b>Sonora</b> es la red de músicos de Rehearsal Notebook. Es un espacio tuyo, <b>separado de las bandas</b>, para mostrar quién eres como músico y encontrar gente con quien tocar.'],
+['<b>Monte o seu perfil.</b> Conte quais instrumentos você toca e tem, os seus equipamentos, os estilos que curte, as bandas que te inspiram e poste vídeos.','<b>Build your profile.</b> Say which instruments you play and own, your equipment, the styles you like, the bands that inspire you, and post videos.','<b>Arma tu perfil.</b> Cuenta qué instrumentos tocas y tienes, tu equipo, los estilos que te gustan, las bandas que te inspiran y publica vídeos.'],
+['<b>Encontre músicos.</b> Busque por nome, cidade, instrumento ou estilo, e veja quem toca perto de você.','<b>Find musicians.</b> Search by name, city, instrument or style, and see who plays near you.','<b>Encuentra músicos.</b> Busca por nombre, ciudad, instrumento o estilo, y mira quién toca cerca de ti.'],
+['<b>Combine de tocar.</b> Mande uma mensagem por e-mail pelo próprio app. O seu e-mail não aparece para ninguém.','<b>Arrange to play.</b> Send an email message through the app itself. Your email is not shown to anyone.','<b>Quedad para tocar.</b> Envía un mensaje por correo desde la propia app. Tu correo no aparece para nadie.'],
+['O seu perfil começa <b>privado</b>. Ele só aparece para os outros se você ligar “Visível para outros músicos”. Você pode apagar tudo quando quiser.','Your profile starts <b>private</b>. It only shows to others if you turn on “Visible to other musicians”. You can delete everything whenever you want.','Tu perfil empieza <b>privado</b>. Solo aparece para los demás si activas “Visible para otros músicos”. Puedes borrar todo cuando quieras.'],
 ['Marque ensaios, shows e outros compromissos. Nos ensaios, a banda confirma presença.','Schedule rehearsals, shows and other events. For rehearsals, the band confirms attendance.','Marca ensayos, shows y otros compromisos. En los ensayos, la banda confirma asistencia.'],
 ['Toque em “Novo compromisso” para marcar um ensaio ou um show. Nos ensaios, a banda confirma presença por aqui.','Tap “New event” to schedule a rehearsal or a show. For rehearsals, the band confirms attendance here.','Toca “Nuevo compromiso” para marcar un ensayo o un show. En los ensayos, la banda confirma asistencia aquí.'],
 ['Marque ensaios, shows e outros compromissos. Nos ensaios, cada integrante responde Vou, Talvez ou Não vou, e todo mundo vê quem confirmou. A resposta do próximo ensaio também fica no cartão do ensaio.','Schedule rehearsals, shows and other events. For rehearsals, each member answers Going, Maybe or Not going, and everyone sees who confirmed. The answer for the next rehearsal is also on the rehearsal card.','Marca ensayos, shows y otros compromisos. En los ensayos, cada integrante responde Voy, Quizás o No voy, y todos ven quién confirmó. La respuesta del próximo ensayo también está en la tarjeta del ensayo.'],
@@ -763,6 +820,24 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^\+ (.+)$/,function(m){return '+ '+inst(m[1])}],
+[/^· (.+)$/,function(m){return '· '+inst(m[1])}],
+[/^(\d+) a resolver$/,function(m){return I===1?m[1]+' to solve':m[1]+' por resolver'}],
+[/^(\d) estrelas?$/,function(m){return I===1?m[1]+(m[1]==='1'?' star':' stars'):m[1]+(m[1]==='1'?' estrella':' estrellas')}],
+[/^Remover (.+)$/,function(m){return (I===1?'Remove ':'Quitar ')+m[1]}],
+[/^Progresso: (\d+)%$/,function(m){return (I===1?'Progress: ':'Progreso: ')+m[1]+'%'}],
+[/^Selos: (\d+) de (\d+)$/,function(m){return (I===1?'Badges: ':'Insignias: ')+m[1]+(I===1?' of ':' de ')+m[2]}],
+[/^Em (.+)$/,function(m){return (I===1?'In ':'En ')+m[1]}],
+[/^(\d+) seguidores?$/,function(m){return m[1]+(I===1?(m[1]==='1'?' follower':' followers'):(m[1]==='1'?' seguidor':' seguidores'))}],
+[/^Mensagem para (.+)$/,function(m){return (I===1?'Message to ':'Mensaje para ')+m[1]}],
+[/^Excluir (.+)\?$/,function(m){return (I===1?'Delete ':'¿Eliminar ')+m[1]+'?'}],
+[/^⚑ (\d+) trechos?$/,function(m){return '⚑ '+m[1]+(I===1?(m[1]==='1'?' spot':' spots'):(m[1]==='1'?' pasaje':' pasajes'))}],
+[/^🔥 (\d+) dias? seguidos?$/,function(m){return '🔥 '+m[1]+(I===1?(m[1]==='1'?' day in a row':' days in a row'):(m[1]==='1'?' día seguido':' días seguidos'))}],
+[/^Seu perfil está (\d+)% completo$/,function(m){return I===1?'Your profile is '+m[1]+'% complete':'Tu perfil está '+m[1]+'% completo'}],
+[/^Falta: (.+)\. Perfis completos são mais fáceis de encontrar\.$/,function(m){var it=m[1].replace(/…$/,'').split(', ').map(inst).join(', ');return I===1?'Missing: '+it+'. Complete profiles are easier to find.':'Falta: '+it+'. Los perfiles completos son más fáciles de encontrar.'}],
+[/^(\d+) gravações de áudio$/,function(m){return I===1?m[1]+' audio recordings':m[1]+' grabaciones de audio'}],
+[/^(\d+) vídeos$/,function(m){return I===1?m[1]+' videos':m[1]+' vídeos'}],
+[/^Ex\.: Show no (.+)$/,function(m){return (I===1?'E.g.: Show at ':'Ej.: Show en ')+m[1]}],
 [/^Pronto: as fotos e os vídeos vão para “(.+)”\.$/,function(m){return I===1?'Done: photos and videos go to “'+m[1]+'”.':'Listo: las fotos y los vídeos van a «'+m[1]+'».'}],
 [/^Foto muito grande \(máximo 100 MB\): (.+)$/,function(m){return (I===1?'Photo too large (max 100 MB): ':'Foto demasiado grande (máx. 100 MB): ')+m[1]}],
 [/^Gravando o mapa: (\d+) toques?$/,function(m){return (I===1?'Recording the map: ':'Grabando el mapa: ')+m[1]+(I===1?(m[1]==='1'?' tap':' taps'):(m[1]==='1'?' toque':' toques'))}],
@@ -867,9 +942,10 @@ function tr(s){
   var lead=s.slice(0,s.indexOf(t)),trail=s.slice(s.indexOf(t)+t.length);
   var e=EX[t];if(e)return lead+e[I]+trail;
   for(var i=0;i<P.length;i++){var m=t.match(P[i][0]);if(m)return lead+P[i][1](m)+trail}
+  var am=t.match(/^(.+) ▾$/);if(am){var ra=tr(am[1]);if(ra!==am[1])return lead+ra+' ▾'+trail}
   var pm=t.match(/^\((.+)\)$/);if(pm){var r=tr(pm[1]);if(r!==pm[1])return lead+'('+r+')'+trail}
   if(t.indexOf(' · ')>0){var parts=t.split(' · '),ch=false,out=parts.map(function(p){var q=tr(p);if(q!==p)ch=true;return q});if(ch)return lead+out.join(' · ')+trail}
-  var cm=t.match(/^(.*[^\s])\s+\((.+)\)$/);if(cm){var ins=inst(cm[2]);if(ins!==cm[2])return lead+cm[1]+' ('+ins+')'+trail}
+  var cm=t.match(/^(.*[^\s])\s+\((.+)\)$/);if(cm){var ins=inst(cm[2]),bs=tr(cm[1]);if(ins!==cm[2]||bs!==cm[1])return lead+bs+' ('+ins+')'+trail}
   return s;
 }
 window.CE_TR=tr;
@@ -884,6 +960,23 @@ function skipEl(el){
   }
   return false;
 }
+var PB=[
+[/^<b>(\d+)<\/b> (?:vai|vão) · (\d+) talvez · (\d+) não · (\d+) sem resposta$/,function(m){return I===1?'<b>'+m[1]+'</b> going · '+m[2]+' maybe · '+m[3]+' not going · '+m[4]+' no answer':'<b>'+m[1]+'</b> '+(m[1]==='1'?'va':'van')+' · '+m[2]+' quizás · '+m[3]+' no · '+m[4]+' sin respuesta'}],
+[/^<b>(\d+)<\/b> seguidor(?:es)? · <b>(\d+)<\/b> seguindo$/,function(m){return I===1?'<b>'+m[1]+'</b> '+(m[1]==='1'?'follower':'followers')+' · <b>'+m[2]+'</b> following':'<b>'+m[1]+'</b> '+(m[1]==='1'?'seguidor':'seguidores')+' · <b>'+m[2]+'</b> siguiendo'}],
+[/^Isso apaga <b>para todos os integrantes<\/b> as (\d+) músicas?, as anotações, os comentários, o setlist, os lembretes e a ligação com o Google Drive\. <b>Não dá para desfazer\.<\/b>$/,function(m){return I===1?'This deletes, <b>for all members</b>, the '+m[1]+(m[1]==='1'?' song':' songs')+', notes, comments, setlist, reminders and the Google Drive link. <b>It cannot be undone.</b>':'Esto borra, <b>para todos los integrantes</b>, '+(m[1]==='1'?'la canción':'las '+m[1]+' canciones')+', las notas, los comentarios, el setlist, los recordatorios y el enlace con Google Drive. <b>No se puede deshacer.</b>'}]
+];
+/* parágrafos com trechos em negrito/link no meio: a frase inteira (com as marcas) é traduzida de uma vez */
+var INLINE={B:1,I:1,STRONG:1,EM:1,SMALL:1,SPAN:1,A:1,CODE:1,BR:1,MARK:1};
+function inlineOnly(el){for(var c=el.firstChild;c;c=c.nextSibling){if(c.nodeType===1){if(!INLINE[c.tagName]||!inlineOnly(c))return false}else if(c.nodeType!==3&&c.nodeType!==8)return false}return true}
+function doBlock(n){
+  if(!n.children||!n.children.length||SKIP.test(n.tagName)||INLINE[n.tagName]&&0)return false;
+  var hasText=false;for(var c=n.firstChild;c;c=c.nextSibling){if(c.nodeType===3&&c.nodeValue.trim()){hasText=true;break}}
+  if(!hasText||!inlineOnly(n)||skipEl(n))return false;
+  var key=n.innerHTML.trim(),e=EX[key];
+  if(e&&e[I]!==key){n.innerHTML=e[I];return true}
+  for(var q=0;q<PB.length;q++){var pm=key.match(PB[q][0]);if(pm){n.innerHTML=PB[q][1](pm);return true}}
+  return false;
+}
 var ATTRS=['placeholder','title','aria-label','alt'];
 function doNode(n){
   if(n.nodeType===3){
@@ -895,6 +988,7 @@ function doNode(n){
       ATTRS.forEach(function(a){var v=n.getAttribute&&n.getAttribute(a);if(v){var r=tr(v);if(r!==v)n.setAttribute(a,r)}});
     }
     if(n.tagName==='TEXTAREA'||(n.tagName==='INPUT'&&false))return;
+    if(doBlock(n))return;
     for(var c=n.firstChild;c;c=c.nextSibling)doNode(c);
   }
 }
