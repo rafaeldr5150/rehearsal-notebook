@@ -19,6 +19,10 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Partitura','Sheet music','Partitura'],
+['Terminal','Terminal','Terminal'],
+['Papel de partitura, letra com serifa e pauta. Calmo e elegante.','Sheet-music paper, serif type and staff lines. Calm and elegant.','Papel de partitura, letra con serifa y pentagrama. Tranquilo y elegante.'],
+['Tela preta com letras verdes, como um computador antigo.','Black screen with green letters, like an old computer.','Pantalla negra con letras verdes, como un ordenador antiguo.'],
 ['Restaurar original','Restore original','Restaurar original'],
 ['Valores originais restaurados.','Original values restored.','Valores originales restaurados.'],
 ['Ferramentas','Tools','Herramientas'],
