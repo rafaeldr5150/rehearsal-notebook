@@ -232,6 +232,8 @@ body.sk-car .t-wrap{gap:10px}
 body.sk-car .pbar{background:rgba(0,0,0,.18);border:1px solid rgba(0,0,0,.35);border-radius:2px;height:12px}
 body.sk-car .pbar i{background:#c8452f;border-radius:0}
 body.sk-car .summary .pbar{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4)}
+#tabbar.five a,#tabbar.five button{font-size:11px!important;letter-spacing:0!important}
+#tabbar.five a>span,#tabbar.five button>span{font-size:11px!important;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -2276,7 +2278,7 @@ function renderTabbar(){
   }
   el.className=musOn()?'five':'';el.innerHTML=tab('#geral','Geral','home',!pid&&hh!=='setlist'&&hh!=='config'&&!musRoute())+tab('#setlist','Setlist','list',hh==='setlist')+
     (me?tab('#pessoa-'+me.id,first(me.name),me.photo?avatarHTML(me,24):icoFor(me.instrument),pid===me.id):tab(null,'Quem sou eu?','user',false,'who-open'))+
-    (musOn()?tab('#musicos','Sonora','group',!!musRoute()):'')+tab('#config','Configurações','gear',hh==='config');
+    (musOn()?tab('#musicos','Sonora','group',!!musRoute()):'')+tab('#config','Ajustes','gear',hh==='config');
 }
 
 /* ---------- cartaz da banda ---------- */
