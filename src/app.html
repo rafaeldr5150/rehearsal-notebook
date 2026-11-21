@@ -145,6 +145,46 @@ body.sk-car .t-wrap{gap:10px}
 .cv.playing .cv-play{background:#ff3d8b}
 .cv.playing{box-shadow:0 0 0 2px #ff3d8b,0 2px 8px rgba(0,0,0,.35)}
 .cv.sm .cv-play{width:18px;height:18px;font-size:9px}
+/* ===== presença e agenda ===== */
+.rsvp{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.rsvp-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rsvp-btns .btn{min-height:46px;padding:6px 4px;font-size:15px}
+.rsvp-btns .btn.on.rs-yes{background:#1fbf84;border-color:#1fbf84;color:#04140e}
+.rsvp-btns .btn.on.rs-maybe{background:#f5b83c;border-color:#f5b83c;color:#241800}
+.rsvp-btns .btn.on.rs-no{background:#ff5d5d;border-color:#ff5d5d;color:#2a0505}
+.rsvp-sum{font-size:14px;color:var(--muted)}.rsvp-sum b{color:var(--ink)}
+.rsvp-who{display:flex;flex-wrap:wrap;gap:6px}
+.tag.rs-t-yes{background:rgba(31,191,132,.2);border-color:#1fbf84}
+.tag.rs-t-maybe{background:rgba(245,184,60,.2);border-color:#f5b83c}
+.tag.rs-t-no{background:rgba(255,93,93,.18);border-color:#ff5d5d;text-decoration:line-through}
+.tag.rs-t-none{opacity:.6}
+#agview{display:flex;flex-direction:column;gap:var(--gap,18px)}#agview[hidden]{display:none}
+.agcard{display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.agcard:empty{display:none}
+.ag-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.ag-top h3{margin:0;font-size:18px}
+.ag-list,.ev-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.ag-item{display:flex;align-items:center;gap:12px}
+.ag-info{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}.ag-info .tag{align-self:flex-start}.ag-info b{overflow-wrap:anywhere}.ag-info small{color:var(--muted)}
+.ag-yes{font-weight:700;font-size:15px;color:var(--muted)}
+.ev-badge{flex:none;width:52px;height:56px;border-radius:12px;display:grid;place-items:center;align-content:center;background:linear-gradient(135deg,#ff3d8b,#ff9a3c);color:#fff;line-height:1.05}
+.ev-badge b{font-size:22px}.ev-badge small{font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.ev-card{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.ev-head{display:flex;gap:12px;align-items:center}
+.ev-notes{margin:0;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.ev-h{margin:6px 0 0;font-size:18px}
+.ev-form{display:flex;flex-direction:column;gap:14px}
+.tag.ev-show{background:rgba(255,61,139,.2);border-color:#ff3d8b}.tag.ev-ensaio{background:rgba(31,191,132,.16);border-color:#1fbf84}
+/* ===== trechos difíceis ===== */
+.spots{display:flex;flex-direction:column;gap:10px;padding-top:6px}
+.spots-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.spots-h small{color:var(--muted)}
+.spot-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.spot{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface2,transparent)}
+.spot span{flex:1;min-width:0;overflow-wrap:anywhere}.spot.done span{text-decoration:line-through;opacity:.55}
+.spot-chk{flex:none;width:30px;height:30px;border-radius:8px;border:2px solid var(--muted);background:transparent;color:#04140e;font-weight:800;padding:0}
+.spot.done .spot-chk{background:#1fbf84;border-color:#1fbf84}
+.spot-del{flex:none;width:32px;height:32px;border:0;background:transparent;color:var(--muted);font-size:22px;line-height:1}
+.spot-add{display:flex;gap:8px}.spot-add input{flex:1;min-width:0}
+.spot-tag{background:rgba(245,184,60,.18);border-color:#f5b83c}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -1267,6 +1307,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
    <div id="setview" hidden></div>
    <div id="cfgview" hidden></div>
    <div id="musview" hidden></div>
+   <div id="agview" hidden></div>
    <div id="home">
     <section class="summary" aria-live="polite">
       <div class="hero" id="hero"></div>
@@ -1280,6 +1321,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
     <section id="folders" class="folders" hidden></section>
     <section id="installbar" class="reh" hidden></section>
     <section id="reh" class="reh"></section>
+    <section id="agcard" class="agcard"></section>
     <section id="lineup" class="lineup"></section>
     <section id="ideas" class="ideas"></section>
     <section id="feed" class="feed"></section>
@@ -1348,7 +1390,7 @@ var met={ctx:null,running:false,beat:0,next:0,timer:null,songId:null,delta:0};
 var ui={prim:{},edit:{},more:{},tr:{},arm:{},ced:{}}, fs=15, fss=26;
 var setlist=null, setDoc=null, stage=null, setChain=Promise.resolve();
 var live=null, liveDoc=null, following=false, lastLiveSong='', lyBusy=false;
-var linksCfg=null, linksDoc=null, spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, ideas=[], ideasCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0,hold:null,done:{}};
+var linksCfg=null, linksDoc=null, spotCfg=null, spotDoc=null, acts=[], actCol=null, actReady=false, rehCfg=null, rehDoc=null, showCfg=null, showDoc=null, comments=[], cmCol=null, ideas=[], ideasCol=null, events=[], evCol=null, names={}, meId=null, canAdmin=false, userNS=null, auto={on:false,speed:30,pos:0,last:0,raf:0,hold:null,done:{}};
 var pend={}, drafts={}, renderTimer=null;
 var BG=['flat','top','soft'], BGN={soft:'parede suave',top:'parede só no topo',flat:'liso'}, bgMode='flat';
 try{bgMode=localStorage.getItem('ce-bg2')||'flat'}catch(e){}
@@ -1427,7 +1469,7 @@ function kindOf(inst){var t=String(inst||'').toLowerCase();
 function view(){var h=location.hash.replace(/^#/,'');if(h.indexOf('pessoa-')===0){var id=h.slice(7);if(member(id))return id}return ''}
 
 /* ---------- derivados ---------- */
-function partOf(s,mid){var p=(s.parts&&s.parts[mid])||{};return {status:p.status||0,role:p.role||'',notes:p.notes||'',link:p.link||'',tone:p.tone||''}}
+function partOf(s,mid){var p=(s.parts&&s.parts[mid])||{};return {status:p.status||0,role:p.role||'',notes:p.notes||'',link:p.link||'',tone:p.tone||'',spots:Array.isArray(p.spots)?p.spots:[]}}
 function partList(s){return members().map(function(m){var p=partOf(s,m.id);return {m:m,status:p.status,role:p.role}})}
 function items(s){return partList(s).filter(function(p){return p.status!==3}).map(function(p){return {status:p.status}})}
 function pct(s){var it=items(s);if(!it.length)return 0;return Math.round(it.reduce(function(a,i){return a+(i.status||0)},0)/(it.length*2)*100)}
@@ -2715,7 +2757,7 @@ function cardHTML(s){
     '<div class="cbar">'+(vstate(s)===3?checkHTML():'')+starsHTML(p)+'<span class="pct">'+p+'%</span>'+(vstate(s)>=0&&STATE_LABEL[vstate(s)]?statPill(vstate(s),STATE_LABEL[vstate(s)]):'')+'</div></div>';
 }
 function pcardHTML(s,pid){
-  var p=partOf(s,pid),meta=metaTags(s)+recInd(s);
+  var p=partOf(s,pid),nsp=p.spots.filter(function(x){return !x.done}).length,meta=metaTags(s)+(nsp?'<span class="tag spot-tag" title="Trechos difíceis a resolver">⚑ '+nsp+(nsp===1?' trecho':' trechos')+'</span>':'')+recInd(s);
   return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+
     '<div class="t-wrap">'+coverHTML(s)+'<div class="t-txt"><div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div></div>'+
     (meta?'<div class="inst">'+meta+'</div>':'')+(p.role?'<div class="mine">'+esc(p.role)+'</div>':'')+(p.tone?'<div class="faint">Timbre: '+esc(p.tone)+'</div>':'')+
@@ -2815,6 +2857,19 @@ function metroBlock(s){
     '<select data-f="beats" data-id="'+s.id+'" aria-label="Compasso">'+opts+'</select></div>'+
     '<p class="hint">Os botões de BPM mudam só o treino de agora; o BPM salvo da música não é alterado, a menos que você toque em “Salvar”. Para descobrir o BPM, toque em “Tocar no ritmo” acompanhando a música (3 toques ou mais).</p></div></div>';
 }
+function spotsHTML(s,m){
+  var id=s.id,sp=partOf(s,m.id).spots,open=sp.filter(function(x){return !x.done}).length;
+  return '<div class="spots"><div class="spots-h"><b>Trechos difíceis</b><small>'+(sp.length?(open?open+(open===1?' a resolver':' a resolver'):'tudo resolvido'):'ainda nenhum')+'</small></div>'+
+    (sp.length?'<ul class="spot-list">'+sp.map(function(x){return '<li class="spot'+(x.done?' done':'')+'"><button type="button" class="spot-chk" data-act="spot-toggle" data-id="'+id+'" data-mid="'+m.id+'" data-sid="'+esc(x.id)+'" aria-pressed="'+(!!x.done)+'" aria-label="'+(x.done?'Marcar como não resolvido':'Marcar como resolvido')+'">'+(x.done?'✓':'')+'</button><span>'+esc(x.t)+'</span><button type="button" class="spot-del" data-act="spot-del" data-id="'+id+'" data-mid="'+m.id+'" data-sid="'+esc(x.id)+'" aria-label="Apagar trecho">×</button></li>'}).join('')+'</ul>':'')+
+    '<div class="spot-add"><input type="text" maxlength="80" data-spot-add="'+id+'" data-mid="'+m.id+'" data-draft="spot" data-fk="spot'+id+'" value="'+esc(drafts['spot:'+id]||'')+'" placeholder="Ex.: ponte, compasso 17" autocomplete="off" aria-label="Novo trecho difícil"><button type="button" class="btn small primary" data-act="spot-add" data-id="'+id+'" data-mid="'+m.id+'">Adicionar</button></div></div>';
+}
+function spotSave(id,mid,fn){var s=get(id);if(!s)return;var cur=partOf(s,mid).spots.map(function(x){return Object.assign({},x)});setPart(id,mid,{spots:fn(cur)},true);render()}
+function spotAdd(id,mid){
+  var v=String(drafts['spot:'+id]||'').trim().slice(0,80);if(!v){toast('Escreva o trecho, como “ponte, compasso 17”.');return}
+  var s=get(id);if(s&&partOf(s,mid).spots.length>=12){toast('Limite de 12 trechos por música.');return}
+  drafts['spot:'+id]='';
+  spotSave(id,mid,function(a){a.push({id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:v,done:false});return a});
+}
 function studyHTML(s,m){
   var k=kindOf(m.instrument),p=partOf(s,m.id),id=s.id;
   var B={lyrics:textBlock(s,'lyrics'),chords:textBlock(s,'chords'),metro:metroBlock(s)};
@@ -2825,7 +2880,7 @@ function studyHTML(s,m){
     '<button type="button" class="stbtn st'+p.status+'" data-act="cyc-part" data-id="'+id+'" data-mid="'+m.id+'">'+PART_LABEL[p.status]+'</button>'+
     '<input type="text" style="grid-column:1 / -1" value="'+esc(p.link)+'" placeholder="Link da minha faixa de estudo (Moises, Drive…)" data-f="part-link" data-id="'+id+'" data-mid="'+m.id+'" data-fk="'+id+'l'+m.id+'" aria-label="Link da faixa de estudo">'+
     '<input type="text" style="grid-column:1 / -1" value="'+esc(p.tone)+'" placeholder="Timbre, preset ou equipamento (ex.: preset 3, drive no 6)" data-f="part-tone" data-id="'+id+'" data-mid="'+m.id+'" data-fk="'+id+'t'+m.id+'" aria-label="Timbre">'+
-    '<textarea placeholder="Minhas anotações (pegada, afinação, trechos difíceis…)" data-f="part-notes" data-id="'+id+'" data-mid="'+m.id+'" data-fk="'+id+'n'+m.id+'" aria-label="Minhas anotações">'+esc(p.notes)+'</textarea></div>'+
+    '<textarea placeholder="Minhas anotações (pegada, afinação, trechos difíceis…)" data-f="part-notes" data-id="'+id+'" data-mid="'+m.id+'" data-fk="'+id+'n'+m.id+'" aria-label="Minhas anotações">'+esc(p.notes)+'</textarea></div>'+spotsHTML(s,m)+
     '<div class="row-actions">'+(safeUrl(p.link)?'<a class="btn small primary" target="_blank" rel="noopener" href="'+esc(p.link)+'">Abrir minha faixa ↗</a>':'')+
     (safeUrl(s.moises)?'<a class="btn small" target="_blank" rel="noopener" href="'+esc(s.moises)+'">Faixas da música ↗</a>':'')+
     '<a class="btn small" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">'+(s.spotify?'▶ Ouvir no Spotify':'Buscar no Spotify ↗')+'</a></div></div>';
@@ -2856,6 +2911,65 @@ function renderPerson(pid){
     '<div id="plist" style="display:flex;flex-direction:column;gap:8px">'+body+'</div>';
 }
 
+
+/* ---------- presença (vou / talvez / não vou) e agenda da banda ---------- */
+function rehRsvp(){var k=rehCfg?(rehCfg.date||'')+'|'+(rehCfg.time||''):'';return rehCfg&&rehCfg.rsvpFor===k&&rehCfg.rsvp?rehCfg.rsvp:{}}
+function rsvpHTML(kind,id,map){
+  map=map||{};var mem=members(),me=meMember&&member(meMember),c={yes:0,maybe:0,no:0};
+  mem.forEach(function(m){if(c[map[m.id]]!=null)c[map[m.id]]++});
+  var wait=mem.length-c.yes-c.maybe-c.no,mine=me?map[me.id]:'';
+  var btns=me?'<div class="rsvp-btns" role="group" aria-label="Você vai?">'+[['yes','✓ Vou'],['maybe','? Talvez'],['no','✗ Não vou']].map(function(x){return '<button type="button" class="btn rs-'+x[0]+(mine===x[0]?' on':'')+'" data-act="rsvp" data-k="'+kind+'" data-id="'+esc(id)+'" data-v="'+x[0]+'" aria-pressed="'+(mine===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>'
+    :'<p class="hint">Escolha quem você é para responder.</p>';
+  var who=mem.map(function(m){var v=map[m.id];return '<span class="tag rs-t-'+(v||'none')+'" title="'+(v==='yes'?'Vai':v==='maybe'?'Talvez':v==='no'?'Não vai':'Sem resposta')+'">'+(v==='yes'?'✓ ':v==='no'?'✗ ':v==='maybe'?'? ':'· ')+esc(first(m.name))+'</span>'}).join('');
+  return '<div class="rsvp">'+btns+'<div class="rsvp-sum"><b>'+c.yes+'</b> '+(c.yes===1?'vai':'vão')+' · '+c.maybe+' talvez · '+c.no+' não · '+wait+' sem resposta</div><div class="rsvp-who">'+who+'</div></div>';
+}
+function rsvpSet(kind,id,v){
+  if(!meMember){toast('Escolha quem você é primeiro.');whoOpen=true;render();return}
+  if(kind==='reh'){
+    if(!rehDoc||!rehCfg||!rehCfg.date)return;
+    var key=(rehCfg.date||'')+'|'+(rehCfg.time||''),map=Object.assign({},rehRsvp());
+    if(map[meMember]===v)delete map[meMember];else map[meMember]=v;
+    rehCfg=Object.assign({},rehCfg,{rsvp:map,rsvpFor:key});rehDoc.update({rsvp:map,rsvpFor:key}).catch(fail);render();return}
+  var ev=events.filter(function(x){return x.id===id})[0];if(!ev||!evCol)return;
+  var m2=Object.assign({},ev.rsvp||{});if(m2[meMember]===v)delete m2[meMember];else m2[meMember]=v;
+  ev.rsvp=m2;evCol.doc(id).update({rsvp:m2}).catch(fail);render();
+}
+var EV_TYPES={ensaio:'Ensaio',show:'Show',outro:'Outro'};
+function evWhen(e){var d=new Date(e.date+'T'+(e.time||'00:00')+':00');return isNaN(d.getTime())?null:d}
+function evSorted(){return events.slice().sort(function(a,b){return (evWhen(a)||0)-(evWhen(b)||0)})}
+function evUpcoming(){var now=new Date();now.setHours(0,0,0,0);return evSorted().filter(function(e){var d=evWhen(e);return d&&d>=now})}
+function evBadge(e){var d=evWhen(e);if(!d)return '';var loc=window.CE_LOCALE||'pt-BR';return '<span class="ev-badge"><b>'+d.toLocaleDateString(loc,{day:'2-digit'})+'</b><small>'+esc(d.toLocaleDateString(loc,{month:'short'}).replace('.',''))+'</small></span>'}
+function evLine(e){var d=evWhen(e),loc=window.CE_LOCALE||'pt-BR';return (d?d.toLocaleDateString(loc,{weekday:'long'}):'')+(e.time?' · '+e.time:'')+(e.place?' · '+e.place:'')}
+function renderAgCard(){
+  var el=$('#agcard');if(!el)return;
+  if(!loaded||!members().length){el.innerHTML='';return}
+  var up=evUpcoming().slice(0,2);
+  el.innerHTML='<div class="ag-top"><h3>Agenda da banda</h3><a class="btn small" href="#agenda">'+(events.length?'Abrir a agenda':'+ Evento')+'</a></div>'+
+    (up.length?'<ul class="ag-list">'+up.map(function(e){var m=e.rsvp||{},yes=members().filter(function(x){return m[x.id]==='yes'}).length;return '<li class="ag-item">'+evBadge(e)+'<div class="ag-info"><span class="tag ev-'+esc(e.type||'outro')+'">'+esc(EV_TYPES[e.type]||'Outro')+'</span><b>'+esc(e.title)+'</b><small>'+esc(evLine(e))+'</small></div><span class="ag-yes" title="Confirmados">'+yes+'/'+members().length+'</span></li>'}).join('')+'</ul>'
+      :'<p class="hint">Marque ensaios, shows e outros compromissos, e a banda confirma presença.</p>');
+}
+function renderAgenda(){
+  var el=$('#agview');if(!el)return;
+  if(!loaded){el.innerHTML='';return}
+  var d=ui.evDraft,up=evUpcoming(),now=new Date();now.setHours(0,0,0,0);
+  var past=evSorted().filter(function(e){var x=evWhen(e);return x&&x<now}).reverse().slice(0,10);
+  var card=function(e){
+    var arm=ui.armEv===e.id;
+    return '<li class="ev-card"><div class="ev-head">'+evBadge(e)+'<div class="ag-info"><span class="tag ev-'+esc(e.type||'outro')+'">'+esc(EV_TYPES[e.type]||'Outro')+'</span><b>'+esc(e.title)+'</b><small>'+esc(evLine(e))+'</small></div></div>'+
+      (e.notes?'<p class="ev-notes">'+esc(e.notes)+'</p>':'')+(evWhen(e)>=now?rsvpHTML('ev',e.id,e.rsvp):'')+
+      '<div class="row-actions no-fill"><button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="ev-del" data-id="'+esc(e.id)+'">'+(arm?'Confirmar: apagar':'Apagar')+'</button></div></li>'};
+  el.innerHTML='<div class="phead"><div><div class="faint">Compromissos da banda</div><h2>Agenda</h2></div><div class="row-actions no-fill"><a class="btn small" href="#geral">← Geral</a></div></div>'+
+    (d?'<div class="panel ev-form"><h3>Novo compromisso</h3>'+
+      '<div class="chips" role="group">'+['ensaio','show','outro'].map(function(k){return '<button type="button" class="chip" data-act="ev-type" data-v="'+k+'" aria-pressed="'+(d.type===k)+'">'+EV_TYPES[k]+'</button>'}).join('')+'</div>'+
+      '<label class="f">Título<input type="text" maxlength="80" data-evf="title" data-draft="ev" data-fk="evtitle" value="'+esc(d.title)+'" placeholder="Ex.: Show no Bar do Zé"></label>'+
+      '<div class="fields"><label class="f">Data<input type="date" data-evf="date" data-draft="ev" value="'+esc(d.date)+'"></label><label class="f">Hora<input type="time" data-evf="time" data-draft="ev" value="'+esc(d.time)+'"></label></div>'+
+      '<label class="f">Local (opcional)<input type="text" maxlength="80" data-evf="place" data-draft="ev" data-fk="evplace" value="'+esc(d.place)+'" placeholder="Ex.: Estúdio do Zé"></label>'+
+      '<label class="f">Observações (opcional)<textarea rows="3" maxlength="300" data-evf="notes" data-draft="ev" data-fk="evnotes" placeholder="Passagem de som às 18h, cachê, o que levar…">'+esc(d.notes)+'</textarea></label>'+
+      '<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="ev-save">Salvar</button><button type="button" class="btn" data-act="ev-cancel">Cancelar</button></div></div>'
+      :'<div class="row-actions no-fill"><button type="button" class="btn primary" data-act="ev-new">+ Novo compromisso</button></div>')+
+    '<h3 class="ev-h">Próximos</h3>'+(up.length?'<ul class="ev-list">'+up.map(card).join('')+'</ul>':'<div class="empty-state"><strong>Nada marcado ainda</strong>Toque em “Novo compromisso” para marcar um ensaio ou um show. A banda confirma presença por aqui.</div>')+
+    (past.length?'<details class="more"><summary>Já passaram ('+past.length+')</summary><ul class="ev-list">'+past.map(card).join('')+'</ul></details>':'');
+}
 /* ---------- adicionar / remover pausa com o dedo ---------- */
 function pauseSrc(){var s=stage&&get(stage.id);return {s:s,kind:(stage&&stage.kind==='lyrics')?'lyrics':'chords'}}
 function pauseLines(){var r=pauseSrc();return String((r.s&&r.s[r.kind])||'').replace(/\r/g,'').split('\n')}
@@ -3245,7 +3359,7 @@ function commentsBlock(s){
 
 /* ---------- render principal ---------- */
 function renderHome(){
-  renderHero();renderSummary();renderInstallBar();renderReh();renderFolders();renderLineup();renderIdeas();renderFeed();
+  renderHero();renderSummary();renderInstallBar();renderReh();renderAgCard();renderFolders();renderLineup();renderIdeas();renderFeed();
   if(!loaded)return;
   var q=query.trim().toLowerCase();
   var vis=songs.filter(function(s){
@@ -3319,6 +3433,7 @@ function renderReh(){
   el.innerHTML='<div class="reh-top"><div><small>Próximo ensaio</small><b>'+esc(line)+'</b></div><span class="reh-cnt">'+cnt+'</span></div>'+
     (nx&&i.days>=0?'<div class="reh-who">'+members().map(function(m){var n=pendNext(m.id).length;return '<span class="tag'+(n?'':' ok')+'">'+esc(first(m.name)+': '+(n?n+' a tirar':'em dia'))+'</span>'}).join('')+'</div>':
       (i.days>=0?'<p class="hint">Marque com ★ as músicas do ensaio para ver o que falta para cada um.</p>':''))+
+    (i.days>=0?rsvpHTML('reh','',rehRsvp()):'')+
     '<div class="row-actions"><button type="button" class="btn small" data-act="reh-edit">Editar</button><button type="button" class="btn small'+(ui.armReh?' danger armed':'')+'" data-act="reh-remove">'+(ui.armReh?'Confirmar: cancelar o ensaio':'Cancelar o ensaio')+'</button></div>';
 }
 var TOUR_V=2;
@@ -3961,16 +4076,16 @@ function render(){
   if((ui.playId||ui.playLoad)&&ui.playSong!==openId)stopPlayback();
   if(ui.pres===undefined&&!ui.presLoad&&ui.drive&&ui.drive.connected&&!ui.drive.expired&&Date.now()-(ui.presTry||0)>20000)loadPresence();
   var hp=$('#hdr-pl');if(hp){var okp=spotCfg&&spotCfg.playlist;hp.hidden=!okp;if(okp)hp.href='https://open.spotify.com/playlist/'+spotCfg.playlist}
-  var bp=$('#btn-pl');if(bp){var hh0=location.hash,onHome=!view()&&hh0!=='#setlist'&&hh0!=='#config'&&!musRoute();bp.hidden=!(onHome&&spotCfg&&spotCfg.playlist&&window.CE_PLAYLIST);bp.textContent=ui.plBusy?'Buscando…':'↻ Atualizar playlist';bp.disabled=!!ui.plBusy}
+  var bp=$('#btn-pl');if(bp){var hh0=location.hash,onHome=!view()&&hh0!=='#setlist'&&hh0!=='#config'&&hh0!=='#agenda'&&!musRoute();bp.hidden=!(onHome&&spotCfg&&spotCfg.playlist&&window.CE_PLAYLIST);bp.textContent=ui.plBusy?'Buscando…':'↻ Atualizar playlist';bp.disabled=!!ui.plBusy}
   if(!ui.plAuto&&loaded&&band&&spotCfg&&spotCfg.playlist&&col){ui.plAuto=true;if(Date.now()-(spotCfg.last||0)>6*3600000)setTimeout(function(){syncPlaylist(false)},1500)}
   var lb=$('#btn-lyrics-all');if(lb){var nl=canFetchLyrics()?songs.filter(function(s){return !s.lyrics}).length:0;lb.hidden=!nl;lb.textContent='Buscar letras que faltam ('+nl+')'}
   var a=document.activeElement,fk=a&&a.dataset?a.dataset.fk:null,ss=null,se=null;
   if(fk){try{ss=a.selectionStart;se=a.selectionEnd}catch(e){}}
-  var pid=view(),isSet=location.hash==='#setlist',isCfg=location.hash==='#config',isMus=!!musRoute();
+  var pid=view(),isSet=location.hash==='#setlist',isCfg=location.hash==='#config',isMus=!!musRoute(),isAg=location.hash==='#agenda';
   var h1=document.querySelector('header h1');if(h1)h1.textContent=bandName()||'Rehearsal Notebook';
-  $('#home').hidden=!!pid||isSet||isCfg||isMus;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;$('#musview').hidden=!isMus;
-  $('#btn-add').hidden=!!pid||isSet||isCfg||isMus;$('#btn-import').hidden=!!pid||isSet||isCfg||isMus;
-  if(isMus)renderMus();else if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
+  $('#home').hidden=!!pid||isSet||isCfg||isMus||isAg;$('#agview').hidden=!isAg;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;$('#musview').hidden=!isMus;
+  $('#btn-add').hidden=!!pid||isSet||isCfg||isMus||isAg;$('#btn-import').hidden=!!pid||isSet||isCfg||isMus||isAg;
+  if(isAg)renderAgenda();else if(isMus)renderMus();else if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
   coverTick();
   renderDrawer();renderMusVideo();renderBandDel();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.mediaPick)renderMediaPick();if(ui.ytOpen)ytPanel();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
   if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
@@ -4006,6 +4121,22 @@ document.addEventListener('click',function(e){
   if(act==='pfilter'){pfilter=t.dataset.v;render();return}
   if(act==='toggle'){if(met.running&&met.songId!==id)metStop();openId=openId===id?null:id;met.delta=0;render();return}
   if(act==='prev-play'){e.stopPropagation();e.preventDefault();togglePreview(id);return}
+  if(act==='spot-add'){spotAdd(id,t.dataset.mid);return}
+  if(act==='spot-toggle'){spotSave(id,t.dataset.mid,function(a){a.forEach(function(x){if(x.id===t.dataset.sid)x.done=!x.done});return a});return}
+  if(act==='spot-del'){spotSave(id,t.dataset.mid,function(a){return a.filter(function(x){return x.id!==t.dataset.sid})});return}
+  if(act==='rsvp'){rsvpSet(t.dataset.k,id,t.dataset.v);return}
+  if(act==='ev-new'){ui.evDraft={type:'ensaio',title:'',date:'',time:'',place:'',notes:''};render();return}
+  if(act==='ev-cancel'){ui.evDraft=null;render();return}
+  if(act==='ev-type'){if(ui.evDraft){ui.evDraft.type=t.dataset.v;if(!ui.evDraft.title&&t.dataset.v!=='outro')ui.evDraft.title=EV_TYPES[t.dataset.v];render()}return}
+  if(act==='ev-save'){
+    var ed=ui.evDraft;if(!ed)return;
+    if(!String(ed.title||'').trim()){toast('Informe o título.');return}
+    if(!ed.date){toast('Informe a data.');return}
+    if(!evCol){toast('O banco de dados não está disponível nesta visualização.');return}
+    evCol.add({type:ed.type,title:String(ed.title).trim().slice(0,80),date:ed.date,time:ed.time||'',place:String(ed.place||'').trim().slice(0,80),notes:String(ed.notes||'').trim().slice(0,300),rsvp:{},by:meMember||null,at:Date.now()}).then(function(){ui.evDraft=null;toast('Compromisso salvo.');render()}).catch(fail);return}
+  if(act==='ev-del'){
+    if(ui.armEv!==id){ui.armEv=id;render();clearTimeout(ui._armEvT);ui._armEvT=setTimeout(function(){ui.armEv='';render()},5000);return}
+    ui.armEv='';if(evCol)evCol.doc(id).delete().catch(fail);return}
   if(act==='star'){e.stopPropagation();patch(id,{next:!(get(id)||{}).next},true);render();return}
   if(act==='prim'){e.preventDefault();var pk=id+t.dataset.k;ui.prim[pk]=!ui.prim[pk];render();return}
   if(act==='more'){e.preventDefault();ui.more[id]=!ui.more[id];render();return}
@@ -4174,7 +4305,7 @@ document.addEventListener('click',function(e){
   if(act==='st-close'){ui.stPick=null;renderStPick();return}
   if(act==='reh-edit'){ui.rehEdit=true;ui.rehDraft=null;$('#reh').dataset.editing='';renderReh();return}
   if(act==='reh-done'){var dd=ui.rehDraft||{};if(!dd.date||!dd.time){toast('Informe a data e a hora do ensaio.');return}
-    var o3={date:dd.date,time:dd.time,place:(dd.place||'').trim()};rehCfg=o3;if(rehDoc)rehDoc.set(o3).catch(fail);ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';render();return}
+    var o3={date:dd.date,time:dd.time,place:(dd.place||'').trim()};if(rehCfg&&rehCfg.rsvpFor===dd.date+'|'+dd.time&&rehCfg.rsvp){o3.rsvp=rehCfg.rsvp;o3.rsvpFor=rehCfg.rsvpFor}rehCfg=o3;if(rehDoc)rehDoc.set(o3).catch(fail);ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';render();return}
   if(act==='reh-cancel'){ui.rehEdit=false;ui.rehDraft=null;$('#reh').dataset.editing='';renderReh();return}
   if(act==='show-clear'){if(!ui.armShow){ui.armShow=true;toast('Toque de novo para remover a data e o nome do show.');render();return}
     ui.armShow=false;saveShow({date:'',name:''});toast('Data do show removida.');return}
@@ -4280,7 +4411,7 @@ document.addEventListener('click',function(e){
     col.doc(id).delete().catch(fail);songs=songs.filter(function(s){return s.id!==id});openId=null;metStop();render();return}
 });
 document.addEventListener('keydown',function(e){
-  if(e.key==='Enter'&&e.target&&e.target.dataset){var kt=e.target.dataset;if(kt.musAdd){e.preventDefault();musAddItem(kt.musAdd,e.target.value);render();var ag=document.querySelector('[data-mus-add="'+kt.musAdd+'"]');if(ag)ag.focus();return}if(kt.mus==='q'){e.preventDefault();musSearch(true);return}}
+  if(e.key==='Enter'&&e.target&&e.target.dataset){var kt=e.target.dataset;if(kt.spotAdd){e.preventDefault();spotAdd(kt.spotAdd,kt.mid);return}if(kt.musAdd){e.preventDefault();musAddItem(kt.musAdd,e.target.value);render();var ag=document.querySelector('[data-mus-add="'+kt.musAdd+'"]');if(ag)ag.focus();return}if(kt.mus==='q'){e.preventDefault();musSearch(true);return}}
   if(stage){
     if(e.key==='Escape'){if(ui.sheet){ui.sheet=false;render();return}closeStage();return}
     if(e.key===' '&&!/^(BUTTON|INPUT|TEXTAREA|SELECT|A)$/.test(e.target.tagName)){e.preventDefault();setAuto(!auto.on);render();return}
@@ -4299,6 +4430,8 @@ var TEXTF=['title','artist','link','notes','key','moises','lyrics','chords','tun
 document.addEventListener('input',function(e){
   var t=e.target;
   if(t.dataset&&t.dataset.mus){var mk=t.dataset.mus;if(mk==='q')mus.q=t.value;else if(mk==='vurl'){mus.vurl=t.value;musTitleSoon()}else if(mk==='vtitle')mus.vtitle=t.value;else if(mus.draft)mus.draft[mk]=t.value;return}
+  if(t.dataset&&t.dataset.evf){if(ui.evDraft)ui.evDraft[t.dataset.evf]=t.value;return}
+  if(t.dataset&&t.dataset.spotAdd){drafts['spot:'+t.dataset.spotAdd]=t.value;return}
   if(t.dataset&&t.dataset.musAdd){mus.add[t.dataset.musAdd]=t.value;if(t.dataset.musAdd==='refs')musAcSoon(t.value);return}
   if(t.dataset&&t.dataset.musMsg){mus.msg=t.value;var cn=document.getElementById('mus-msg-count');if(cn)cn.textContent=mus.msg.length+' / 1000';return}
   if(t.dataset&&t.dataset.musC){if(mus.draft){mus.draft.contact=mus.draft.contact||{};mus.draft.contact[t.dataset.musC]=t.value}return}
@@ -4445,6 +4578,11 @@ function start(){
     },function(){});
     showDoc=db.doc('config/show');
     showDoc.onSnapshot(function(snap){showCfg=snap.exists?snap.data():null;if(editingField())softRender();else render()},function(){});
+    evCol=db.collection('events');
+    evCol.onSnapshot(function(snap){
+      events=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())}).filter(function(x){return x.title&&x.date});
+      if(editingField())softRender();else render();
+    },function(){});
     ideasCol=db.collection('ideas');
     ideasCol.onSnapshot(function(snap){
       ideas=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())}).filter(function(x){return x.title});
