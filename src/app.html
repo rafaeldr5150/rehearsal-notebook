@@ -142,6 +142,8 @@ body.sk-car .t-wrap{gap:10px}
 @media (max-width:600px){body.sk-car .card .cbar .pill,body.sk-car .card .cbar .stpill{font-size:15px;padding:5px 9px;letter-spacing:.02em}body.sk-car .card .t-title{font-size:17px}}
 .cv.cvb{position:relative;cursor:pointer}
 .cv-play{position:absolute;right:3px;bottom:3px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;line-height:1;color:#fff;background:rgba(0,0,0,.62);backdrop-filter:blur(2px)}
+.tag.usr{background:rgba(245,184,60,.16);border-color:#f5b83c;color:inherit;font-size:12px;white-space:normal}
+.usr-note{display:flex;flex-wrap:wrap;align-items:center;gap:8px;color:var(--ink)}
 .cv-play svg{width:62%;height:62%;fill:currentColor;display:block}
 .cv.playing .cv-play{background:#ff3d8b}
 .cv.playing{box-shadow:0 0 0 2px #ff3d8b,0 2px 8px rgba(0,0,0,.35)}
@@ -1565,7 +1567,13 @@ function vstate(s){if(!as)return stateOf(s);var p=partOf(s,as);if(p.status===3)r
 function vpct(s){return as?[0,50,100][partOf(s,as).status]||0:pct(s)}
 /* ---------- gravação ---------- */
 function patch(id,fields,now){
-  if('bpm' in fields||'key' in fields){fields.metaAuto=false;fields.metaCheck=false}
+  if('bpm' in fields||'key' in fields){
+    var s0=get(id);
+    if(s0){var o=Object.assign({},s0.orig||{});
+      if('bpm' in fields&&!('bpm' in o)&&s0.bpm)o.bpm=s0.bpm;
+      if('key' in fields&&!('key' in o)&&s0.key)o.key=s0.key;
+      if(Object.keys(o).length)fields.orig=o}
+    fields.metaAuto=false;fields.metaCheck=false}
   var s=get(id);if(s)Object.assign(s,fields);
   var p=pend[id]||(pend[id]={fields:{},inflight:{},timer:null,chain:Promise.resolve()});
   Object.assign(p.fields,fields);
@@ -1654,6 +1662,11 @@ function saveBand(){
 
 /* ---------- metrônomo ---------- */
 function bpmTxt(v){return v>=300?'CESAR':String(v)}
+function origChg(s){var o=s.orig||{},r={};
+  if(o.bpm!=null&&s.bpm!=null&&+o.bpm!==+s.bpm)r.bpm=o.bpm;
+  if(o.bpm!=null&&!s.bpm)r.bpm=o.bpm;
+  if(o.key&&s.key!==o.key)r.key=o.key;
+  return r}
 function effBpm(s){return Math.max(20,Math.min(300,(s.bpm||0)+met.delta))}
 function clickAt(t,acc){
   var o=met.ctx.createOscillator(),g=met.ctx.createGain();
@@ -2794,6 +2807,7 @@ function renderFilters(){var c={};songs.forEach(function(s){var v=vstate(s);if(v
 function starHTML(s){return '<button type="button" class="star" data-act="star" data-id="'+s.id+'" aria-pressed="'+(!!s.next)+'" aria-label="Marcar para o próximo ensaio" title="Próximo ensaio">★</button>'}
 function metaTags(s){
   var t=[];var q=s.metaCheck?'~':'';if(s.bpm)t.push('<span class="tag mono" title="'+(s.metaCheck?'Valor da internet, confira de ouvido':'BPM')+'">'+q+s.bpm+' BPM</span>');if(s.key)t.push('<span class="tag" title="'+(s.metaCheck?'Valor da internet, confira de ouvido':'Tom')+'">Tom '+q+esc(s.key)+'</span>');
+  var oc=origChg(s);if(oc.bpm!=null)t.push('<span class="tag usr" title="BPM alterado por usuário">Alterado pelo usuário. Original: '+esc(oc.bpm)+' BPM</span>');if(oc.key)t.push('<span class="tag usr" title="Tom alterado por usuário">Alterado pelo usuário. Original: tom '+esc(oc.key)+'</span>');
   if(s.tuning)t.push('<span class="tag">Afinação '+esc(s.tuning)+'</span>');
   if(s.capo)t.push('<span class="tag">Capo '+esc(s.capo)+'</span>');
   var ra=ratingAvg(s);if(ra)t.push('<span class="tag" title="Avaliação do último ensaio">Ensaio '+ratingTxt(ra)+'★</span>');
@@ -2923,6 +2937,7 @@ function detailHTML(s){
       '<label class="f">Link de referência (cifra, vídeo)<input type="text" value="'+esc(s.link||'')+'" placeholder="https://" data-f="link" data-id="'+id+'" data-fk="'+id+'link"></label>'+
       '<label class="f">Pasta ou link das faixas separadas<input type="text" value="'+esc(s.moises||'')+'" placeholder="https://" data-f="moises" data-id="'+id+'" data-fk="'+id+'moises"></label>'+
     '</div>'+
+    (function(){var oc=origChg(s);if(oc.bpm==null&&!oc.key)return '';return '<p class="hint usr-note">Alterado pelo usuário. Original: '+[oc.bpm!=null?oc.bpm+' BPM':'',oc.key?'tom '+esc(oc.key):''].filter(Boolean).join(' e ')+'. <button type="button" class="btn small" data-act="orig-restore" data-id="'+id+'">Restaurar original</button></p>'})()+
     (s.metaAuto?'<p class="hint">BPM e tom preenchidos automaticamente com dados da internet'+(s.metaCheck?'. As fontes divergem para esta música, então confira de ouvido.':'.')+'</p>':'')+
     '<div class="block"><h3>Quem faz o quê <span class="faint">toque no status para avançar</span></h3>'+partRows+'</div>'+
     '<label class="f">Observações<textarea rows="3" placeholder="Afinação, andamento, pegadas, pontos de atenção…" data-f="notes" data-id="'+id+'" data-fk="'+id+'notes">'+esc(s.notes||'')+'</textarea></label>'+
@@ -4478,6 +4493,7 @@ document.addEventListener('click',function(e){
   if(act==='copy-invite'){var lk=location.origin+location.pathname+'?b='+encodeURIComponent(window.CE_BAND||'');var done=function(){toast('Link de convite copiado.')};try{navigator.clipboard.writeText(lk).then(done,function(){toast(lk)})}catch(err){toast(lk)}return}
   if(act==='bpmd'){met.delta=Math.max(-200,Math.min(200,met.delta+ +t.dataset.d));render();return}
   if(act==='bpm-reset'){met.delta=0;render();return}
+  if(act==='orig-restore'){var so=get(id);if(so&&so.orig){var rf={};if(so.orig.bpm!=null)rf.bpm=so.orig.bpm;if(so.orig.key!=null)rf.key=so.orig.key;patch(id,rf,true);render();toast('Valores originais restaurados.')}return}
   if(act==='bpm-save'){var sb=get(id);if(sb&&sb.bpm){patch(id,{bpm:effBpm(sb)},true)}met.delta=0;render();toast('BPM da música atualizado.');return}
   if(act==='bcol'){bcol=+t.dataset.v;bcolUser=true;render();return}
   if(act==='mv-part'){var cur3=partOf(get(id),t.dataset.mid).status,nx=cur3+ +t.dataset.d;if(nx>=0&&nx<=2){setPart(id,t.dataset.mid,{status:nx},true);render()}return}

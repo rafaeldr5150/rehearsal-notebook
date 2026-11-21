@@ -19,6 +19,8 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Restaurar original','Restore original','Restaurar original'],
+['Valores originais restaurados.','Original values restored.','Valores originales restaurados.'],
 ['Ferramentas','Tools','Herramientas'],
 ['⏱ Metrônomo','⏱ Metronome','⏱ Metrónomo'],
 ['Marcar no toque','Tap tempo','Marcar con toques'],
@@ -846,6 +848,7 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^Alterado pelo usuário\. Original: (.+)$/,function(m){var r=m[1].replace(' e tom ',I===1?' and key ':' y tono ').replace(/^tom /,I===1?'key ':'tono ').replace(/ BPM e /,' BPM and ');return I===1?'Changed by user. Original: '+r:'Cambiado por el usuario. Original: '+r}],
 [/^\+ (.+)$/,function(m){return '+ '+inst(m[1])}],
 [/^· (.+)$/,function(m){return '· '+inst(m[1])}],
 [/^(\d+) a resolver$/,function(m){return I===1?m[1]+' to solve':m[1]+' por resolver'}],
