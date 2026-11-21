@@ -130,6 +130,9 @@ window.CE_AUTH={
   rotate:function(){return arpc('ce_band_rotate',{p_code:band}).then(function(c){try{localStorage.setItem('ce-band',c)}catch(e){}return c})},
   setMe:function(mid){if(window.CE_AUTH.user&&band)arpc('ce_set_me',{p_code:band,p_mid:mid||''}).catch(function(){})}
 };
+window.CE_COVER=function(title,artist){
+  return fetch(CFG.url+'/functions/v1/song-cover',{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify({title:title||'',artist:artist||''})}).then(function(r){return r.json()}).catch(function(){return null});
+};
 window.CE_PROFILE={
   me:function(){return arpc('ce_profile_me')},
   save:function(d){return arpc('ce_profile_save',{p:{name:d.name,city:d.city,bio:d.bio,plays:d.plays,owns:d.owns,gear:d.gear,styles:d.styles,refs:d.refs||[],photo:d.photo||'',contact:{instagram:(d.contact||{}).instagram||''},accept_msgs:!!d.accept_msgs,visible:!!d.visible}})},

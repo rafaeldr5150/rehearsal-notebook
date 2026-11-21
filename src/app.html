@@ -129,6 +129,17 @@ body.sk-cus{--rec-on:var(--cb,#33d6a0)}
 .sp-bar{height:10px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
 .sp-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#ff3d8b,#ff9a3c)}
 .sonora-progress .hint{margin:0}
+.t-wrap{display:flex;align-items:center;gap:12px;min-width:0}
+.t-txt{min-width:0;flex:1 1 auto}
+.cv{flex:none;width:58px;height:58px;border-radius:10px;overflow:hidden;display:grid;place-items:center;background:var(--surface2,#25262e);box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.cv img{width:100%;height:100%;object-fit:cover;display:block}
+.cv.ph{color:var(--muted);opacity:.55}
+.cv.sm{width:42px;height:42px;border-radius:8px}
+.dhead .cv{width:52px;height:52px}
+body.sk-car .cv{width:44px;height:44px;border-radius:2px;border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.45);transform:rotate(-2deg)}
+body.sk-car .cv.sm{width:36px;height:36px}
+body.sk-car .t-wrap{gap:10px}
+@media (max-width:600px){body.sk-car .card .cbar .pill,body.sk-car .card .cbar .stpill{font-size:15px;padding:5px 9px;letter-spacing:.02em}body.sk-car .card .t-title{font-size:17px}}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -2479,7 +2490,7 @@ function renderSetlist(){
     var start=t;t+=(s.duration||0)+(i<inSet.length-1?gap:0);if(!s.duration)noDur++;
     var st=stateOf(s);if(st===3)ready++;
     return '<article class="song"><div class="srow"><span class="mono idx">'+(i+1)+'</span>'+
-      '<div><div class="t-title">'+esc(s.title)+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':' · sem duração')+'</div></div>'+
+      '<div class="t-wrap">'+coverHTML(s,'sm')+'<div class="t-txt"><div class="t-title">'+esc(s.title)+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':' · sem duração')+'</div></div></div>'+
       '<span class="mono faint" title="Início no show">'+fmt(start)+'</span>'+
       '<div class="state"><span class="pill s'+st+'">'+STATE_LABEL[st]+'</span>'+starsHTML(pct(s))+'</div>'+
       '<div class="row-actions"><button type="button" class="btn small" data-act="set-up" data-id="'+s.id+'" aria-label="Subir"'+(i===0?' disabled':'')+'>↑</button><button type="button" class="btn small" data-act="set-down" data-id="'+s.id+'" aria-label="Descer"'+(i===inSet.length-1?' disabled':'')+'>↓</button><button type="button" class="btn small" data-act="stage" data-id="'+s.id+'" data-kind="lyrics">Modo show</button><button type="button" class="x" data-act="set-rm" data-id="'+s.id+'" aria-label="Tirar do setlist">×</button></div></div></article>';
@@ -2642,6 +2653,23 @@ function recInd(s){
   return '<span class="tag ri'+(na?' on':'')+'" title="'+(na?(na===1?'1 gravação de áudio':na+' gravações de áudio'):'Sem gravação de áudio')+'" role="img" aria-label="'+(na?'Tem gravação de áudio':'Sem gravação de áudio')+'">'+ICO_MIC+'</span>'+
     '<span class="tag ri'+(nv?' on':'')+'" title="'+(nv?(nv===1?'1 vídeo':nv+' vídeos'):'Sem vídeo')+'" role="img" aria-label="'+(nv?'Tem vídeo':'Sem vídeo')+'">'+ICO_VID+'</span>';
 }
+var COVER_OK=/^https:\/\/[a-z0-9.-]*dzcdn\.net\//i;
+function coverOf(s){return s&&s.cover&&COVER_OK.test(s.cover)?s.cover:''}
+var ICO_NOTE='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>';
+function coverHTML(s,cls){var u=coverOf(s);return '<span class="cv'+(u?'':' ph')+(cls?' '+cls:'')+'">'+(u?'<img alt="" loading="lazy" decoding="async" src="'+esc(u)+'" title="'+esc(s.coverAlbum||'')+'">':ICO_NOTE)+'</span>'}
+function songKey(s){return plNorm(s.title)+'|'+plNorm(s.artist)}
+var coverBusy=false;
+function coverTick(){
+  if(coverBusy||!window.CE_COVER||!loaded||!col||document.hidden)return;
+  var now=Date.now(),s=songs.filter(function(x){return x.title&&(x.coverKey!==songKey(x)||(!coverOf(x)&&now-(x.coverTried||0)>30*864e5))})[0];
+  if(!s)return;
+  coverBusy=true;var key=songKey(s);
+  CE_COVER(s.title,s.artist||'').then(function(r){
+    var f={coverKey:key,coverTried:Date.now()};
+    if(r&&r.ok&&COVER_OK.test(r.cover||'')){f.cover=r.cover;f.coverAlbum=String(r.album||'').slice(0,100)}else{f.cover='';f.coverAlbum=''}
+    patch(s.id,f,true);
+  }).catch(function(){}).then(function(){coverBusy=false;setTimeout(coverTick,350)});
+}
 function cardHTML(s){
   var p=vpct(s),mid2;
   if(as){
@@ -2653,14 +2681,14 @@ function cardHTML(s){
   }
   var meta=metaTags(s)+recInd(s);
   return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+
-    '<div><div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div>'+
+    '<div class="t-wrap">'+coverHTML(s)+'<div class="t-txt"><div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div></div>'+
     (meta?'<div class="inst">'+meta+'</div>':'')+mid2+
     '<div class="cbar">'+(vstate(s)===3?checkHTML():'')+starsHTML(p)+'<span class="pct">'+p+'%</span>'+(vstate(s)>=0&&STATE_LABEL[vstate(s)]?statPill(vstate(s),STATE_LABEL[vstate(s)]):'')+'</div></div>';
 }
 function pcardHTML(s,pid){
   var p=partOf(s,pid),meta=metaTags(s)+recInd(s);
   return '<div class="card'+(openId===s.id?' open':'')+'" role="button" tabindex="0" data-act="toggle" data-id="'+s.id+'">'+
-    '<div><div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div>'+
+    '<div class="t-wrap">'+coverHTML(s)+'<div class="t-txt"><div class="t-title">'+starHTML(s)+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+(s.duration?' · <span class="mono">'+fmt(s.duration)+'</span>':'')+'</div></div></div>'+
     (meta?'<div class="inst">'+meta+'</div>':'')+(p.role?'<div class="mine">'+esc(p.role)+'</div>':'')+(p.tone?'<div class="faint">Timbre: '+esc(p.tone)+'</div>':'')+
     '<div class="cbar cst">'+(p.status===2?checkHTML():'')+'<button type="button" class="pill s'+(p.status===2?3:p.status)+' stpill" data-act="pill-status" data-id="'+s.id+'" data-mid="'+pid+'" aria-label="Mudar o status">'+STATE_LABEL[p.status===2?3:p.status]+' ▾</button></div></div>';
 }
@@ -2682,7 +2710,7 @@ function renderDrawer(){
   if(!s){el.hidden=true;bg.hidden=true;el.innerHTML='';lastDrawer=null;return}
   var pid=view(),old=el.querySelector('.dbody'),top=old&&lastDrawer===s.id?old.scrollTop:0;
   el.hidden=false;bg.hidden=false;
-  el.innerHTML='<div class="dhead"><div><div class="t-title">'+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+'</div></div><div class="row-actions"><a class="btn small primary" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">'+(s.spotify?'▶ Ouvir no Spotify':'Buscar no Spotify ↗')+'</a><button type="button" class="btn small" data-act="drawer-close">Fechar</button></div></div><div class="dbody">'+(pid?studyHTML(s,member(pid)):detailHTML(s))+'</div>';
+  el.innerHTML='<div class="dhead"><div class="t-wrap">'+coverHTML(s)+'<div class="t-txt"><div class="t-title">'+esc(s.title||'Sem título')+'</div><div class="t-artist">'+esc(s.artist||'')+'</div></div></div><div class="row-actions"><a class="btn small primary" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">'+(s.spotify?'▶ Ouvir no Spotify':'Buscar no Spotify ↗')+'</a><button type="button" class="btn small" data-act="drawer-close">Fechar</button></div></div><div class="dbody">'+(pid?studyHTML(s,member(pid)):detailHTML(s))+'</div>';
   el.querySelector('.dbody').scrollTop=top;lastDrawer=s.id;
 }
 function detailHTML(s){
@@ -3913,6 +3941,7 @@ function render(){
   $('#home').hidden=!!pid||isSet||isCfg||isMus;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;$('#musview').hidden=!isMus;
   $('#btn-add').hidden=!!pid||isSet||isCfg||isMus;$('#btn-import').hidden=!!pid||isSet||isCfg||isMus;
   if(isMus)renderMus();else if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
+  coverTick();
   renderDrawer();renderMusVideo();renderBandDel();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.mediaPick)renderMediaPick();if(ui.ytOpen)ytPanel();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
   if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
   if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
