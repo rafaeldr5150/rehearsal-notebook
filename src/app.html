@@ -1196,6 +1196,23 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 @media (min-width:700px){.folders .row-actions{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .folders .row-actions.pastas{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
 .folders{display:flex;flex-direction:column;gap:10px}
+.songtools{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--accent,#ff4d8d);border-radius:16px;background:rgba(255,77,141,.08);margin:0 0 14px}
+.songtools[hidden]{display:none}
+.st-label{font-size:14px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;opacity:.85}
+.st-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px}
+.st-row .btn{min-height:50px;white-space:normal;line-height:1.2;padding:6px 8px;font-size:14px}
+.st-row .btn[hidden]{display:none}
+.ftools{display:flex;flex-direction:column;gap:10px;margin:0 0 14px}
+.ftools .st-row .btn{min-height:56px;font-size:16px}
+#mtool{position:fixed;inset:0;z-index:48;display:flex;align-items:center;justify-content:center;background:#08070b;padding:16px;overflow:auto}
+#mtool[hidden]{display:none}
+.mt-bpm{font-size:96px;line-height:1;font-weight:800;text-align:center}
+.mt-bpm small{display:block;font-size:16px;color:var(--muted);font-weight:500}
+.mt-dots{display:flex;justify-content:center;gap:10px;min-height:22px}
+.mt-dots i{width:18px;height:18px;border-radius:50%;background:var(--line)}.mt-dots i.on{background:#ff3d8b;box-shadow:0 0 12px #ff3d8b}
+.mt-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px}.mt-row .btn{min-height:54px;font-size:18px}
+.mt-slider{width:100%}
+#mtool .tn-modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}#mtool .tn-modes .chip{padding:8px 2px;font-size:13px;text-align:center;justify-content:center}
 .folders:empty{display:none}
 .folders h3{font-size:14px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
 .inst-steps{margin:10px 0 0;padding-left:22px;text-align:left;display:flex;flex-direction:column;gap:8px;font-size:15px}
@@ -1333,14 +1350,10 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
       <p class="sub">Progresso das músicas tiradas para o repertório da banda.</p>
     </div>
     <div class="row-actions">
-      <button type="button" class="btn" id="btn-pl" data-act="pl-sync" hidden>↻ Atualizar playlist</button>
       <a class="btn" id="hdr-pl" href="#" target="_blank" rel="noopener" hidden>Playlist no Spotify ↗</a>
       <button class="btn" id="btn-skin" type="button" title="Escolher o layout do aplicativo">Layout e idioma</button>
       <button class="btn" id="btn-bg" type="button" title="Mudar o fundo da página">Fundo</button>
       <button class="btn" id="btn-band" type="button">Banda</button>
-      <button class="btn" id="btn-import" type="button">Importar lista</button>
-      <button class="btn" id="btn-tuner" type="button" data-act="tuner-open">🎵 Afinador</button>
-      <button class="btn primary" id="btn-add" type="button">+ Música</button>
     </div>
   </header>
 
@@ -1387,6 +1400,7 @@ body.sk-car .reh,body.sk-car .feed li{background:var(--paper);color:var(--paper-
     <section id="lineup" class="lineup"></section>
     <section id="ideas" class="ideas"></section>
     <section id="feed" class="feed"></section>
+    <section id="songtools" class="songtools" aria-label="Músicas"><div class="st-label">Músicas</div><div class="st-row"><button type="button" class="btn" id="btn-pl" data-act="pl-sync" hidden>↻ Atualizar playlist</button><button class="btn" id="btn-import" type="button">Importar lista</button><button class="btn primary" id="btn-add" type="button">+ Música</button></div></section>
 
     <section class="panel" id="panel-add" hidden>
       <h3>Nova música</h3>
@@ -3000,7 +3014,7 @@ function renderPerson(pid){
     :flatHTML(vis,function(s){return pcardHTML(s,pid)});
   el.innerHTML='<div class="phead"><div><div class="faint">Página pessoal</div><h2>'+(avatarHTML(m,46).indexOf('class="av"')>=0?'<span class="pav">'+avatarHTML(m,46)+'</span>':'')+esc(m.name)+' <span class="faint" style="font-weight:400">· '+esc(m.instrument)+'</span></h2><div class="row-actions" style="margin-top:8px">'+(meMember===pid?'<span class="tag" style="background:var(--red);color:#fff;border-color:var(--paper-ink)">Esta é a sua página</span><button type="button" class="btn small" data-act="photo-pick" data-id="'+pid+'">'+(m.photo?'📷 Trocar minha foto':'📷 Minha foto')+'</button>':'<button type="button" class="btn small" data-act="set-me" data-id="'+pid+'">Sou eu</button>')+'<button type="button" class="btn small" data-act="who-nav">Trocar de músico</button></div></div>'+
     '<div class="pstat"><div class="pl" style="display:flex;justify-content:space-between"><b>'+done+' de '+mine.length+' prontas</b><span class="mono faint">'+pc+'%</span></div>'+pbarHTML(pc)+'</div></div>'+
-    studyCardHTML(pid)+alertHTML(pid)+'<div class="tools"><input class="grow" type="search" id="pq" data-fk="pq" value="'+esc(pquery)+'" placeholder="Buscar por título ou artista" aria-label="Buscar música"><div class="chips">'+chipsHTML(PFILTERS,'pfilter',pfilter,pcounts)+'</div></div>'+
+    studyCardHTML(pid)+alertHTML(pid)+'<section class="ftools"><div class="st-label">Ferramentas</div><div class="st-row"><button type="button" class="btn" data-act="tuner-open">🎵 Afinador</button><button type="button" class="btn" data-act="mtool-open">⏱ Metrônomo</button></div></section><div class="tools"><input class="grow" type="search" id="pq" data-fk="pq" value="'+esc(pquery)+'" placeholder="Buscar por título ou artista" aria-label="Buscar música"><div class="chips">'+chipsHTML(PFILTERS,'pfilter',pfilter,pcounts)+'</div></div>'+
     '<div id="plist" style="display:flex;flex-direction:column;gap:8px">'+body+'</div>';
 }
 
@@ -3150,8 +3164,52 @@ function renderTuner(){
     (tuner.err?'<p class="hint">'+esc(tuner.err)+'</p>':'<div class="tn-read" id="tn-read"><div class="tn-note" id="tn-note">–</div><div class="tn-hz mono" id="tn-hz">toque uma corda</div>'+
     '<div class="tn-meter" aria-hidden="true"><i class="tn-tick l"></i><i class="tn-tick c"></i><i class="tn-tick r"></i><i class="tn-needle" id="tn-needle"></i></div>'+
     '<div class="tn-cents mono" id="tn-cents">&nbsp;</div><div class="tn-say" id="tn-say">&nbsp;</div></div>')+
-    (T.s.length?'<div class="tn-strings" id="tn-strings">'+T.s.map(function(x,i){return '<span class="tn-str" data-i="'+i+'"><b>'+esc(x[0].replace(/[0-9]/g,''))+'</b><small>'+esc(x[0].replace(/\D/g,''))+'</small></span>'}).join('')+'</div>':'')+
+    (T.s.length?'<div class="tn-strings" id="tn-strings">'+T.s.map(function(x,i){return '<span class="tn-str" data-i="'+i+'"><b>'+esc(x[0].replace(/[0-9]/g,''))+'</b><small>'+(T.s.length-i)+'</small></span>'}).join('')+'</div><p class="hint" style="text-align:center">O número embaixo da nota é a corda. A 1 é a mais fina.</p>':'')+
     '</div>';
+}
+
+/* ---------- metrônomo avulso (ferramentas) ---------- */
+var mtool={on:false,run:false,bpm:100,beats:4,beat:0,next:0,timer:null};
+function mtStop(){mtool.run=false;clearInterval(mtool.timer);mtool.timer=null}
+function mtSched(){
+  var iv=60/mtool.bpm;
+  while(mtool.next<met.ctx.currentTime+0.15){
+    var b=mtool.beat%mtool.beats,at=mtool.next;
+    clickAt(at,b===0);
+    (function(bb,d){setTimeout(function(){if(mtool.run){var ds=document.querySelectorAll('#mtool .mt-dots i');ds.forEach(function(x,i){x.classList.toggle('on',i===bb)})}},d)})(b,Math.max(0,(at-met.ctx.currentTime)*1000));
+    mtool.next+=iv;mtool.beat++;
+  }
+}
+function mtStart(){
+  var AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC){toast('Este navegador não toca o metrônomo.');return}
+  if(!met.ctx)met.ctx=new AC();
+  met.ctx.resume();metStop();mtStop();
+  mtool.run=true;mtool.beat=0;mtool.next=met.ctx.currentTime+0.1;mtool.timer=setInterval(mtSched,25);
+}
+function renderMtool(){
+  var el=document.getElementById('mtool');
+  if(!el){el=document.createElement('div');el.id='mtool';el.hidden=true;document.body.appendChild(el)}
+  if(!mtool.on){el.hidden=true;el.innerHTML='';return}
+  el.hidden=false;var dots='';for(var i=0;i<mtool.beats;i++)dots+='<i></i>';
+  el.innerHTML='<div class="tn-box" role="dialog" aria-label="Metrônomo"><div class="tn-top"><b>Metrônomo</b><button type="button" class="btn small" data-act="mtool-close">Fechar</button></div>'+
+    '<div class="mt-bpm" id="mt-bpm">'+mtool.bpm+'<small>BPM</small></div><div class="mt-dots">'+dots+'</div>'+
+    '<input class="mt-slider" id="mt-slider" type="range" min="30" max="240" value="'+mtool.bpm+'" aria-label="BPM">'+
+    '<div class="mt-row"><button type="button" class="btn" data-act="mtool-bpm" data-d="-5">−5</button><button type="button" class="btn" data-act="mtool-bpm" data-d="-1">−1</button><button type="button" class="btn" data-act="mtool-bpm" data-d="1">+1</button><button type="button" class="btn" data-act="mtool-bpm" data-d="5">+5</button></div>'+
+    '<div class="chips tn-modes" role="group">'+[2,3,4,6].map(function(n){return '<button type="button" class="chip" data-act="mtool-beats" data-v="'+n+'" aria-pressed="'+(mtool.beats===n)+'">'+n+' tempos</button>'}).join('')+'</div>'+
+    '<div class="mt-row"><button type="button" class="btn" data-act="mtool-tap">Marcar no toque</button><button type="button" class="btn primary" data-act="mtool-go">'+(mtool.run?'Parar':'Iniciar')+'</button></div></div>';
+  var sl=document.getElementById('mt-slider');if(sl)sl.oninput=function(){mtSet(+sl.value)};
+}
+function mtSet(b){mtool.bpm=Math.max(30,Math.min(240,Math.round(b)));var e=document.getElementById('mt-bpm');if(e)e.innerHTML=mtool.bpm+'<small>BPM</small>';var sl=document.getElementById('mt-slider');if(sl&&+sl.value!==mtool.bpm)sl.value=mtool.bpm;if(mtool.run){mtool.next=Math.min(mtool.next,met.ctx.currentTime+60/mtool.bpm)}}
+var mtTaps=[];
+function mtAct(act,t){
+  if(act==='mtool-open'){mtool.on=true;renderMtool();return true}
+  if(act==='mtool-close'){mtool.on=false;mtStop();renderMtool();return true}
+  if(act==='mtool-bpm'){mtSet(mtool.bpm+(+t.dataset.d));return true}
+  if(act==='mtool-beats'){mtool.beats=+t.dataset.v;mtool.beat=0;renderMtool();return true}
+  if(act==='mtool-go'){if(mtool.run)mtStop();else mtStart();renderMtool();return true}
+  if(act==='mtool-tap'){var n=performance.now();if(mtTaps.length&&n-mtTaps[mtTaps.length-1]>2500)mtTaps=[];mtTaps.push(n);if(mtTaps.length>8)mtTaps.shift();if(mtTaps.length>=3){var b=Math.round(60000/((mtTaps[mtTaps.length-1]-mtTaps[0])/(mtTaps.length-1)));if(b>=30&&b<=240)mtSet(b)}return true}
+  return false;
 }
 function tunerTick(ts){
   if(!tuner.on)return;tuner.raf=requestAnimationFrame(tunerTick);
@@ -4294,7 +4352,7 @@ function render(){
   var pid=view(),isSet=location.hash==='#setlist',isCfg=location.hash==='#config',isMus=!!musRoute(),isAg=location.hash==='#agenda';
   var h1=document.querySelector('header h1');if(h1)h1.textContent=bandName()||'Rehearsal Notebook';
   $('#home').hidden=!!pid||isSet||isCfg||isMus||isAg;$('#agview').hidden=!isAg;$('#personview').hidden=!pid;$('#setview').hidden=!isSet;$('#cfgview').hidden=!isCfg;$('#musview').hidden=!isMus;
-  $('#btn-add').hidden=!!pid||isSet||isCfg||isMus||isAg;var bt=$('#btn-tuner');if(bt)bt.hidden=!!pid||isSet||isCfg||isMus||isAg;$('#btn-import').hidden=!!pid||isSet||isCfg||isMus||isAg;
+  $('#btn-add').hidden=!!pid||isSet||isCfg||isMus||isAg;$('#btn-import').hidden=!!pid||isSet||isCfg||isMus||isAg;var stl=$('#songtools');if(stl)stl.hidden=!!pid||isSet||isCfg||isMus||isAg;
   if(isAg)renderAgenda();else if(isMus)renderMus();else if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
   coverTick();
   renderDrawer();histSync();renderMusVideo();renderBandDel();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.mediaPick)renderMediaPick();if(ui.ytOpen)ytPanel();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
@@ -4355,6 +4413,7 @@ document.addEventListener('click',function(e){
   if(act==='spot-del'){spotSave(id,t.dataset.mid,function(a){return a.filter(function(x){return x.id!==t.dataset.sid})});return}
   if(act==='study-today'){studyToggleToday();return}
   if(act==='study-min'){studyMinutes(+t.dataset.v);return}
+  if(act.indexOf('mtool-')===0&&mtAct(act,t))return;
   if(act==='tuner-open'){tunerOpen();return}
   if(act==='tuner-close'){tunerClose();return}
   if(act==='tuner-mode'){tuner.mode=t.dataset.v;tuner.freq=0;renderTuner();return}

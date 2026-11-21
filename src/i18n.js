@@ -19,6 +19,15 @@ var I=lang==='en'?1:2;
 
 /* [português, inglês, espanhol] */
 var D=[
+['Ferramentas','Tools','Herramientas'],
+['⏱ Metrônomo','⏱ Metronome','⏱ Metrónomo'],
+['Marcar no toque','Tap tempo','Marcar con toques'],
+['O número embaixo da nota é a corda. A 1 é a mais fina.','The number under the note is the string. String 1 is the thinnest.','El número bajo la nota es la cuerda. La 1 es la más fina.'],
+['Músicas','Songs','Canciones'],
+['2 tempos','2 beats','2 tiempos'],
+['3 tempos','3 beats','3 tiempos'],
+['4 tempos','4 beats','4 tiempos'],
+['6 tempos','6 beats','6 tiempos'],
 ['Mostre o seu som. Marque uma jam.','Show your sound. Set up a jam.','Muestra tu sonido. Organiza una jam.'],
 ['<b>Marque uma jam.</b> Chame o músico por uma mensagem dentro do app. O seu e-mail não aparece para ninguém.','<b>Set up a jam.</b> Reach out to the musician with a message inside the app. Your email is not shown to anyone.','<b>Organiza una jam.</b> Escribe al músico con un mensaje dentro de la app. Tu correo no aparece para nadie.'],
 ['Um tour rápido, só com o principal. O resto você descobre usando. Toque em Próximo para avançar.','A quick tour with just the essentials. You\'ll discover the rest by using it. Tap Next to continue.','Un tour rápido, solo con lo principal. El resto lo descubres usando la app. Toca Siguiente para avanzar.'],
