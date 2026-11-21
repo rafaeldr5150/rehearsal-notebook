@@ -66,7 +66,7 @@ body.sk-cus{--rec-on:var(--cb,#33d6a0)}
 .card .tag.ri{min-width:30px;padding:2px 6px}
 #tour.coach{display:block;background:transparent;padding:0;overflow:hidden}
 .tour-hole{position:fixed;border-radius:14px;box-shadow:0 0 0 100vmax rgba(8,4,6,.8);outline:3px solid var(--accent,#ff4d8d);pointer-events:none;transition:top .22s,left .22s,width .22s,height .22s}
-.tour-card{position:fixed;left:12px;right:12px;margin:0 auto;width:auto;max-width:440px;text-align:left;z-index:2;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.tour-card{position:fixed;left:12px;right:12px;margin:0 auto;width:auto;max-width:440px;box-sizing:border-box;text-align:left;z-index:2;box-shadow:0 10px 40px rgba(0,0,0,.6)}
 .tour-card h2{font-size:22px;margin:2px 0 6px}
 .tour-count{font-size:13px;color:var(--muted)}
 .tour-btns{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
@@ -1310,6 +1310,7 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 #statuspick,#tour{position:fixed;inset:0;z-index:36;display:flex;align-items:center;justify-content:center;background:rgba(8,4,6,.82);padding:18px;overflow:auto}
 #tour{z-index:40}
 .stpick,.tourbox{width:min(420px,100%);text-align:center}
+#tour .tour-card{width:auto;max-width:440px;left:12px;right:12px;box-sizing:border-box}
 .stopts{display:grid;grid-template-columns:1fr;gap:8px}
 .stopts .stbtn{padding:14px 10px;font-size:15px}
 .stopts .stbtn.cur{outline:3px solid currentColor;outline-offset:2px}
@@ -3661,40 +3662,20 @@ function renderReh(){
     (i.days>=0?rsvpHTML('reh','',rehRsvp()):'')+
     '<div class="row-actions"><button type="button" class="btn small" data-act="reh-edit">Editar</button><button type="button" class="btn small'+(ui.armReh?' danger armed':'')+'" data-act="reh-remove">'+(ui.armReh?'Confirmar: cancelar o ensaio':'Cancelar o ensaio')+'</button></div>';
 }
-var TOUR_V=2;
+var TOUR_V=3;
 function tourMe(){return meMember&&member(meMember)?meMember:(members()[0]||{}).id}
 function h3Block(root,txt){if(!root)return null;var h=root.querySelectorAll('h3');for(var i=0;i<h.length;i++){if(h[i].textContent.trim().toLowerCase().indexOf(txt)===0)return h[i].closest('.block,.cfg,.panel')||h[i].parentNode}return null}
 var TOUR=[
- {v:1,modal:1,ico:'home',t:'Bem-vindo ao Rehearsal Notebook',x:'Vou te mostrar o app tela por tela, nas telas de verdade. Toque em Próximo para avançar. Você pode sair quando quiser.'},
- {v:1,r:'geral',sel:function(){var t=$('#tabbar');return t&&t.offsetHeight?t:$('#side')},t:'Navegação',x:'Geral é o resumo da banda. Setlist é a ordem do show. A página com o seu nome tem só as suas músicas. Configurações guarda o resto.'},
- {v:1,r:'geral',sel:'#hero',t:'Resumo da banda',x:'Nome da banda, a data do próximo show e quanto do repertório já está tirado. Embaixo, as músicas prontas, em andamento e não iniciadas.'},
- {v:1,r:'geral',sel:'#reh',skip:1,t:'Próximo ensaio',x:'Marque a data e a hora do próximo ensaio. Com a estrela ★ nas músicas, cada um vê o que ainda falta.'},
- {v:2,r:'geral',sel:'#folders',skip:1,t:'Fotos, vídeos e pastas',x:'Tire fotos e grave vídeos direto pelo app: eles vão para a pasta da banda no Google Drive. Os botões de baixo abrem as pastas e a galeria.'},
- {v:1,r:'geral',sel:'#lineup .mgrid .mcard',t:'A banda',x:'O seu cartão vem primeiro e os dos outros integrantes vêm embaixo. Toque em um nome para ver só as músicas daquela pessoa. Em Configurações, cada um coloca a própria foto.'},
- {v:1,r:'geral',sel:'#ideas',t:'Sugestões de músicas',x:'Qualquer um sugere uma música nova e a banda vota com o 👍. Quando decidirem, toque em Aprovar e ela entra no setlist.'},
- {v:1,r:'geral',sel:'#feed',skip:1,t:'Atividade recente',x:'Avisos de quem terminou uma música e das novidades da banda.'},
- {v:1,r:'geral',sel:'#home .card',skip:1,t:'Cartão da música',x:'Cada música mostra o status e as estrelas de progresso. Os ícones 🎙 e 🎥 ficam acesos quando existe gravação de áudio ou de vídeo. Toque no cartão para abrir.'},
- {v:1,r:'me',sel:'.phead',t:'A sua página',x:'Cada integrante tem a própria página, só com as músicas dele, com busca e filtros por status. É aqui que você acompanha o que falta.'},
- {v:1,r:'me',sel:'#plist .card',skip:1,t:'Mudar o status',x:'Toque na etiqueta para marcar a música como Não iniciada, Em andamento ou Pronta. Toque no cartão para abrir os detalhes.'},
- {v:1,r:'me',open:1,sel:'#drawer .dhead',skip:1,t:'Dentro da música',x:'Tudo da música fica aqui: cifra, a sua parte, gravações, avaliação e comentários. Role para ver tudo.'},
- {v:1,r:'me',open:1,sel:'#drawer details.prim',skip:1,t:'Cifra, letra ou metrônomo',x:'Fica recolhido para não ocupar a tela: toque para abrir. Guitarra e baixo veem a cifra (dá para transpor o tom), a voz vê a letra e a bateria vê o metrônomo.'},
- {v:1,r:'me',open:1,sel:'#drawer .mypart',skip:1,t:'Minha parte',x:'Anote o que você faz na música, o link da faixa de estudo, o timbre e as suas observações. O botão de status também fica aqui.'},
- {v:2,r:'me',open:1,sel:function(){return h3Block($('#drawer'),'gravar')},skip:1,t:'Gravar',x:'● Gravar grava o áudio, com um medidor que avisa se o som está estourando. 🎥 Gravar vídeo abre a câmera. Tudo vai para a pasta da música no Drive.'},
- {v:2,r:'me',open:1,sel:'#drawer .rec-list li',skip:1,t:'Ouvir as gravações',x:'Toque em Ouvir para abrir o player: barra de progresso, pular 10 segundos, velocidade e repetir só um trecho (marque A e B).'},
- {v:1,r:'me',open:1,sel:function(){return h3Block($('#drawer'),'como saiu')},skip:1,t:'Avaliação',x:'Depois do ensaio, dê de 1 a 5 estrelas para dizer como a música saiu. A média aparece para a banda toda.'},
- {v:1,r:'me',open:1,sel:function(){return h3Block($('#drawer'),'comentários')},skip:1,t:'Comentários',x:'Deixe recados para a banda sobre a música, como "refrão rápido demais".'},
- {v:1,r:'setlist',sel:'#setview .phead',t:'Setlist',x:'Monte a ordem do show, ajuste a pausa entre as músicas e marque a data e o local do show.'},
- {v:1,r:'setlist',sel:'[data-act="live-start"]',skip:1,t:'Ensaio ao vivo',x:'Começar ensaio ao vivo: a banda toda acompanha a mesma música, com rolagem automática e metrônomo sincronizado entre os celulares.'},
- {v:3,r:'geral',sel:'#agcard',skip:1,t:'Agenda e presença',x:'Marque ensaios, shows e outros compromissos. Nos ensaios, cada integrante responde Vou, Talvez ou Não vou, e todo mundo vê quem confirmou. A resposta do próximo ensaio também fica no cartão do ensaio.'},
- {v:3,r:'geral',sel:'#btn-tuner',skip:1,t:'Afinador',x:'Afine o violão, a guitarra, o baixo ou o ukulele pelo microfone. A agulha mostra se a corda está grave, afinada ou aguda.'},
- {v:3,r:'musicos',sel:'#musview .mus-head',skip:1,t:'Sonora',x:'A Sonora é a rede de músicos do app, separada das bandas. Monte o seu perfil, siga outros músicos, curta vídeos, encontre quem toca na sua cidade e combine de tocar. O perfil só aparece para os outros se você ligar “Visível”.'},
- {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'você')},t:'Você',x:'Escolha quem você é e coloque a sua foto, que aparece no cartão da banda.'},
- {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'aparência')},skip:1,t:'Aparência',x:'Troque o layout (Neon, Cartaz, Estúdio ou Personalizado) e o idioma.'},
- {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'banda')},skip:1,t:'Banda e convite',x:'Nome, logo e integrantes. Copie o link de convite para chamar a banda; o dono pode gerar um convite novo se o antigo vazar.'},
- {v:2,r:'config',sel:function(){return h3Block($('#cfgview'),'google drive')},skip:1,t:'Google Drive',x:'Conecte o Drive uma vez (só o dono conecta). As gravações, fotos e vídeos passam a ir para as pastas da banda.'},
- {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'lembretes')},skip:1,t:'Lembretes',x:'Ative os lembretes e o celular avisa na véspera e no dia do ensaio.'},
- {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'ajuda')},skip:1,t:'Ajuda',x:'Aqui você instala o app na tela inicial, revê as permissões e abre este tour de novo quando quiser.'},
- {v:1,modal:1,ico:'home',last:1,t:'Tudo pronto!',x:'Esse foi o app. Para ver o tour de novo: Configurações, Ajuda, Ver o tour.'}
+ {v:1,modal:1,ico:'home',t:'Bem-vindo ao Rehearsal Notebook',x:'Um tour rápido, só com o principal. O resto você descobre usando. Toque em Próximo para avançar.'},
+ {v:1,r:'geral',sel:function(){var t=$('#tabbar');return t&&t.offsetHeight?t:$('#side')},t:'Navegação',x:'Geral é o resumo da banda. Setlist é a ordem do show. A página com o seu nome tem só as suas músicas. Ajustes guarda o resto.'},
+ {v:1,r:'geral',sel:'#hero',t:'Resumo da banda',x:'Nome da banda, a data do próximo show e quanto do repertório já está tirado.'},
+ {v:1,r:'geral',sel:'#agcard',skip:1,t:'Agenda e presença',x:'Marque ensaios e shows. Nos ensaios, cada um responde Vou, Talvez ou Não vou, e todo mundo vê quem confirmou.'},
+ {v:1,r:'me',sel:'#plist .card',skip:1,t:'Suas músicas',x:'Cada integrante tem a própria página, só com as músicas dele. Toque na etiqueta para mudar o status e no cartão para abrir os detalhes.'},
+ {v:1,r:'me',open:1,sel:'#drawer .dhead',skip:1,t:'Dentro da música',x:'Cifra, letra ou metrônomo, a sua parte, trechos difíceis, avaliação e comentários. Para voltar, toque em Fechar ou deslize da borda esquerda para a direita.'},
+ {v:1,r:'me',open:1,sel:function(){return h3Block($('#drawer'),'gravar')},skip:1,t:'Gravar e ouvir',x:'Grave áudio ou vídeo direto no app. Tudo vai para a pasta da música no Google Drive e dá para ouvir depois, com repetição de trechos.'},
+ {v:1,r:'setlist',sel:'#setview .phead',t:'Setlist e ensaio ao vivo',x:'Monte a ordem do show. No ensaio ao vivo, a banda toda acompanha a mesma música, com rolagem automática e metrônomo sincronizado.'},
+ {v:1,r:'musicos',sel:'#musview .mus-head',skip:1,t:'Sonora',x:'A Sonora é a rede de músicos do app, separada das bandas. Monte o seu perfil, siga outros músicos e encontre quem toca na sua cidade.'},
+ {v:1,modal:1,ico:'home',last:1,t:'Tudo pronto!',x:'Em Ajustes você convida a banda, conecta o Google Drive e muda o layout e o idioma. Para rever este tour: Ajustes, Ajuda.'}
 ];
 function tourSteps(){return ui.tourFrom?TOUR.filter(function(x){return x.v>ui.tourFrom}):TOUR}
 function tourFind(st){
@@ -4315,13 +4296,32 @@ function render(){
   $('#btn-add').hidden=!!pid||isSet||isCfg||isMus||isAg;var bt=$('#btn-tuner');if(bt)bt.hidden=!!pid||isSet||isCfg||isMus||isAg;$('#btn-import').hidden=!!pid||isSet||isCfg||isMus||isAg;
   if(isAg)renderAgenda();else if(isMus)renderMus();else if(pid)renderPerson(pid);else if(isSet)renderSetlist();else if(isCfg){renderConfig();if(!ui.pushAsked){ui.pushAsked=true;refreshPush()}}else renderHome();
   coverTick();
-  renderDrawer();renderMusVideo();renderBandDel();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.mediaPick)renderMediaPick();if(ui.ytOpen)ytPanel();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
+  renderDrawer();histSync();renderMusVideo();renderBandDel();renderWho();renderCePick();renderStPick();renderInstall();renderWatch();if(ui.mediaPick)renderMediaPick();if(ui.ytOpen)ytPanel();if(ui.pm&&!stage)ui.pm=null;renderPauseMenu();if(ui.spOpen)spPanel();
   if(ui.setupPending&&!whoOpen&&ui.tour==null){ui.setupPending=false;ui.setup=true;ui.setupSt=null;renderSetup();loadSetup()}
   if(!ui.driveAsked&&band&&window.CE_DRIVE){ui.driveAsked=true;refreshDrive();
     try{var qs=new URLSearchParams(location.search),dv=qs.get('drive');if(dv){var M={ok:'Google Drive conectado!',denied:'Conexão cancelada.',err:'Não foi possível conectar o Drive. Tente de novo.',nosecret:'O Drive ainda não está configurado no servidor.'};toast(M[dv]||'');qs.delete('drive');history.replaceState(null,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}}catch(e){}}
   if(!ui.tourChecked&&band&&members().length){ui.tourChecked=true;var seen='1';try{seen=localStorage.getItem('ce-tour')||''}catch(e){}if(!seen){ui.tourFrom=0;ui.tourDir=1;tourShow(0)}else if((+seen||1)<TOUR_V&&TOUR.some(function(x){return x.v>(+seen||1)})){ui.tourFrom=+seen||1;ui.tourDir=1;tourShow(0)}}
   if(fk){var el=document.querySelector('[data-fk="'+fk+'"]');if(el){el.focus();try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
 }
+/* ---------- voltar do sistema / gesto de deslizar fecha a música ---------- */
+function histSync(){
+  try{
+    if(openId&&!ui.hist){history.pushState({ced:1},'',location.href);ui.hist=true}
+    else if(!openId&&ui.hist){ui.hist=false;if(history.state&&history.state.ced){ui.skipPop=true;history.back()}}
+  }catch(e){}
+}
+window.addEventListener('popstate',function(){
+  if(ui.skipPop){ui.skipPop=false;return}
+  if(ui.hist){ui.hist=false;if(openId){openId=null;render()}}
+});
+(function(){
+  var x0=0,y0=0,t0=0,on=false;
+  document.addEventListener('touchstart',function(e){var t=e.touches[0];on=!!(openId&&e.touches.length===1&&t.clientX<=28);x0=t.clientX;y0=t.clientY;t0=Date.now()},{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!on)return;on=false;var t=e.changedTouches[0],dx=t.clientX-x0,dy=Math.abs(t.clientY-y0);
+    if(openId&&dx>70&&dy<60&&Date.now()-t0<800){openId=null;render()}
+  },{passive:true});
+})();
 function route(){
   mus.compose=false;if(ui.prevId||ui.prevLoad)stopPreview();metStop();openId=null;taps=[];stage=null;met.delta=0;closeStageSilent();
   window.scrollTo(0,0);ui.pushAsked=false;render();
