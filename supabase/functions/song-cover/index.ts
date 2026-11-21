@@ -17,9 +17,21 @@ const okCover = (u: unknown) => { try { const h = new URL(String(u)).hostname; r
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   if (req.method !== "POST") return J({ ok: false }, 405);
-  let b: { title?: string; artist?: string; spotify?: string } = {};
+  let b: { title?: string; artist?: string; spotify?: string; preview?: boolean } = {};
   try { b = await req.json(); } catch (_) { /* empty */ }
   const title = clean(b.title, 100), artist = clean(b.artist, 80);
+  if (b.preview) {
+    // a fresh 30-second preview link (these links expire, so it is looked up each time)
+    if (title.length < 1) return J({ ok: false, error: "title" }, 400);
+    const pq = artist ? [`artist:"${artist}" track:"${title}"`, `${title} ${artist}`] : [`track:"${title}"`, title];
+    for (const q of pq) {
+      const d = await getJson(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=5`);
+      for (const t of d?.data || []) {
+        try { if (t?.preview && new URL(String(t.preview)).hostname.endsWith("dzcdn.net")) return J({ ok: true, preview: String(t.preview) }); } catch (_) { /* skip */ }
+      }
+    }
+    return J({ ok: false, error: "notfound" }, 404);
+  }
   const sp = /^[A-Za-z0-9]{22}$/.test(String(b.spotify || "")) ? String(b.spotify) : "";
   if (sp) {
     // the same cover Spotify shows for that exact track
