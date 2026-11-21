@@ -462,6 +462,14 @@ pre.read.mono{font-family:var(--f-mono);white-space:pre;overflow-wrap:normal}
 .metro select{width:auto}
 details.more>summary{cursor:pointer;color:var(--muted);font-weight:500;padding:4px 0}
 details.more[open]>summary{margin-bottom:12px}
+details.moretools>summary{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 16px;border:2px solid var(--accent,#ff4d8d);border-radius:14px;background:rgba(255,77,141,.12);color:var(--ink);list-style:none}
+details.moretools>summary::-webkit-details-marker{display:none}
+details.moretools>summary::after{content:"▸";margin-left:auto;font-size:22px;color:var(--accent,#ff4d8d)}
+details.moretools[open]>summary::after{content:"▾"}
+details.moretools .mt-ic{font-size:26px}
+details.moretools .mt-tx{display:flex;flex-direction:column;gap:2px;text-align:left}
+details.moretools .mt-tx b{font-size:17px;font-weight:700}
+details.moretools .mt-tx small{font-size:13px;color:var(--muted)}
 details.more>div{display:flex;flex-direction:column;gap:18px}
 .mapl{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px}
 .mapl span b{font-weight:500;margin-right:6px}
@@ -2996,7 +3004,7 @@ function studyHTML(s,m){
   var PN={chords:'Cifra',lyrics:'Letra',metro:'Metrônomo'};
   var primHTML=prim.map(function(x){var op=!!ui.prim[id+x];return '<details class="more prim"'+(op?' open':'')+'><summary data-act="prim" data-id="'+id+'" data-k="'+x+'">'+PN[x]+'</summary><div>'+B[x]+'</div></details>'}).join('');
   return '<div class="detail"><div class="block study">'+primHTML+mine+recBlock(s)+ratingBlock(s)+commentsBlock(s)+
-    '<details class="more"'+(more?' open':'')+'><summary data-act="more" data-id="'+id+'">Mais ferramentas</summary><div>'+sec.map(function(x){return B[x]}).join('')+'</div></details></div></div>';
+    '<details class="more moretools"'+(more?' open':'')+'><summary data-act="more" data-id="'+id+'"><span class="mt-ic" aria-hidden="true">🧰</span><span class="mt-tx"><b>Mais ferramentas</b><small>'+sec.map(function(x){return PN[x]}).join(' · ')+'</small></span></summary><div>'+sec.map(function(x){return B[x]}).join('')+'</div></details></div></div>';
 }
 function renderPerson(pid){
   var m=member(pid),el=$('#personview');
