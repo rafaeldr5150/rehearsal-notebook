@@ -2653,18 +2653,18 @@ function recInd(s){
   return '<span class="tag ri'+(na?' on':'')+'" title="'+(na?(na===1?'1 gravação de áudio':na+' gravações de áudio'):'Sem gravação de áudio')+'" role="img" aria-label="'+(na?'Tem gravação de áudio':'Sem gravação de áudio')+'">'+ICO_MIC+'</span>'+
     '<span class="tag ri'+(nv?' on':'')+'" title="'+(nv?(nv===1?'1 vídeo':nv+' vídeos'):'Sem vídeo')+'" role="img" aria-label="'+(nv?'Tem vídeo':'Sem vídeo')+'">'+ICO_VID+'</span>';
 }
-var COVER_OK=/^https:\/\/[a-z0-9.-]*dzcdn\.net\//i;
+var COVER_OK=/^https:\/\/[a-z0-9.-]*(dzcdn\.net|scdn\.co|spotifycdn\.com)\//i;
 function coverOf(s){return s&&s.cover&&COVER_OK.test(s.cover)?s.cover:''}
 var ICO_NOTE='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>';
 function coverHTML(s,cls){var u=coverOf(s);return '<span class="cv'+(u?'':' ph')+(cls?' '+cls:'')+'">'+(u?'<img alt="" loading="lazy" decoding="async" src="'+esc(u)+'" title="'+esc(s.coverAlbum||'')+'">':ICO_NOTE)+'</span>'}
-function songKey(s){return plNorm(s.title)+'|'+plNorm(s.artist)}
+function songKey(s){return plNorm(s.title)+'|'+plNorm(s.artist)+'|'+(/^[A-Za-z0-9]{22}$/.test(s.spotify||'')?s.spotify:'')}
 var coverBusy=false;
 function coverTick(){
   if(coverBusy||!window.CE_COVER||!loaded||!col||document.hidden)return;
   var now=Date.now(),s=songs.filter(function(x){return x.title&&(x.coverKey!==songKey(x)||(!coverOf(x)&&now-(x.coverTried||0)>30*864e5))})[0];
   if(!s)return;
   coverBusy=true;var key=songKey(s);
-  CE_COVER(s.title,s.artist||'').then(function(r){
+  CE_COVER(s.title,s.artist||'',s.spotify).then(function(r){
     var f={coverKey:key,coverTried:Date.now()};
     if(r&&r.ok&&COVER_OK.test(r.cover||'')){f.cover=r.cover;f.coverAlbum=String(r.album||'').slice(0,100)}else{f.cover='';f.coverAlbum=''}
     patch(s.id,f,true);
