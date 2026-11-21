@@ -1193,6 +1193,7 @@ body.sk-car .cfg-row{background:var(--paper);color:var(--paper-ink);border:2px s
 .folders .row-actions{display:grid;grid-template-columns:1fr;gap:10px}
 .folders .row-actions .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;box-sizing:border-box;text-align:center;text-decoration:none;white-space:nowrap}
 @media (min-width:700px){.folders .row-actions{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.folders .row-actions.pastas{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
 .folders{display:flex;flex-direction:column;gap:10px}
 .folders:empty{display:none}
 .folders h3{font-size:14px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
