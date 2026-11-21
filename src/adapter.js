@@ -139,7 +139,11 @@ window.CE_PREVIEW=function(title,artist){
 window.CE_PROFILE={
   me:function(){return arpc('ce_profile_me')},
   save:function(d){return arpc('ce_profile_save',{p:{name:d.name,city:d.city,bio:d.bio,plays:d.plays,owns:d.owns,gear:d.gear,styles:d.styles,refs:d.refs||[],photo:d.photo||'',contact:{instagram:(d.contact||{}).instagram||''},accept_msgs:!!d.accept_msgs,visible:!!d.visible}})},
-  search:function(q,inst,style,off){return arpc('ce_profiles_search',{p_q:q||'',p_inst:inst||'',p_style:style||'',p_limit:20,p_offset:off||0})},
+  search:function(q,inst,style,off,mode,city){return arpc('ce_profiles_search',{p_q:q||'',p_inst:inst||'',p_style:style||'',p_limit:20,p_offset:off||0,p_mode:mode||'all',p_city:city||''})},
+  follow:function(id){return arpc('ce_follow',{p_user:id})},
+  unfollow:function(id){return arpc('ce_unfollow',{p_user:id})},
+  like:function(video,on){return arpc('ce_video_like',{p_video:video,p_on:!!on})},
+  feed:function(){return arpc('ce_feed',{p_limit:8})},
   get:function(id){return arpc('ce_profile_get',{p_user:id})},
   addVideo:function(url,title){return arpc('ce_video_add',{p_url:url,p_title:title||''})},
   delVideo:function(id){return arpc('ce_video_del',{p_id:id})},

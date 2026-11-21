@@ -216,6 +216,13 @@ body.sk-car .t-wrap{gap:10px}
 .tn-strings{display:flex;justify-content:center;gap:8px;flex-wrap:nowrap}
 .tn-str{display:flex;flex-direction:column;align-items:center;min-width:44px;padding:6px 8px;border:2px solid var(--line);border-radius:14px;opacity:.6}
 .tn-str b{font-size:22px}.tn-str small{font-size:12px;color:var(--muted)}.tn-str.on{opacity:1;border-color:#ff3d8b;background:rgba(255,61,139,.16)}
+/* ===== sonora: seguir e curtir ===== */
+.mus-modes{justify-content:flex-start}
+.mus-counts{margin-top:6px;color:var(--muted);font-size:15px}.mus-counts b{color:var(--ink)}
+.tag.fol{background:rgba(31,191,132,.2);border-color:#1fbf84;font-size:12px;vertical-align:middle}
+.btn.like.on{color:#ff6b9a;border-color:#ff6b9a}
+.mus-feed h3{margin-top:0}
+.mus-vmeta a{color:var(--muted)}
 </style>
 <style>
 /* Layout: cadastro da banda na primeira visita; depois resumo do repertório, filtros, e músicas em quadro; cada música abre numa folha com a função de cada pessoa. */
@@ -2299,7 +2306,7 @@ function renderSide(){
 /* ---------- rede de músicos (independente da banda) ---------- */
 var MUS_INST=['Guitarra','Violão','Baixo','Bateria','Voz','Teclado','Piano','Saxofone','Violino','Percussão','DJ'];
 var MUS_STYLE=['Rock','Pop','Blues','Jazz','Metal','Samba','MPB','Funk','Reggae','Sertanejo','Country','Folk','Eletrônica','Gospel','Clássica'];
-var mus={tab:'discover',q:'',inst:'',style:'',list:null,more:false,busy:false,me:undefined,meBusy:false,draft:null,saving:false,view:undefined,viewBusy:false,acFor:'',acList:[],msg:'',compose:false,msgReady:undefined,sending:false,vurl:'',vtitle:'',vtitleAuto:'',vtitleFor:'',tstat:'',add:{},video:null,armDel:'',err:''};
+var mus={tab:'discover',mode:'all',feed:undefined,q:'',inst:'',style:'',list:null,more:false,busy:false,me:undefined,meBusy:false,draft:null,saving:false,view:undefined,viewBusy:false,acFor:'',acList:[],msg:'',compose:false,msgReady:undefined,sending:false,vurl:'',vtitle:'',vtitleAuto:'',vtitleFor:'',tstat:'',add:{},video:null,armDel:'',err:''};
 function musOn(){return !!(window.CE_PROFILE&&window.CE_STANDALONE)}
 function musAuthed(){return !!(window.CE_AUTH&&window.CE_AUTH.user)}
 function musRoute(){var h=location.hash.replace(/^#/,'');if(h==='musicos')return {k:'dir'};var m=/^musico-([0-9a-f-]{36})$/.exec(h);return m?{k:'prof',id:m[1]}:null}
@@ -2329,7 +2336,8 @@ function musVideos(videos,mine){
     return '<li class="mus-vid"><button type="button" class="mus-vthumb" data-act="mus-play" data-url="'+esc(v.url)+'" aria-label="Ver vídeo">'+musThumb(v)+(id?'<i class="mus-play">▶</i>':'')+'</button>'+
       '<div class="mus-vmeta"><b>'+esc(v.title||'Vídeo')+'</b><small>'+esc((String(v.url).replace(/^https:\/\/(www\.)?/,'').split('/')[0]))+'</small></div>'+
       '<div class="row-actions no-fill mus-vact">'+(id?'':'<a class="btn small" target="_blank" rel="noopener noreferrer" href="'+esc(v.url)+'">Abrir ↗</a>')+
-      (mine?'<button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="mus-vdel" data-v="'+esc(v.id)+'">'+(arm?'Confirmar: apagar':'Apagar')+'</button>':'')+'</div></li>'}).join('')+'</ul>';
+      (mine?'<span class="tag">♥ '+(v.likes||0)+'</span>':likeBtn(v))+
+      (mine===true?'<button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="mus-vdel" data-v="'+esc(v.id)+'">'+(arm?'Confirmar: apagar':'Apagar')+'</button>':'')+'</div></li>'}).join('')+'</ul>';
 }
 function musLoadMe(){
   if(mus.meBusy)return;mus.meBusy=true;
@@ -2338,7 +2346,7 @@ function musLoadMe(){
 function musDraftFrom(p){p=p||{};mus.draft={name:p.name||(window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.name)||'',city:p.city||'',bio:p.bio||'',plays:(p.plays||[]).slice(),owns:(p.owns||[]).slice(),gear:(p.gear||[]).slice(),styles:(p.styles||[]).slice(),refs:(p.refs||[]).slice(),photo:p.photo||'',contact:{instagram:(p.contact||{}).instagram||''},accept_msgs:!!p.accept_msgs,visible:!!p.visible}}
 function musSearch(reset){
   if(mus.busy)return;mus.busy=true;if(reset){mus.list=null}
-  window.CE_PROFILE.search(mus.q,mus.inst,mus.style,reset?0:(mus.list||[]).length).then(function(rows){mus.list=(reset?[]:(mus.list||[])).concat(rows||[]);mus.more=(rows||[]).length>=20;mus.err=''}).catch(function(e){mus.list=mus.list||[];mus.err=musErr(e)}).then(function(){mus.busy=false;render()});
+  window.CE_PROFILE.search(mus.q,mus.inst,mus.style,reset?0:(mus.list||[]).length,mus.mode,(mus.me&&mus.me.profile&&mus.me.profile.city)||'').then(function(rows){mus.list=(reset?[]:(mus.list||[])).concat(rows||[]);mus.more=(rows||[]).length>=20;mus.err=''}).catch(function(e){mus.list=mus.list||[];mus.err=musErr(e)}).then(function(){mus.busy=false;render()});
 }
 function musLoadView(id){
   if(mus.viewBusy||(mus.view&&mus.view.id===id))return;mus.viewBusy=true;
@@ -2379,15 +2387,33 @@ function musEditor(){
     '<div class="panel mus-form"><h3>Privacidade</h3><p class="hint">Você pode apagar o seu perfil e os seus vídeos a qualquer momento. Isso não apaga a sua conta nem as suas bandas.</p>'+
     '<div class="row-actions no-fill"><button type="button" class="btn'+(mus.armDel==='profile'?' danger armed':'')+'" data-act="mus-delprofile">'+(mus.armDel==='profile'?'Confirmar: apagar o meu perfil':'Apagar o meu perfil')+'</button></div></div>';
 }
+function musLoadFeed(){
+  if(mus.feedBusy||!window.CE_PROFILE||!CE_PROFILE.feed)return;mus.feedBusy=true;
+  CE_PROFILE.feed().then(function(r){mus.feed=r||[]}).catch(function(){mus.feed=[]}).then(function(){mus.feedBusy=false;render()});
+}
+function musFeedHTML(){
+  if(mus.feed===undefined){musLoadFeed();return ''}
+  if(!mus.feed.length)return '';
+  return '<div class="panel mus-feed"><h3>Novidades de quem você segue</h3><ul class="mus-vlist">'+mus.feed.map(function(v){
+    var id=ytId(v.url);
+    return '<li class="mus-vid"><button type="button" class="mus-vthumb" data-act="mus-play" data-url="'+esc(v.url)+'" aria-label="Ver vídeo">'+musThumb(v)+(id?'<i class="mus-play">▶</i>':'')+'</button>'+
+      '<div class="mus-vmeta"><b>'+esc(v.title||'Vídeo')+'</b><a href="#musico-'+esc(v.user_id)+'">'+esc(v.name)+'</a></div>'+
+      '<div class="row-actions no-fill mus-vact">'+(id?'':'<a class="btn small" target="_blank" rel="noopener noreferrer" href="'+esc(v.url)+'">Abrir ↗</a>')+likeBtn(v)+'</div></li>'}).join('')+'</ul></div>';
+}
+function likeBtn(v){return '<button type="button" class="btn small like'+(v.liked?' on':'')+'" data-act="mus-like" data-v="'+esc(v.id)+'" aria-pressed="'+(!!v.liked)+'" aria-label="Curtir">'+(v.liked?'♥':'♡')+' '+(v.likes||0)+'</button>'}
 function musDiscover(){
   if(mus.list===null&&!mus.busy)musSearch(true);
   var opt=function(arr,cur,all){return '<option value="">'+all+'</option>'+arr.map(function(x){return '<option'+(cur===x?' selected':'')+'>'+esc(x)+'</option>'}).join('')};
   var rows=(mus.list||[]).map(function(p){
-    return '<a class="mus-card" href="#musico-'+esc(p.user_id)+'">'+musAvatar(p,64)+'<span class="mus-info"><b>'+esc(p.name)+'</b><small>'+esc(p.city||'')+'</small><span class="mus-tags">'+musChips((p.plays||[]).slice(0,4))+musChips((p.styles||[]).slice(0,3),'alt')+'</span></span></a>'}).join('');
-  return '<div class="mus-search"><input type="search" data-mus="q" data-draft="mus" data-fk="musq" value="'+esc(mus.q)+'" placeholder="Buscar por nome ou cidade" aria-label="Buscar músicos"><select data-mus-sel="inst" aria-label="Instrumento">'+opt(MUS_INST,mus.inst,'Qualquer instrumento')+'</select><select data-mus-sel="style" aria-label="Estilo">'+opt(MUS_STYLE,mus.style,'Qualquer estilo')+'</select>'+
+    return '<a class="mus-card" href="#musico-'+esc(p.user_id)+'">'+musAvatar(p,64)+'<span class="mus-info"><b>'+esc(p.name)+(p.is_following?' <span class="tag fol">Seguindo</span>':'')+'</b><small>'+esc(p.city||'')+(p.followers?(p.city?' · ':'')+p.followers+(p.followers==1?' seguidor':' seguidores'):'')+'</small><span class="mus-tags">'+musChips((p.plays||[]).slice(0,4))+musChips((p.styles||[]).slice(0,3),'alt')+'</span></span></a>'}).join('');
+  if(mus.me===undefined&&!mus.meBusy)musLoadMe();
+  var myCity=(mus.me&&mus.me.profile&&mus.me.profile.city)||'';
+  var modes='<div class="chips mus-modes" role="group" aria-label="Quem mostrar">'+[['all','Todos'],['following','Seguindo'],['city',myCity?'Em '+myCity:'Na minha cidade']].map(function(x){return '<button type="button" class="chip" data-act="mus-mode" data-v="'+x[0]+'" aria-pressed="'+(mus.mode===x[0])+'">'+esc(x[1])+'</button>'}).join('')+'</div>';
+  var cityHint=mus.mode==='city'&&!myCity&&mus.me!==undefined?'<p class="hint">Preencha a cidade no seu perfil (Meu perfil) para ver quem toca perto de você.</p>':'';
+  return musFeedHTML()+modes+cityHint+'<div class="mus-search"><input type="search" data-mus="q" data-draft="mus" data-fk="musq" value="'+esc(mus.q)+'" placeholder="Buscar por nome ou cidade" aria-label="Buscar músicos"><select data-mus-sel="inst" aria-label="Instrumento">'+opt(MUS_INST,mus.inst,'Qualquer instrumento')+'</select><select data-mus-sel="style" aria-label="Estilo">'+opt(MUS_STYLE,mus.style,'Qualquer estilo')+'</select>'+
     '<button type="button" class="btn primary" data-act="mus-find">Buscar</button></div>'+
     (mus.err?'<p class="hint">'+esc(mus.err)+'</p>':'')+
-    (mus.list===null?'<p class="hint">Buscando…</p>':rows?'<div class="mus-grid">'+rows+'</div>'+(mus.more?'<div class="row-actions no-fill"><button type="button" class="btn" data-act="mus-more"'+(mus.busy?' disabled':'')+'>Ver mais</button></div>':''):'<div class="empty-state"><strong>Ainda não há músicos por aqui</strong>A Sonora está começando. Quando alguém ligar “Visível” no perfil, aparece aqui. Que tal ser o primeiro? Abra “Meu perfil” e comece.</div>');
+    (mus.list===null?'<p class="hint">Buscando…</p>':rows?'<div class="mus-grid">'+rows+'</div>'+(mus.more?'<div class="row-actions no-fill"><button type="button" class="btn" data-act="mus-more"'+(mus.busy?' disabled':'')+'>Ver mais</button></div>':''):(mus.mode==='following'?'<div class="empty-state"><strong>Você ainda não segue ninguém</strong>Abra o perfil de um músico e toque em Seguir. Aqui aparece só quem você segue.</div>':mus.mode==='city'?'<div class="empty-state"><strong>Ninguém na sua cidade ainda</strong>Convide músicos que você conhece para criar o perfil na Sonora.</div>':'<div class="empty-state"><strong>Ainda não há músicos por aqui</strong>A Sonora está começando. Quando alguém ligar “Visível” no perfil, aparece aqui. Que tal ser o primeiro? Abra “Meu perfil” e comece.</div>'));
 }
 function musMsgReady(){
   if(mus.msgReady===true||mus.compose)return mus.msgReady!==false||mus.compose;
@@ -2417,11 +2443,12 @@ function musProfileView(id){
   var p=v.profile,myId=window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.id,mine=!!((myId&&myId===p.user_id)||(mus.me&&mus.me.profile&&mus.me.profile.user_id===p.user_id));
   var sec=function(t,a,cls){return a&&a.length?'<div class="panel"><h3>'+t+'</h3><div class="mus-tags">'+musChips(a,cls)+'</div></div>':''};
   return '<div class="row-actions no-fill">'+back+'</div>'+
-    '<div class="mus-hero">'+musAvatar(p,112)+'<div><h2>'+esc(p.name)+'</h2><div class="faint">'+esc(p.city||'')+'</div>'+(p.visible?'':'<div class="tag">Só você vê este perfil</div>')+'</div></div>'+
+    '<div class="mus-hero">'+musAvatar(p,112)+'<div><h2>'+esc(p.name)+'</h2><div class="faint">'+esc(p.city||'')+'</div>'+(p.visible?'':'<div class="tag">Só você vê este perfil</div>')+'<div class="mus-counts"><b>'+(v.followers||0)+'</b> '+((v.followers||0)===1?'seguidor':'seguidores')+' · <b>'+(v.following||0)+'</b> seguindo</div></div></div>'+
+    (mine||!p.visible?'':'<div class="row-actions no-fill"><button type="button" class="btn '+(v.is_following?'':'primary')+'" data-act="mus-follow" data-u="'+esc(p.user_id)+'" aria-pressed="'+(!!v.is_following)+'">'+(v.is_following?'✓ Seguindo':'+ Seguir')+'</button></div>')+
     (p.bio?'<div class="panel"><h3>Sobre</h3><p class="mus-bio">'+esc(p.bio)+'</p></div>':'')+
     musContactHTML(p.contact)+
     sec('Toca',p.plays)+sec('Tem',p.owns,'alt')+sec('Equipamentos',p.gear,'alt')+sec('Estilos favoritos',p.styles)+sec('Referências musicais',p.refs,'alt')+
-    '<div class="panel"><h3>Vídeos</h3>'+musVideos(v.videos||[],false)+'</div>'+
+    '<div class="panel"><h3>Vídeos</h3>'+musVideos(v.videos||[],mine?'own':false)+'</div>'+
     (!mine&&p.accept_msgs&&musMsgReady()?musCompose(p):'')+
     (mine?'':'<div class="row-actions no-fill"><button type="button" class="btn small'+(mus.armDel==='rep'?' danger armed':'')+'" data-act="mus-report" data-u="'+esc(p.user_id)+'">'+(mus.armDel==='rep'?'Confirmar: denunciar este perfil':'Denunciar')+'</button></div>');
 }
@@ -2499,6 +2526,15 @@ function musAct(act,t){
   if(act==='mus-intro-show'){mus.introOpen=true;render();return}
   if(act==='mus-intro-hide'){mus.introOpen=false;try{localStorage.setItem('ce-sonora-intro','1')}catch(e){}render();return}
   if(act==='mus-intro-go'){mus.introOpen=false;try{localStorage.setItem('ce-sonora-intro','1')}catch(e){}mus.tab='me';render();window.scrollTo(0,0);return}
+  if(act==='mus-mode'){mus.mode=t.dataset.v;mus.list=null;musSearch(true);render();return}
+  if(act==='mus-follow'){
+    var uid=t.dataset.u,v0=mus.view&&mus.view.id===uid?mus.view:null,on=!(v0&&v0.is_following);
+    (on?P.follow(uid):P.unfollow(uid)).then(function(){if(v0){v0.is_following=on;v0.followers=Math.max(0,(v0.followers||0)+(on?1:-1))}mus.list=null;mus.feed=undefined;render()}).catch(function(e){toast(/closed/.test(String(e&&e.message))?'Esse perfil não está visível.':/limit/.test(String(e&&e.message))?'Você segue 500 músicos, o limite.':musErr(e))});return}
+  if(act==='mus-like'){
+    var vid=t.dataset.v,all=[];
+    if(mus.view&&mus.view.videos)all=all.concat(mus.view.videos);if(mus.feed)all=all.concat(mus.feed);
+    var vv=all.filter(function(x){return x.id===vid})[0],want=!(vv&&vv.liked);
+    P.like(vid,want).then(function(n){all.forEach(function(x){if(x.id===vid){x.liked=want;x.likes=n}});render()}).catch(function(e){toast(/closed/.test(String(e&&e.message))?'Esse vídeo não está visível.':musErr(e))});return}
   if(act==='mus-find'){musSearch(true);return}
   if(act==='mus-more'){musSearch(false);return}
   if(act==='mus-retry'){mus.me=undefined;mus.err='';render();return}
@@ -3627,7 +3663,9 @@ var TOUR=[
  {v:1,r:'me',open:1,sel:function(){return h3Block($('#drawer'),'comentários')},skip:1,t:'Comentários',x:'Deixe recados para a banda sobre a música, como "refrão rápido demais".'},
  {v:1,r:'setlist',sel:'#setview .phead',t:'Setlist',x:'Monte a ordem do show, ajuste a pausa entre as músicas e marque a data e o local do show.'},
  {v:1,r:'setlist',sel:'[data-act="live-start"]',skip:1,t:'Ensaio ao vivo',x:'Começar ensaio ao vivo: a banda toda acompanha a mesma música, com rolagem automática e metrônomo sincronizado entre os celulares.'},
- {v:3,r:'musicos',sel:'#musview .mus-head',skip:1,t:'Sonora',x:'A Sonora é a rede de músicos do app, separada das bandas. Monte o seu perfil com instrumentos, equipamentos, estilos e vídeos, encontre outros músicos e combine de tocar. O perfil só aparece para os outros se você ligar “Visível”.'},
+ {v:3,r:'geral',sel:'#agcard',skip:1,t:'Agenda e presença',x:'Marque ensaios, shows e outros compromissos. Cada integrante responde Vou, Talvez ou Não vou, e todo mundo vê quem confirmou. A resposta do próximo ensaio fica no cartão do ensaio.'},
+ {v:3,r:'geral',sel:'#btn-tuner',skip:1,t:'Afinador',x:'Afine o violão, a guitarra, o baixo ou o ukulele pelo microfone. A agulha mostra se a corda está grave, afinada ou aguda.'},
+ {v:3,r:'musicos',sel:'#musview .mus-head',skip:1,t:'Sonora',x:'A Sonora é a rede de músicos do app, separada das bandas. Monte o seu perfil, siga outros músicos, curta vídeos, encontre quem toca na sua cidade e combine de tocar. O perfil só aparece para os outros se você ligar “Visível”.'},
  {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'você')},t:'Você',x:'Escolha quem você é e coloque a sua foto, que aparece no cartão da banda.'},
  {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'aparência')},skip:1,t:'Aparência',x:'Troque o layout (Neon, Cartaz, Estúdio ou Personalizado) e o idioma.'},
  {v:1,r:'config',sel:function(){return h3Block($('#cfgview'),'banda')},skip:1,t:'Banda e convite',x:'Nome, logo e integrantes. Copie o link de convite para chamar a banda; o dono pode gerar um convite novo se o antigo vazar.'},
