@@ -2840,10 +2840,7 @@ function renderStage(){
       '<div class="row"><span class="lbl">Espera</span><button type="button" class="btn small" data-act="wait-step" data-id="'+s.id+'" data-d="-5" aria-label="Menos espera">−5</button><span class="mono">'+(s.wait||0)+'s</span><button type="button" class="btn small" data-act="wait-step" data-id="'+s.id+'" data-d="5" aria-label="Mais espera">+5</button><span class="faint" style="font-size:13px">antes de rolar</span></div>'+
       (s.bpm?'<div class="row multi"><span class="lbl">Clique</span>'+nb(-5)+nb(-1)+'<b class="mono bpmv'+(eff>=300?' cesar':'')+'">'+bpmTxt(eff)+(d?' <small>('+(d>0?'+':'−')+Math.abs(d)+')</small>':'')+'</b>'+nb(1)+nb(5)+'<button type="button" class="btn small '+(on?'danger':'primary')+'" data-act="'+(on?'met-stop':'met-start')+'" data-id="'+s.id+'">'+(on?'Parar':'Iniciar')+'</button></div>':'')+
       (isL?'':'<div class="row"><span class="lbl">Tom</span><button type="button" class="btn small" data-act="tr" data-id="'+s.id+'" data-d="-1" aria-label="Descer um semitom">−1</button><span class="mono">'+(tr>0?'+':'')+tr+'</span><button type="button" class="btn small" data-act="tr" data-id="'+s.id+'" data-d="1" aria-label="Subir um semitom">+1</button></div>')+
-      '<div class="row"><span class="lbl">Escutar</span><button type="button" class="btn small primary" data-act="mic-open" data-id="'+s.id+'">🎧 Escutar e sincronizar</button></div>'+
-      '<div class="row"><span class="lbl">YouTube</span><button type="button" class="btn small primary" data-act="yt-open" data-id="'+s.id+'">▶ Player com o mapa</button></div>'+
       '<div class="row multi"><span class="lbl">Pausa</span><button type="button" class="btn small primary" data-act="pause-pick">⏸ Adicionar pausa</button><span class="faint" style="font-size:12.5px">Ou segure o dedo numa linha do texto.</span></div>'+
-      (s.spotify&&s.bpm?'<div class="row"><span class="lbl">Spotify</span><button type="button" class="btn small primary" data-act="sp-open" data-id="'+s.id+'">♫ Clique com o player</button></div>':'')+
       (canSync()&&s.bpm?'<div class="row"><span class="lbl">Banda</span>'+(smOn()?'<button type="button" class="btn small danger" data-act="sm-stop">Parar clique da banda</button>':'<button type="button" class="btn small primary" data-act="sm-start" data-id="'+s.id+'">Clique para todos ('+bpmTxt(eff)+')</button>')+'</div>':'')+
       '<div class="row"><a class="btn small" target="_blank" rel="noopener" href="'+spotifyUrl(s)+'">Ouvir no Spotify ↗</a></div>'+
     '</div>':'')+
@@ -3064,9 +3061,6 @@ function metroBlock(s){
     '<div class="mdots" aria-hidden="true">'+dots+'</div>'+
     '<div class="row-actions"><button type="button" class="btn '+(on?'danger':'primary')+'" data-act="'+(on?'met-stop':'met-start')+'" data-id="'+s.id+'">'+(on?'Parar':'Iniciar')+'</button>'+
     '<button type="button" class="btn" data-act="met-tap" data-id="'+s.id+'">Tocar no ritmo</button>'+
-    '<button type="button" class="btn" data-act="mic-open" data-id="'+s.id+'">🎧 Escutar e sincronizar</button>'+
-    (ytVideoOf(s)||true?'<button type="button" class="btn" data-act="yt-open" data-id="'+s.id+'">▶ Tocar com o YouTube</button>':'')+
-    (s.spotify&&s.bpm&&!window.CE_ARTIFACT?'<button type="button" class="btn" data-act="sp-open" data-id="'+s.id+'">♫ Tocar com o Spotify</button>':'')+
     '<select data-f="beats" data-id="'+s.id+'" aria-label="Compasso">'+opts+'</select></div>'+
     '<p class="hint">Os botões de BPM mudam só o treino de agora; o BPM salvo da música não é alterado, a menos que você toque em “Salvar”. Para descobrir o BPM, toque em “Tocar no ritmo” acompanhando a música (3 toques ou mais).</p></div></div>';
 }
