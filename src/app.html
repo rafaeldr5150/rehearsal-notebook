@@ -4080,7 +4080,7 @@ function recFinish(){
   var blob=new Blob(r.chunks,{type:base}),name='';
   (ui.up||(ui.up={}))[r.songId]={p:0};render();
   nextTake(r.songId).then(function(n){name=recName(r.title,n,ext);
-    return window.CE_DRIVE.upload(blob,{songId:r.songId,title:r.title,name:name,mime:base},function(p){ui.up[r.songId].p=p;recTick()})}).then(function(res){
+    return window.CE_DRIVE.upload(blob,{songId:r.songId,title:r.title,name:name,mime:base,by:recorderName()},function(p){ui.up[r.songId].p=p;recTick()})}).then(function(res){
     delete ui.up[r.songId];
     if(res.sent){presDirty();(ui.recDone||(ui.recDone={}))[r.songId]=name;if(ui.recList)ui.recList[r.songId]=undefined;toast('Gravação salva no Drive: setlist/'+r.title)}
     else{ui.recPending=(ui.recPending||0)+1;if(/invalid_grant/.test(String(res.error||''))&&ui.drive)ui.drive.expired=true;toast(/invalid_grant/.test(String(res.error||''))?'A conexão com o Google Drive expirou. A gravação ficou guardada no aparelho. Reconecte em Configurações.':res.error==='not_connected'?'O Drive não está conectado. A gravação ficou guardada no aparelho.':'Sem conexão: a gravação será enviada depois.')}
@@ -4197,6 +4197,7 @@ function recPlay(fid,btn){
 }
 function isAudioFile(f){return /^audio\//.test(f.mimeType||'')||/\.(mp3|m4a|wav|webm|ogg|aac|flac|opus)$/i.test(f.name||'')}
 function guessMime(n){var x=(String(n).split('.').pop()||'').toLowerCase();return {pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',txt:'text/plain',mp3:'audio/mpeg',m4a:'audio/mp4',wav:'audio/wav',mp4:'video/mp4',mov:'video/quicktime',m4v:'video/x-m4v',webm:'video/webm',heic:'image/heic',heif:'image/heif',mid:'audio/midi',midi:'audio/midi',gp:'application/octet-stream',gp5:'application/octet-stream',gpx:'application/octet-stream',musicxml:'application/xml',xml:'application/xml',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}[x]||'application/octet-stream'}
+function recorderName(){var m=meMember&&member(meMember);return m&&m.name?m.name:((window.CE_AUTH&&window.CE_AUTH.user&&window.CE_AUTH.user.name)||'')}
 function recListHTML(s,kind){
   kind=kind||'audio';
   var id=s.id,l0=ui.recList&&ui.recList[id];
@@ -4209,7 +4210,7 @@ function recListHTML(s,kind){
   return '<ul class="rec-list">'+l.map(function(f){
     var playing=ui.playId===f.id&&recAudio&&!recAudio.paused,arm=ui.armDel===f.id,
         when=f.createdTime?new Date(f.createdTime).toLocaleString(window.CE_LOCALE||'pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
-    return '<li><div class="rec-meta"><b>'+esc(f.name)+'</b><small>'+esc(when)+(f.size?' · '+fileSize(f.size):'')+' <span class="rec-pl mono" data-fid="'+f.id+'"></span></small></div><div class="row-actions">'+
+    return '<li><div class="rec-meta"><b>'+esc(f.name)+'</b><small>'+(kind==='audio'&&f.appProperties&&f.appProperties.by?'Gravado por '+esc(f.appProperties.by)+' · ':'')+esc(when)+(f.size?' · '+fileSize(f.size):'')+' <span class="rec-pl mono" data-fid="'+f.id+'"></span></small></div><div class="row-actions">'+
       (kind==='audio'?'<button type="button" class="btn small primary" data-act="rec-play" data-fid="'+f.id+'">'+(ui.playLoad===f.id?'Carregando…':playing?'Pausar':'Ouvir')+'</button>':'<button type="button" class="btn small primary" data-act="file-get" data-fid="'+f.id+'" data-name="'+esc(f.name)+'">'+(ui.getLoad===f.id?'Baixando…':'Baixar')+'</button>')+
       '<button type="button" class="btn small'+(arm?' danger armed':'')+'" data-act="rec-del" data-fid="'+f.id+'" data-id="'+id+'">'+(arm?'Confirmar: apagar':'Apagar')+'</button>'+
       (f.webViewLink?'<a class="btn small" target="_blank" rel="noopener" href="'+esc(f.webViewLink)+'">Drive ↗</a>':'')+'</div>'+(kind==='audio'&&ui.playId===f.id?plHTML(f):'')+'</li>'}).join('')+'</ul>';

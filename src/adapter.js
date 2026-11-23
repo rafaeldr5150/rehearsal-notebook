@@ -376,7 +376,7 @@ function rpc(fn,args){
   function del(id){return tx('readwrite',function(s){return s.delete(id)})}
   function all(){return tx('readonly',function(s){return s.getAll()}).then(function(a){return (a||[]).filter(function(x){return x.band===band})}).catch(function(){return []})}
   function send(it,onProg){
-    return call('upload',{songId:it.songId,title:it.title,name:it.name,mime:it.mime,origin:location.origin,kind:it.kind||''}).then(function(r){
+    return call('upload',{songId:it.songId,title:it.title,name:it.name,mime:it.mime,origin:location.origin,kind:it.kind||'',by:it.by||''}).then(function(r){
       if(!r||!r.ok){var e=new Error(r&&r.error||'upload');e.code=r&&r.error;throw e}
       return new Promise(function(res,rej){
         var x=new XMLHttpRequest();x.open('PUT',r.url);x.setRequestHeader('Content-Type',it.mime);
@@ -442,7 +442,7 @@ function rpc(fn,args){
     pending:function(){return all().then(function(l){return l.length})},
     flush:flush,
     upload:function(blob,meta,onProg){
-      var it={id:Math.random().toString(36).slice(2)+Date.now(),band:band,songId:meta.songId,title:meta.title,name:meta.name,mime:meta.mime,kind:meta.kind||'',blob:blob,at:Date.now()};
+      var it={id:Math.random().toString(36).slice(2)+Date.now(),band:band,songId:meta.songId,title:meta.title,name:meta.name,mime:meta.mime,kind:meta.kind||'',by:String(meta.by||'').slice(0,60),blob:blob,at:Date.now()};
       return send(it,onProg).then(function(f){return {sent:true,file:f}},function(e){
         if(meta.noQueue)throw e;
         return put(it).then(function(){return {sent:false,queued:true,error:e&&e.code}},function(){throw e});

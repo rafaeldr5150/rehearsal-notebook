@@ -852,6 +852,7 @@ function inst(x){var r=EX[x];return r?r[I]:x}
 
 /* frases com números, datas e nomes */
 var P=[
+[/^Gravado por ([^·]+?)(?: · (.+))?$/,function(m){return (I===1?'Recorded by ':'Grabado por ')+m[1]+(m[2]?' · '+tr(m[2]):'')}],
 [/^Alterado pelo usuário\. Original: (.+)$/,function(m){var r=m[1].replace(' e tom ',I===1?' and key ':' y tono ').replace(/^tom /,I===1?'key ':'tono ').replace(/ BPM e /,' BPM and ');return I===1?'Changed by user. Original: '+r:'Cambiado por el usuario. Original: '+r}],
 [/^\+ (.+)$/,function(m){return '+ '+inst(m[1])}],
 [/^· (.+)$/,function(m){return '· '+inst(m[1])}],

@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
       if (!sf) return J({ ok: true, files: [] });
       const tok = await accessToken(row);
       const q = encodeURIComponent(`'${sf}' in parents and trashed=false`);
-      const r = await gj(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=createdTime desc&pageSize=50&fields=files(id,name,mimeType,size,createdTime,webViewLink)`, tok);
+      const r = await gj(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=createdTime desc&pageSize=50&fields=files(id,name,mimeType,size,createdTime,webViewLink,appProperties)`, tok);
       if (r.status === 404) return J({ ok: true, files: [] });
       return J({ ok: r.status === 200, files: r.data.files || [] });
     } catch (e) { return J({ ok: false, error: String((e as Error).message) }, 502); }
@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
       const init = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,webViewLink", {
         method: "POST",
         headers: { Authorization: "Bearer " + tok, "Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": mime, Origin: b.origin },
-        body: JSON.stringify({ name: clean(b.name), parents: [sf], mimeType: mime }),
+        body: JSON.stringify({ name: clean(b.name), parents: [sf], mimeType: mime, ...(b.by ? { appProperties: { by: clean(String(b.by)).slice(0, 60) } } : {}) }),
       });
       const loc = init.headers.get("location");
       if (!loc) return J({ ok: false, error: "init:" + init.status }, 502);
